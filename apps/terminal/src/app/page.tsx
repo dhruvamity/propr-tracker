@@ -207,19 +207,23 @@ export default async function OverviewPage() {
                     <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
                       <span
                         className={
-                          ddConsumed > 75
+                          ddConsumed >= 100 || isFailed
                             ? "text-red-400 font-bold"
+                            : ddConsumed > 75
+                            ? "text-red-400 font-semibold"
                             : ddConsumed > 40
                             ? "text-amber-400 font-medium"
                             : "text-zinc-300"
                         }
                       >
-                        {formatPercent(acc.drawdownLimitConsumedPercent, 2)}
+                        {formatPercent(acc.drawdownUsedPercent, 2)}
+                        <span className="text-zinc-500 font-normal ml-1">/ {acc.maxDrawdownPercent || "3"}%</span>
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
                       <span className="font-medium text-white">
-                        {formatPercent(acc.profitTargetProgressPercent, 2)}
+                        {formatPercent(acc.profitTargetPct, 2)}
+                        <span className="text-zinc-500 font-normal ml-1">/ {acc.profitTargetPercent || "9"}%</span>
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center whitespace-nowrap">

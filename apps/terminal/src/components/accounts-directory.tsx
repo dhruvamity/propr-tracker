@@ -20,18 +20,33 @@ export interface AccountItem {
   startingBalance?: string;
   balance?: string;
   equity?: string;
-  drawdownLimitConsumedPercent?: string;
-  drawdownUsedPercent?: string;
-  drawdownRemaining?: string;
-  breachFloor?: string;
+  realizedPnl?: string;
+  unrealizedPnl?: string;
+  fees?: string;
+  totalPnl?: string;
   profitTargetPercent?: string;
   profitTargetPct?: string;
   profitTargetProgressPercent?: string;
+  toTargetAmount?: string;
+  maxDrawdownPercent?: string;
+  maxDrawdownAmount?: string;
+  drawdownUsedPercent?: string;
+  drawdownUsedAmount?: string;
+  drawdownLimitConsumedPercent?: string;
+  drawdownRemaining?: string;
+  breachFloor?: string;
+  maxDailyLossPercent?: string;
+  dailyLossLimitAmount?: string;
+  dailyLossUsedAmount?: string;
+  dailyLossUsedPercent?: string;
+  dailyLossLimitConsumedPercent?: string;
   dailyLossRemaining?: string;
+  dailyLossFloor?: string;
   failureReason?: string;
   currentPhase?: number;
   tradingDays?: number;
   requiredTradingDays?: number;
+  winRate?: string;
   trades?: any[];
 }
 
@@ -299,27 +314,31 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         <span
                           className={
-                            ddConsumed > 75
+                            ddConsumed >= 100 || isFailed
                               ? "text-red-400 font-bold"
+                              : ddConsumed > 75
+                              ? "text-red-400 font-semibold"
                               : ddConsumed > 40
                               ? "text-amber-400 font-medium"
                               : "text-zinc-200"
                           }
                         >
-                          {formatPercent(acc.drawdownLimitConsumedPercent, 2)}
+                          {formatPercent(acc.drawdownUsedPercent, 2)}
+                          <span className="text-zinc-500 font-normal ml-1">/ {acc.maxDrawdownPercent || "3"}%</span>
                         </span>
                         <span className="text-[10px] text-zinc-500 block">
-                          {formatPercent(acc.drawdownUsedPercent, 2)} used
+                          {formatUSD(acc.drawdownRemaining)} buffer
                         </span>
                       </td>
 
                       {/* Target Progress */}
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         <span className="font-medium text-white">
-                          {formatPercent(acc.profitTargetProgressPercent, 2)}
+                          {formatPercent(acc.profitTargetPct, 2)}
                         </span>
                         <span className="text-[10px] text-zinc-500 block">
-                          target: +{acc.profitTargetPercent || "10"}%
+                          target: {acc.profitTargetPercent || "9"}%
+                          {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 ? ` • ${formatUSD(acc.toTargetAmount)} left` : ""}
                         </span>
                       </td>
 
@@ -347,7 +366,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                             {/* Account Details */}
                             <div className="space-y-2 text-xs font-mono">
                               <span className="text-[10px] uppercase font-semibold text-zinc-400 block">
-                                Account Details
+                                Risk & Limits
                               </span>
                               <div className="space-y-1">
                                 <div className="flex justify-between">
@@ -359,17 +378,31 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                                   <span className="text-red-400 font-bold">{formatUSD(acc.breachFloor)}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-zinc-500">Daily loss limit</span>
-                                  <span className="text-zinc-200">{formatUSD(acc.dailyLossRemaining)}</span>
+                                  <span className="text-zinc-500">Drawdown used / limit</span>
+                                  <span className="text-zinc-200">
+                                    {formatUSD(acc.drawdownUsedAmount || 0)} / {formatUSD(acc.maxDrawdownAmount || 0)} ({formatPercent(acc.drawdownUsedPercent, 2)} / {acc.maxDrawdownPercent}%)
+                                  </span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-zinc-500">Drawdown headroom</span>
-                                  <span className="text-zinc-200">{formatUSD(acc.drawdownRemaining)}</span>
+                                  <span className="text-zinc-500">Daily loss used / limit</span>
+                                  <span className="text-zinc-200">
+                                    {formatUSD(acc.dailyLossUsedAmount || 0)} / {formatUSD(acc.dailyLossLimitAmount || 0)} ({formatPercent(acc.dailyLossUsedPercent, 2)} / {acc.maxDailyLossPercent}%)
+                                  </span>
                                 </div>
-                                {acc.failureReason && (
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Daily loss remaining</span>
+                                  <span className="text-zinc-200">{formatUSD(acc.dailyLossRemaining)}</span>
+                                </div>
+                                {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 && (
                                   <div className="flex justify-between">
-                                    <span className="text-zinc-500">Failure reason</span>
-                                    <span className="text-red-400">{acc.failureReason.replace(/_/g, " ")}</span>
+                                    <span className="text-zinc-500">Distance to target</span>
+                                    <span className="text-emerald-400 font-medium">{formatUSD(acc.toTargetAmount)}</span>
+                                  </div>
+                                )}
+                                {acc.failureReason && (
+                                  <div className="flex justify-between pt-1 border-t border-red-900/30">
+                                    <span className="text-red-400 font-semibold">Breach trigger</span>
+                                    <span className="text-red-400 font-bold">{acc.failureReason.replace(/_/g, " ")}</span>
                                   </div>
                                 )}
                               </div>
@@ -378,12 +411,22 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                             {/* Lifecycle & Trade Data */}
                             <div className="space-y-2 text-xs font-mono">
                               <span className="text-[10px] uppercase font-semibold text-zinc-400 block">
-                                Lifecycle
+                                Trade Performance
                               </span>
                               <div className="space-y-1">
                                 <div className="flex justify-between">
-                                  <span className="text-zinc-500">Phase</span>
-                                  <span className="text-zinc-200">Phase {acc.currentPhase || 1}</span>
+                                  <span className="text-zinc-500">Win rate</span>
+                                  <span className="text-zinc-200">{acc.winRate || "0.0%"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Realized PnL</span>
+                                  <span className={`font-medium ${Number(acc.realizedPnl || 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                    {formatUSD(acc.realizedPnl)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Trading fees</span>
+                                  <span className="text-zinc-400">{formatUSD(acc.fees)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-zinc-500">Trading days</span>

@@ -46,16 +46,22 @@ export interface AccountSnapshot {
   profitTargetPercent: string;
   profitTargetPct?: string;
   profitTargetProgressPercent: string;
+  toTargetAmount?: string;
   maxDrawdownPercent: string;
+  maxDrawdownAmount?: string;
   drawdownUsedPercent: string;
+  drawdownUsedAmount?: string;
   drawdownLimitConsumedPercent: string;
   drawdownRemaining: string;
   breachFloor?: string;
   maxDailyLossPercent: string;
+  dailyLossLimitAmount?: string;
+  dailyLossUsedAmount?: string;
   dailyLossUsedPercent: string;
   dailyLossLimitConsumedPercent: string;
   dailyLossRemaining: string;
   dailyLossFloor?: string;
+  failureDetails?: Record<string, unknown>;
   highWaterMark?: string;
   tradingDays?: number;
   requiredTradingDays?: number;
@@ -512,23 +518,60 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         const ddUsedPct = d(initialBalance).gt(0)
           ? ddUsedAmount.div(d(initialBalance)).times(100)
           : new Decimal(0);
-        const ddLimitConsumed = maxDdAmount.gt(0)
-          ? ddUsedAmount.div(maxDdAmount).times(100)
-          : new Decimal(0);
+        const ddLimitConsumed =
+          attempt?.failureReason === "max_drawdown_exceeded"
+            ? new Decimal(100)
+            : maxDdAmount.gt(0)
+            ? ddUsedAmount.div(maxDdAmount).times(100)
+            : new Decimal(0);
 
-        // Daily loss calculation against day-start base
+        // Daily loss calculation against day-start base per Propr Docs:
+        // dailyLossBase = startingBalance + startingIsolatedPositionMargin
         const maxDlPct = d(maxDailyLossPercent);
-        const dlBase = d(startingBalance).plus(isolatedMargin);
-        const maxDlAmount = maxDlPct.div(100).times(dlBase);
-        const dlLimit = dlBase.minus(maxDlAmount);
-        const dlUsedAmount = Decimal.max(dlBase.minus(equity), 0);
-        const dlRemaining = Decimal.max(equity.minus(dlLimit), 0);
-        const dlUsedPct = dlBase.gt(0)
-          ? dlUsedAmount.div(dlBase).times(100)
-          : new Decimal(0);
-        const dlLimitConsumed = maxDlAmount.gt(0)
-          ? dlUsedAmount.div(maxDlAmount).times(100)
-          : new Decimal(0);
+        let dailyLossBase: Decimal;
+        let dlLimitAmount: Decimal;
+        let dlLimit: Decimal;
+        let dlUsedAmount: Decimal;
+        let dlRemaining: Decimal;
+        let dlUsedPct: Decimal;
+        let dlLimitConsumed: Decimal;
+
+        const failureDetails = attempt?.failureDetails as Record<string, unknown> | undefined;
+
+        if (dailyMetrics && dailyMetrics.startingBalance) {
+          const dmStartBal = d(dailyMetrics.startingBalance as string);
+          const dmStartIso = d((dailyMetrics.startingIsolatedPositionMargin as string) || "0");
+          dailyLossBase = dmStartBal.plus(dmStartIso);
+          dlLimitAmount = maxDlPct.div(100).times(dailyLossBase);
+          dlLimit = dailyLossBase.minus(dlLimitAmount);
+          dlUsedAmount = Decimal.max(dailyLossBase.minus(equity), 0);
+          dlRemaining = Decimal.max(equity.minus(dlLimit), 0);
+          dlUsedPct = dailyLossBase.gt(0) ? dlUsedAmount.div(dailyLossBase).times(100) : new Decimal(0);
+          dlLimitConsumed = dlLimitAmount.gt(0) ? dlUsedAmount.div(dlLimitAmount).times(100) : new Decimal(0);
+        } else if (failureDetails) {
+          // Breached account: retrieve frozen breach snapshot
+          const fdStartBal = d((failureDetails.dayStartBalance as string) || initialBalance);
+          dailyLossBase = fdStartBal;
+          dlLimitAmount = maxDlPct.div(100).times(dailyLossBase);
+          dlLimit = d((failureDetails.equityLimit as string) || dailyLossBase.minus(dlLimitAmount).toString());
+          dlUsedAmount = d((failureDetails.dailyLoss as string) || "0");
+          dlRemaining = new Decimal(0);
+          dlUsedPct = d((failureDetails.dailyLossPercent as string) || "0");
+          dlLimitConsumed =
+            attempt?.failureReason === "max_daily_loss_exceeded"
+              ? new Decimal(100)
+              : dlLimitAmount.gt(0)
+              ? dlUsedAmount.div(dlLimitAmount).times(100)
+              : new Decimal(0);
+        } else {
+          dailyLossBase = d(startingBalance).plus(isolatedMargin);
+          dlLimitAmount = maxDlPct.div(100).times(dailyLossBase);
+          dlLimit = dailyLossBase.minus(dlLimitAmount);
+          dlUsedAmount = Decimal.max(dailyLossBase.minus(equity), 0);
+          dlRemaining = Decimal.max(equity.minus(dlLimit), 0);
+          dlUsedPct = dailyLossBase.gt(0) ? dlUsedAmount.div(dailyLossBase).times(100) : new Decimal(0);
+          dlLimitConsumed = dlLimitAmount.gt(0) ? dlUsedAmount.div(dlLimitAmount).times(100) : new Decimal(0);
+        }
 
         // Profit target calculations
         const profitAmount = equity.minus(d(phaseStartingBalance));
@@ -537,9 +580,41 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           : new Decimal(0);
 
         const ptTargetAmount = d(phaseStartingBalance).times(d(profitTargetPercent)).div(100);
+        const toTargetAmount = Decimal.max(ptTargetAmount.minus(profitAmount), 0);
         const ptProgress = ptTargetAmount.gt(0)
           ? profitAmount.div(ptTargetAmount).times(100)
           : new Decimal(0);
+
+        // Trade aggregates (dynamic from all historical trades)
+        let totalTradeRpnl = new Decimal(0);
+        let totalTradeFees = new Decimal(0);
+        let winningTradesCount = 0;
+        let closedTradesCount = 0;
+        const tradingDaysSet = new Set<string>();
+
+        for (const t of trades) {
+          const rpnl = d(t.realizedPnl);
+          const fee = d(t.fee);
+          totalTradeRpnl = totalTradeRpnl.plus(rpnl);
+          totalTradeFees = totalTradeFees.plus(fee);
+          if (!rpnl.isZero()) {
+            closedTradesCount++;
+            if (rpnl.gt(0)) winningTradesCount++;
+          }
+          if (t.executedAt) {
+            tradingDaysSet.add(t.executedAt.slice(0, 10));
+          }
+        }
+
+        const dynamicWinRate =
+          closedTradesCount > 0
+            ? `${((winningTradesCount / closedTradesCount) * 100).toFixed(1)}%`
+            : (attempt?.winRate as string) || "0.0%";
+
+        const dynamicTradingDays =
+          tradingDaysSet.size > 0
+            ? tradingDaysSet.size
+            : (attempt?.tradingDays as number) || 1;
 
         const rawName = challenge?.name;
         const challengeName = typeof rawName === "object" && rawName !== null
@@ -547,7 +622,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           : (rawName as string) || (attempt?.challengeId as string) || "Starter Turbo";
 
         const attemptPnl = attempt?.totalPnl ? d(attempt.totalPnl as string) : undefined;
-        const totalPnl = attemptPnl ?? (totalRpnl.plus(totalUpnl).isZero() ? equity.minus(d(initialBalance)) : totalRpnl.plus(totalUpnl));
+        const totalPnl = attemptPnl ?? (equity.minus(d(initialBalance)));
 
         accounts.push({
           accountId,
@@ -561,34 +636,40 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           currentPhase: attempt?.currentPhase as number,
           accountType: issuance?.accountType as string,
           failureReason: attempt?.failureReason as string,
+          failureDetails,
           closureReason: issuance?.closureReason as string,
           initialBalance,
-          startingBalance,
+          startingBalance: ds(dailyLossBase),
           phaseStartingBalance,
           balance: ds(balance),
           equity: ds(equity),
-          realizedPnl: ds(totalRpnl),
+          realizedPnl: ds(totalTradeRpnl),
           unrealizedPnl: ds(totalUpnl),
-          fees: ds(totalFees),
+          fees: ds(totalTradeFees),
           totalPnl: ds(totalPnl),
           drawdownType,
           profitTargetPercent,
           profitTargetPct: dsFixed(profitTargetPct, 2),
           profitTargetProgressPercent: dsFixed(Decimal.min(Decimal.max(ptProgress, 0), 100), 2),
+          toTargetAmount: dsFixed(toTargetAmount, 2),
           maxDrawdownPercent,
+          maxDrawdownAmount: dsFixed(maxDdAmount, 2),
           drawdownUsedPercent: dsFixed(Decimal.max(ddUsedPct, 0), 2),
+          drawdownUsedAmount: dsFixed(Decimal.max(ddUsedAmount, 0), 2),
           drawdownLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100), 2),
           drawdownRemaining: dsFixed(Decimal.max(ddRemaining, 0), 2),
           breachFloor: dsFixed(ddLimit, 2),
           maxDailyLossPercent,
+          dailyLossLimitAmount: dsFixed(dlLimitAmount, 2),
+          dailyLossUsedAmount: dsFixed(dlUsedAmount, 2),
           dailyLossUsedPercent: dsFixed(Decimal.max(dlUsedPct, 0), 2),
           dailyLossLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100), 2),
           dailyLossRemaining: dsFixed(Decimal.max(dlRemaining, 0), 2),
           dailyLossFloor: dsFixed(dlLimit, 2),
           highWaterMark,
-          tradingDays: attempt?.tradingDays as number,
+          tradingDays: dynamicTradingDays,
           requiredTradingDays: (phase?.minTradingDays || challenge?.requiredTradingDays) as number,
-          winRate: attempt?.winRate as string,
+          winRate: dynamicWinRate,
           openPositionCount: positions.length,
           openOrderCount: orders.length,
           positions,

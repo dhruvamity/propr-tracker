@@ -17,6 +17,7 @@ export function RiskCard({ account, rank }: RiskCardProps) {
   const dailyRoomNum = Number(account.dailyLossRemaining || 0);
   const ddConsumedPct = Number(account.drawdownLimitConsumedPercent || 0);
   const targetProgressPct = Number(account.profitTargetProgressPercent || 0);
+  const actualProfitPct = Number(account.profitTargetPct || 0);
 
   // Semantic Risk State Determination
   let riskStatus: "SAFE" | "CAUTION" | "CRITICAL" | "BREACHED" = "SAFE";
@@ -145,17 +146,29 @@ export function RiskCard({ account, rank }: RiskCardProps) {
           <span className="text-zinc-500">Daily room</span>
           <span className="text-zinc-300">{formatUSD(dailyRoomNum)}</span>
         </div>
+        <div className="flex justify-between col-span-2 pt-1 border-t border-[var(--border-subtle)]/50">
+          <span className="text-zinc-500">Daily loss</span>
+          <span className="text-zinc-300">
+            {formatUSD(account.dailyLossUsedAmount || 0)}
+            <span className="text-zinc-500 ml-1">/ {formatUSD(account.dailyLossLimitAmount || 0)}</span>
+          </span>
+        </div>
       </div>
 
-      {/* Target Progress — small secondary meter */}
+      {/* Target Progress — shows actual profit %, bar uses progress toward target */}
       <div className="pl-1 pt-2 border-t border-[var(--border-subtle)]">
         <div className="flex justify-between text-[11px] font-mono mb-1">
-          <span className="text-zinc-500">Target</span>
+          <span className="text-zinc-500">Profit Target</span>
           <span className="text-zinc-300 font-medium">
-            {formatPercent(targetProgressPct, 2)}
+            {formatPercent(actualProfitPct, 2)}
             <span className="text-zinc-500 ml-1">
-              / +{account.profitTargetPercent || "10"}%
+              / {account.profitTargetPercent || "9"}%
             </span>
+            {account.toTargetAmount && Number(account.toTargetAmount) > 0 && (
+              <span className="text-zinc-400 ml-1.5 text-[10px]">
+                ({formatUSD(account.toTargetAmount)} left)
+              </span>
+            )}
           </span>
         </div>
         <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">

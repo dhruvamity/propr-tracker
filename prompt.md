@@ -1,793 +1,158 @@
-The table rendering lives in `apps/terminal/src/components/accounts-directory.tsx`.
+# The Rulebook
 
-To clamp the percentages, update the formatting utility in `apps/terminal/src/lib/utils.ts`. Use `Intl.NumberFormat` to lock the output to two decimal places instead of rendering the raw strings calculated in `packages/calculations/src/risk.ts`.
+Twelve rules. Six are hard limits that end the session or the trade automatically.
+Six are process rules that shape how a trade is chosen and sized.
 
-For the other UI adjustments:
-
-* **WebSocket colors:** Parse the JSON strings in `apps/terminal/src/components/system-terminal-stream.tsx` and map text color classes to the `type` field.
-
-
-* **Active tab styling:** Edit `apps/terminal/src/components/sidebar.tsx`. Change the active text color to white or light grey while keeping the cyan border.
-
-
-* **Empty state centering:** Update `apps/terminal/src/components/empty-state.tsx`. Add `flex-1 items-center justify-center` to the parent wrapper so it dynamically fills the remaining viewport height.
-
-
-* **Risk card padding:** Increase the vertical padding inside the metric blocks in `apps/terminal/src/components/risk-card.tsx`.
-
-
-
-
-
-### 1. Fix the realtime state everywhere
-
-This is the biggest remaining issue.
-
-Your screenshots show:
-
-```text
-SYNCED • POLLING
-REST ●
-WS ●
-```
-
-and Diagnostics shows:
-
-```text
-REST API         HEALTHY
-WEBSOCKET        DISCONNECTED
-DATA PIPELINE    FRESH
-```
-
-but elsewhere you still show:
-
-```text
-REALTIME RADAR
-```
-
-and inside the account cards:
-
-```text
-SYNC
-REALTIME
-```
-
-That is contradictory.
-
-Your own specification explicitly says that a disconnected WebSocket must enter a degraded REST-fallback state and must never present cached/polled data as live. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
-
-Make the vocabulary global:
-
-| Actual stateUI                 |                    |
-| ------------------------------ | ------------------ |
-| REST + WS                      | `LIVE • REALTIME`  |
-| REST healthy + WS disconnected | `SYNCED • POLLING` |
-| Data older than 60s            | `STALE • {time}`   |
-| API unavailable                | `OFFLINE`          |
-
-Then `/live` should say:
-
-```text
-Live Risk
-
-Breach proximity across active accounts
-
-2 ACTIVE ACCOUNTS
-● REST POLLING
-```
-
-not:
-
-```text
-REALTIME RADAR
-```
-
-The current GitHub `TopBar` still derives its primary status from `restStatus`, so it can call the interface `LIVE` while `wsStatus` is disconnected.
-
-That should be corrected in code, not merely visually.
+Each rule states the evidence it came from, so you can argue with it on the merits
+rather than on how you feel that morning.
 
 ---
 
-# 2. Make the Overview top section more useful
+## Part 1 — Hard limits (automatic, no judgement involved)
 
-The new portfolio block is much better than the four-card arrangement.
+### H1 · Two positions per UTC day. Maximum.
 
-But the current hierarchy is:
+No exceptions for "great setup". No exceptions for "I'm up". The cap is on positions
+opened, not on positions closed.
 
-```text
-₹25,394.83                    ₹7,336.19
+> **Evidence.** 63 positions in 15 days across five accounts is `$353,196` of turnover
+> on `$5,000` accounts — 70x the account. On 24 August you opened 16 positions,
+> captured `+$71.02` of favourable movement and lost `$80.86` net after `$85.95` in fees.
 
-Total cash spent              Currently at risk
+### H2 · Stop for the day at two losses, or at 3x your per-trade risk in closed loss.
 
-Propr ₹21,559.58              Active accounts 2 at risk
-Breakout ₹3,835.25            Funded accounts 0 active
-```
+> **Evidence.** The report's own counterfactual: stopping after the second losing
+> position each day turns `-$596.78` into `-$334.09`. Adding a two-per-day cap takes it
+> to `-$259.46`. Both are the largest single improvements available in the dataset.
 
-The numbers are good, but the user has to scan horizontally to understand the relationship.
+### H3 · Hard notional cap, never exceeded, regardless of stop distance.
 
-I'd make the top block:
+See `05-position-sizing.md` for the number by plan. If the correct size at your risk
+amount exceeds the cap, the trade is skipped — you do not take a smaller-risk version
+of a trade that wanted to be huge.
 
-```text
-PORTFOLIO CASH POSITION
+> **Evidence.** Peak implied margin per account: `$4,824` to `$5,064` on `$5,000`
+> accounts. You were routinely deploying the entire account as margin.
 
-₹25,394.83                         ₹7,336.19
-TOTAL CASH SPENT                   ACTIVE CASH AT RISK
+### H4 · The stop order is placed in the same action as the entry order.
 
-Propr        ₹21,559.58            2 active accounts
-Breakout      ₹3,835.25            0 funded accounts
+Not after the fill. Not as a mental level. If the platform will not accept both, do
+not take the trade.
 
-Payouts received     ₹0.00
-Net cash outflow    -₹25,394.83
-```
+> **Evidence.** Limits are equity-based — floating P&L counts. Your worst position
+> floated to `-$215.58` on a `$150` allowance before you closed it at `-$146.43`.
 
-And add a tiny visual relationship:
+### H5 · Never widen a stop. Never add to a loser. Never remove a stop.
 
-```text
-TOTAL SPENT
-████████████████████████████  ₹25,394.83
+A stop that has been moved once is a strategy that has no stop.
 
-ACTIVE AT RISK
-███████                       ₹7,336.19
-```
+### H6 · Two gate violations in a rolling week ends the week.
 
-Not a percentage chart. Just a proportional visual.
-
-The design requirements specifically distinguish actual bank cash from face value and trading P&L, so preserving that hierarchy is more important than adding more KPIs. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
+> **Evidence.** Five accounts died in fifteen days, each replacement opened 19 to 46
+> minutes after the last one stopped. There was no circuit breaker. This is it.
 
 ---
 
-# 3. Rename “ACTUAL CASH P&L” in the UI
+## Part 2 — Process rules
 
-I still don't like that label.
+### P1 · Resting limit orders only. Both sides.
 
-The repo defines it as:
+If the entry requires crossing the spread, skip it.
 
-`processed payouts - actual cash outflow`. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
+| | Round-trip cost | Your 63 trades would have cost |
+|---|---:|---:|
+| Taker `0.045%` x2 | `0.090%` | `$280.80` (what happened) |
+| Maker `0.015%` x2 | `0.030%` | `$105.96` |
 
-For a trader, “P&L” strongly suggests trading performance.
+Saving: `$175`. Certain, immediate, requires no improvement in judgement.
 
-Use:
+### P2 · Size from the drawdown floor, not from margin.
 
-**NET CASH POSITION**
-
-Then:
-
-```text
-NET CASH POSITION
--₹25,394.83
-
-₹25,394.83 spent
-₹0.00 withdrawn
+```
+risk per trade  =  5% of your total drawdown allowance
+notional        =  risk / stop distance %
 ```
 
-You can retain the technical `actualCashPnLINR` field internally.
+At a `1.0%` stop this puts notional at 100x your risk amount. The `1.0%` stop is
+chosen deliberately: your median adverse excursion was `0.367%`, so `1.0%` sits well
+outside normal noise and will not be taken out by chop.
 
-This removes a potential semantic misunderstanding without changing the data model.
+### P3 · The 4h trend picks the side. You do not.
+
+`EMA20 > EMA50` on the 4h means longs only, for that whole session. Reversed means
+shorts only.
+
+> **Evidence.** Flipping every one of your directional calls would have lost `$385`
+> less than what actually happened. Your side selection is measurably worse than a coin
+> flip, so it gets removed from the process.
+>
+> **Honest caveat:** with-trend versus against-trend was a statistical wash in your data
+> (`-$299.82` vs `-$296.95`). This rule is not a proven edge. It deletes an input that
+> was measured to be actively harmful, which is worth doing on its own terms.
+
+### P4 · Minimum 1:3 reward-to-risk. Skip anything where the next 1h level is closer.
+
+| Reward:risk | Break-even win rate (at maker fees) |
+|---|---:|
+| 1:2 | `34.3%` |
+| **1:3** | **`25.8%`** |
+| 1:4 | `20.6%` |
+
+Your observed win rate was `22.2%`, 95% confidence interval `13.7%` to `33.9%`.
+At 1:2 you need a win rate above the top of that interval. At 1:3 the observed rate is
+statistically indistinguishable from break-even, which is the first ratio that gives
+the strategy a chance to work.
+
+### P5 · Confirmed structure only. A partial recovery is not a signal.
+
+1h higher low printed and closed, 15m close through the opposing swing, entry on the
+retest. All three, in that order.
+
+> **Evidence.** 40 of 49 losing positions were up more than `0.10%` at some point;
+> 24 were up more than `0.30%`. Losers' median best case was `+0.284%` against a median
+> realised `-0.132%`. The entries were live but never safe — they were taken before
+> confirmation.
+
+### P6 · Log the thesis before the fill, the outcome after.
+
+Thesis, level, invalidation, target, and the specific 1h structure. Then outcome, MAE,
+MFE and gate compliance. `propr-trade-journal.xlsx` has the columns.
 
 ---
 
-# 4. The account cards are now good, but still too tall
+## Part 3 — The review cadence
 
-The new cards are substantially better.
+**Every 10 trades**, check four numbers and nothing else:
 
-The strongest area is:
+| Metric | Target | Yours in the audited sample |
+|---|---:|---:|
+| Gate compliance rate | `100%` | not tracked |
+| Win rate | above `25.8%` | `22.2%` |
+| Average R on winners | at least `2.5` | `+0.60%` vs `-0.132%` median |
+| Fees as % of gross profit | under `10%` | `89%` of gross loss |
 
-```text
-REMAINING BREACH BUFFER
+If gate compliance is below 100%, fix that before looking at anything else. The other
+three numbers mean nothing while the process is being broken.
 
-$473.67                    $10,173.67
-to breach floor            CURRENT EQUITY
-```
-
-followed by:
-
-```text
-Floor $9,700                       Equity $10,173.67
-───────────────────────────────●
-       $473.67 buffer headroom
-```
-
-Keep that.
-
-What I'd remove from the card is some duplication.
-
-You currently show:
-
-```text
-Remaining breach buffer
-↓
-Drawdown buffer
-↓
-Drawdown consumed
-```
-
-Those are closely related.
-
-I'd structure it as:
-
-```text
-$473.67
-REMAINING TO BREACH
-
-Floor               $9,700
-Equity             $10,173.67
-Buffer                 $473.67
-
-Daily loss room        $336.84
-
-Target                 19.30%
-```
-
-Then one small secondary meter for target progress.
-
-The current implementation still gives the target meter and drawdown meter almost equal visual weight. The product's primary safety task is avoiding liquidation, so breach distance should win that hierarchy. The specification itself puts drawdown consumption and daily-loss cushion at P0. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
+**Every 30 trades**, decide: continue, adjust, or stop. See `01-account-choice.md` for
+why 30 is a screen and not proof.
 
 ---
 
-# 5. Make risk color semantic, not decorative
-
-Your current healthy state uses quite a lot of green.
-
-A healthy card should mostly look neutral.
-
-Something closer to:
-
-```text
-┌────────────────────────────────────────────┐
-│ ① Explorer 1-Step Turbo       ● SAFE      │
-│                                            │
-│ $473.67                                    │
-│ remaining to breach                        │
-│                                            │
-│ Floor $9,700 ───────────────● $10,173.67  │
-│                                            │
-│ Daily room     $336.84                     │
-│ Target         19.30%                      │
-└────────────────────────────────────────────┘
-```
-
-Green should mainly mark:
-
-`SAFE`
-
-`+PnL`
-
-`healthy`
-
-not entire components.
-
-That follows the intended design principle of “calm when healthy, urgent when at risk.” ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
-
----
-
-# 6. Remove “REALTIME” from account cards
-
-This is worth repeating separately because it appears in two places.
-
-Current:
-
-```text
-SYNC
-REALTIME
-```
-
-Change dynamically to:
-
-```text
-SYNC
-POLLING
-```
-
-when WebSocket is unavailable.
-
-Or even better:
-
-```text
-DATA
-11s ago
-```
-
-The global top bar already communicates the transport state, so duplicating `REALTIME` inside every card isn't necessary.
-
----
-
-# 7. Live Risk should be more opinionated
-
-The current ordering is good:
-
-```text
-1 Starter   $228.47
-2 Explorer  $473.67
-```
-
-That's much more useful than arbitrary ordering.
-
-I'd make the heading itself answer the user's question:
-
-```text
-LIVE RISK
-
-Closest accounts to breach
-```
-
-Then:
-
-```text
-#1 STARTER 1-STEP TURBO
-
-$228.47 TO BREACH
-SAFE
-
-#2 EXPLORER 1-STEP TURBO
-
-$473.67 TO BREACH
-SAFE
-```
-
-Don't spend prime screen space on the perpetual-market matrix.
-
-Move it below the risk section as:
-
-```text
-MARKET REFERENCE
-BTC   $68,432.50   +2.45%
-ETH    $3,542.80   +1.82%
-SOL      $178.45   +4.12%
-SUI        $1.84   -0.65%
-```
-
-or behind a collapsed `Market reference` section.
-
-The Live page's job is account risk. Market metadata is secondary.
-
----
-
-# 8. Positions and Orders have too much dead space
-
-This is now the weakest visual area.
-
-The screenshots essentially show:
-
-```text
-──────────────────────────────────────────────
-
-                  [icon]
-
-               No Open Positions
-
-      Your 2 active accounts currently
-       have no market exposure.
-
-            Active accounts 2
-            Open positions 0
-            Open orders 0
-
-              ● Position stream active
-
-──────────────────────────────────────────────
-```
-
-inside a huge empty canvas.
-
-The design requirements explicitly call for centered empty states, but the same document also prioritizes high information density. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
-
-Bring it closer to the content header and shrink the container:
-
-```text
-ACTIVE TRADING POSITIONS                              0
-
-┌───────────────────────────────────────────────────┐
-│                                                   │
-│              No open positions                    │
-│                                                   │
-│  2 active accounts are currently flat.            │
-│                                                   │
-│  Last checked 16s ago                             │
-│                                                   │
-└───────────────────────────────────────────────────┘
-```
-
-Same treatment for Orders.
-
-No giant vertical dead zone.
-
----
-
-# 9. Accounts page is close
-
-This is probably your strongest table screen now.
-
-Keep:
-
-```text
-All (8)   Active (2)   Failed (6)   Funded (0)
-```
-
-and:
-
-```text
-Search account / ID...
-Sort: Risk (Breach Proximity)
-```
-
-But make the table more actionable visually.
-
-For active accounts, surface the actual useful number:
-
-```text
-EVALUATION
-Starter 1-Step Turbo
-
-$5,078.47
-$228.47 to breach
-```
-
-instead of making the reader infer risk from:
-
-```text
-100.00% of limit
-```
-
-for failed accounts.
-
-Also, the little chevron at the beginning of every row currently promises an expandable row.
-
-If it isn't genuinely expandable, remove it.
-
-If it is, make the expanded view worthwhile:
-
-```text
-Account details
-├─ Challenge
-├─ Purchase cost
-├─ Breach floor
-├─ Daily loss limit
-├─ Failure reason
-├─ Trade count
-└─ Last sync
-```
-
-That is much better than a decorative chevron.
-
----
-
-# 10. History needs a small summary strip
-
-Right now History is basically a raw archive table.
-
-You already have:
-
-```text
-6 archived
-137 trades
-55 trades
-73 trades
-26 trades
-58 trades
-15 trades
-```
-
-Use that information.
-
-At the top:
-
-```text
-HISTORY
-
-6 breached accounts
-
-┌────────────┐ ┌────────────┐ ┌────────────┐
-│ 6          │ │ 5          │ │ 1          │
-│ Breached   │ │ DD failures│ │ Daily loss │
-└────────────┘ └────────────┘ └────────────┘
-```
-
-Then the table.
-
-I wouldn't add invented financial statistics. Everything above can be derived from the existing archive.
-
----
-
-# 11. Diagnostics currently has a serious contradiction
-
-This is the other major issue after realtime state.
-
-Your screenshot shows:
-
-```text
-WEBSOCKET STREAM
-DISCONNECTED
-
-Fallback active • 15s ISR polling
-```
-
-but at the bottom:
-
-```text
-STATUS: STREAMING
-PROTOCOL: WebSocket 13
-```
-
-Those cannot both be true.
-
-Also the log contains:
-
-```text
-FILLS order.filled
-```
-
-which can make the user wonder whether this application can execute trades, even though the repository explicitly says the terminal has **zero order-placement/cancellation mutation endpoints**. ([GitHub](https://github.com/dhruvamity/propr-tracker "GitHub - dhruvamity/propr-tracker · GitHub"))
-
-Change the bottom bar to:
-
-```text
-STATUS: POLLING
-FALLBACK: ISR 15s
-WS: DISCONNECTED
-```
-
-When connected:
-
-```text
-STATUS: STREAMING
-WS: CONNECTED
-HEARTBEAT: 2.4s
-```
-
-When disconnected:
-
-```text
-STATUS: POLLING
-WS: DISCONNECTED
-LAST EVENT: 42s ago
-```
-
-That makes the diagnostics page trustworthy.
-
----
-
-# 12. Don't make Diagnostics look like a developer console
-
-The log console is useful, but it dominates the screen.
-
-I'd make the hierarchy:
-
-```text
-SYSTEM HEALTH
-
-REST API          HEALTHY
-WEBSOCKET         DISCONNECTED
-DATA PIPELINE     FRESH
-
---------------------------------
-
-PIPELINE
-REST → CACHE → UI
-       ↓
-   15s polling
-
---------------------------------
-
-EVENT LOG
-```
-
-Then logs.
-
-The user is monitoring a financial terminal, not debugging a backend daemon.
-
----
-
-# 13. Sidebar needs grouping consistency
-
-Your screenshot now has:
-
-```text
-MONITOR
-  Live Risk
-  Positions
-  Orders
-
-ACCOUNTS
-  Accounts
-  History
-
-FINANCE
-  Cash & P&L
-
-SYSTEM
-  Diagnostics
-```
-
-This is much better than the original flat navigation.
-
-Keep it.
-
-One change: remove all-uppercase route labels from the older version and use normal title case consistently:
-
-```text
-Overview
-Live Risk
-Positions
-Orders
-Accounts
-History
-Cash & P&L
-Diagnostics
-```
-
-Keep uppercase only for section labels.
-
-That reduces the “synthetic terminal UI” feel.
-
----
-
-# 14. Add one extremely useful visual: risk ranking bar
-
-You have enough data to make this very effective.
-
-On Live:
-
-```text
-BREACH DISTANCE
-
-Starter 1-Step Turbo
-$228.47
-███████████████████░░░░
-
-Explorer 1-Step Turbo
-$473.67
-███████████████████████░
-```
-
-The cards already contain the data, so this is not a new feature.
-
-The user instantly understands:
-
-> Starter is the account I need to watch first.
-
-That is exactly the use case described for `/live`. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
-
----
-
-# 15. Fix the visual “AI-generated dashboard” fingerprints
-
-This is where your supplied no-slop guidance is useful.
-
-The current screenshots still have several patterns that make the UI feel generated rather than designed:
-
-```text
-ACTIVE ACCOUNT RISK MONITOR
-PERPETUAL MARKETS REFERENCE MATRIX
-SYSTEM DIAGNOSTICS & GATEWAY HEALTH
-DATA PIPELINE STATUS
-SECURITY & READ-ONLY INVARIANTS
-```
-
-The labels are technically descriptive, but there are too many formal nouns stacked together.
-
-Use:
-
-```text
-ACTIVE ACCOUNTS
-
-MARKET REFERENCE
-
-SYSTEM HEALTH
-
-DATA PIPELINE
-
-SECURITY
-```
-
-Similarly, avoid repeatedly writing:
-
-```text
-across active evaluation and funded accounts
-```
-
-when the surrounding context already tells the user that.
-
-The supplied editing rules specifically call for concrete, direct language, removal of repetitive abstraction, and less robotic symmetry.
-
----
-
-# 16. Keep the visual system, don't redesign the brand
-
-I would **not** switch you to a white SaaS dashboard, glassmorphism, gradients, charts everywhere, or a generic shadcn admin template.
-
-The current identity is appropriate:
-
-```text
-#06060b
-#0c0c14
-#11111b
-#16162a
-```
-
-with:
-
-```text
-cyan = active/system
-green = healthy/profit
-amber = caution/stale
-red = failure/breach
-```
-
-Those are already defined in your design system. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
-
-The issue isn't the palette.
-
-It's **how often each semantic color appears**.
-
----
-
-# 17. One architecture change I'd make in the repo
-
-You already have a component inventory specifying:
-
-`Sidebar`, `TopBar`, `MetricCard`, `RiskProgressBar`, `StatusBadge`, `DataTable`, `HealthPill`, `CopyableId`, and `OfflineBanner`. ([GitHub](https://github.com/dhruvamity/propr-tracker/blob/main/UI_DESIGN_REQUIREMENTS.md "propr-tracker/UI_DESIGN_REQUIREMENTS.md at main · dhruvamity/propr-tracker · GitHub"))
-
-I'd actually implement that abstraction instead of continuing to style page-specific blocks.
-
-Something like:
-
-```text
-components/
-  layout/
-    sidebar.tsx
-    top-bar.tsx
-    page-header.tsx
-
-  finance/
-    cash-position.tsx
-    metric-card.tsx
-
-  risk/
-    risk-card.tsx
-    risk-meter.tsx
-    breach-distance.tsx
-    status-badge.tsx
-
-  data/
-    data-table.tsx
-    copyable-id.tsx
-    empty-state.tsx
-
-  system/
-    health-pill.tsx
-    freshness-banner.tsx
-```
-
-Then all pages share exactly the same semantics.
-
-That matters because your biggest remaining problem is **state consistency**, not styling.
-
----
-
-# My priority order
-
-### Fix immediately
-
-**1. WebSocket / polling semantics everywhere**
-**2. Remove contradictory** **`REALTIME`** **/** **`STREAMING`** **states**
-**3. Rename** **`Actual Cash P&L`** **→** **`Net Cash Position`**
-**4. Reduce Positions/Orders empty-state height**
-**5. Reduce account-card duplication**
-
-### Then
-
-**6. Simplify Live Risk**
-**7. Add History summary strip**
-**8. Make Accounts row expansion genuinely useful**
-**9. Simplify section naming**
-**10. Reduce semantic-color usage**
-
-### Don't touch
-
-**Dark terminal identity**
-**Monospace financial values**
-**Breach-buffer-first risk card**
-**Breach-proximity sorting**
-**Cash reconciliation structure**
-**Read-only interaction model**
-
+## Part 4 — Propr's own rules you must not trip
+
+Verified against Propr's published rulebook, August 2026.
+
+- Both the daily loss limit and the maximum drawdown are **equity-based** — floating
+  P&L on open positions counts, so a momentary touch breaches the account.
+- Limits reset at **00:00 UTC**, and the daily dollar limit is a percentage of your
+  **start-of-day balance**, so it shrinks while you are in drawdown.
+- **Hedging the same instrument across two Propr accounts is prohibited**, as is
+  hedging against an external exchange. Penalty is termination without payout.
+- Also prohibited: account sharing, third-party trade coordination, high-frequency
+  evaluation cycling, latency arbitrage, wash trading.
+- There is **no time limit, no minimum trading days, no consistency rule and no profit
+  cap**. Nothing in this rulebook costs you anything except patience.
+- Leverage caps: BTC/ETH/SOL `10x`, other crypto `2x`. You were using `1x` to `5x`.
+- Payouts: `80%` to you, `$20` minimum, on-chain USDC, processed within 24 hours,
+  full sweep with the balance resetting to the starting amount.
