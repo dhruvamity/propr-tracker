@@ -19,24 +19,24 @@ export default async function FinancePage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── 1. Three-Layer Accounting Visualization (Prompt §11) ─────────── */}
+      {/* ─── 1. Cash Reconciliation & Allocation (Prompt Requirement §3 & §4) ─────────── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 space-y-5">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             <GitBranch size={15} className="text-zinc-400" />
-            <span>Cash Flow</span>
+            <span>Cash Reconciliation</span>
           </div>
           <span className="text-[11px] font-mono text-zinc-500">
             Bank settled capital & outflows
           </span>
         </div>
 
-        {/* Visual Flow Diagram */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-          {/* Step 1: Total Spent */}
-          <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2 relative">
+        {/* 4 Reconciliation Cards (Process arrows removed) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Card 1: Total Cash Spent */}
+          <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
             <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-              1. Total Capital Outflow
+              Total Cash Spent
             </span>
             <div className="text-xl md:text-2xl font-mono font-bold text-white">
               {formatINR(totalSpentINR)}{" "}
@@ -52,45 +52,42 @@ export default async function FinancePage() {
                 <span className="text-zinc-200">{formatINR(finance.breakoutActualCashCostINR)}</span>
               </div>
             </div>
-            <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400">
-                →
-              </div>
-            </div>
           </div>
 
-          {/* Step 2: Active Capital at Risk */}
-          <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2 relative">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-              2. Active Capital at Risk
-            </span>
+          {/* Card 2: Active Cash at Risk (Subordinate to actual cash) */}
+          <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Active Cash at Risk
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-950/40 text-amber-400 border border-amber-800/30">
+                2 active evals
+              </span>
+            </div>
             <div className="text-xl md:text-2xl font-mono font-bold text-amber-300">
               {formatINR(activeAtRiskINR)}{" "}
               <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="pt-2 border-t border-zinc-800/80 text-[11px] font-mono text-zinc-400 space-y-1">
               <div className="flex justify-between">
-                <span>Entry Fees:</span>
-                <span className="text-zinc-200">{formatUSD(finance.activeCapitalUSD)} USD</span>
+                <span className="text-zinc-500">Estimated face value:</span>
+                <span className="text-zinc-300 font-medium">{formatUSD(finance.activeCapitalUSD)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Trading Capital:</span>
-                <span className="text-zinc-200">$15,000 USD (2 Evals)</span>
-              </div>
-            </div>
-            <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400">
-                →
+                <span className="text-zinc-500">Trading capital:</span>
+                <span className="text-zinc-400">$15,000 USD nominal</span>
               </div>
             </div>
           </div>
 
-          {/* Step 3: Payouts */}
-          <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2 relative">
+          {/* Card 3: Payouts Received (Zero is neutral) */}
+          <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
             <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-              3. Payouts Received
+              Payouts Received
             </span>
-            <div className="text-xl md:text-2xl font-mono font-bold text-emerald-400">
+            <div className={`text-xl md:text-2xl font-mono font-bold ${
+              totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-300"
+            }`}>
               {formatINR(totalPayoutsINR)}{" "}
               <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
@@ -101,20 +98,17 @@ export default async function FinancePage() {
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
-                <span className="text-zinc-400">Bank Settled</span>
-              </div>
-            </div>
-            <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-              <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400">
-                →
+                <span className="text-zinc-400">
+                  {totalPayoutsINR > 0 ? "Bank Settled" : "None Processed"}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Step 4: Net Capital Outflow (Neutral styling for routine business cost) */}
+          {/* Card 4: Net Cash Outflow */}
           <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
             <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
-              4. Net Capital Outflow
+              Net Cash Outflow
             </span>
             <div className="text-xl md:text-2xl font-mono font-bold text-zinc-200">
               −{formatINR(netOutflowINR)}{" "}

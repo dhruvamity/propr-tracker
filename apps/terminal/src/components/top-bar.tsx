@@ -151,7 +151,7 @@ export function TopBar() {
     };
   } else if (health.restStatus === "HEALTHY" && health.wsStatus === "CONNECTED") {
     statusBadge = {
-      label: "STREAMING",
+      label: "LIVE · REALTIME",
       dotClass: "bg-emerald-400 animate-pulse",
       textClass: "text-emerald-400",
       containerClass: "bg-emerald-950/40 border-emerald-800/50",
@@ -159,7 +159,7 @@ export function TopBar() {
   } else {
     // REST healthy + WS disconnected (Polling mode)
     statusBadge = {
-      label: "POLLING (15s)",
+      label: "POLLING · 15s",
       dotClass: "bg-[var(--cyan)]",
       textClass: "text-[var(--cyan)]",
       containerClass: "bg-cyan-950/40 border-cyan-800/50",
@@ -202,27 +202,23 @@ export function TopBar() {
 
         {/* Relative Sync Timing */}
         <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-zinc-400">
-          <span>Synced</span>
+          <span>Updated</span>
           <span className="text-zinc-200">{relativeTime}</span>
         </div>
 
-        {/* REST / WS Mini Telemetry Dots */}
-        <div className="hidden lg:flex items-center gap-3 text-[11px] font-mono">
+        {/* REST / WS Mini Telemetry Dots (REST ●   WS ○) */}
+        <div className="hidden lg:flex items-center gap-3 text-[11px] font-mono select-none">
           <div className="flex items-center gap-1.5" title={`REST API: ${health.restStatus}`}>
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                health.restStatus === "HEALTHY" ? "bg-emerald-400" : "bg-red-500"
-              }`}
-            />
             <span className="text-zinc-400">REST</span>
+            <span className={health.restStatus === "HEALTHY" ? "text-emerald-400 text-xs leading-none" : "text-red-400 text-xs leading-none"}>
+              ●
+            </span>
           </div>
           <div className="flex items-center gap-1.5" title={`WebSocket: ${health.wsStatus}`}>
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                health.wsStatus === "CONNECTED" ? "bg-emerald-400" : "bg-amber-400"
-              }`}
-            />
             <span className="text-zinc-400">WS</span>
+            <span className={health.wsStatus === "CONNECTED" ? "text-emerald-400 text-xs leading-none" : "text-zinc-500 text-xs leading-none font-bold"}>
+              {health.wsStatus === "CONNECTED" ? "●" : "○"}
+            </span>
           </div>
         </div>
 

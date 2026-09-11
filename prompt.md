@@ -1,215 +1,387 @@
-Your terminal's financial engine matches Propr's backend data on equity, cash ledger balances, trade counts, and daily loss baselines. However, there are three critical logic bugs in risk presentation and trading rules, along with minor UI density issues.
+there are two UX logic flaws and one frontend discrepancy you need to handle.1. The Radar Bar UX MismatchLook at the "Breach Proximity Radar" at the top of the Live Risk tab. The red bar for the Starter account is 86% full, but the text anchored to the right of it reads $22.40 USD room.A massive red bar visually implies "a lot of something." Putting it next to the word "room" causes cognitive dissonance. If the bar fills up as risk increases, the label must state the consumed amount (e.g., $133.97 burned). If you want the label to state the remaining room, the bar should shrink as room vanishes. Pick one mental model and align the text to it.2. The Over-Pruned Market Table
+In the bottom Market Reference matrix, you deleted the 8H FUNDING, MAX LEVERAGE, and TICK SIZE columns. You went too far on the visual cleanup. Put them back. Traders holding perpetual swaps need the 8H funding rate to calculate holding costs, especially since Propr restricts altcoin leverage to 2x while BTC/ETH get 10x.  3. Propr’s Frontend Rounding vs. Your Exact MathDo not chase Propr's frontend analytics when you see minor mismatches. Propr's UI aggressively rounds numbers for display:Your terminal shows Profit Target progress at 1.74% ($173.67 / $10,000). Propr’s UI rounds this up to 2.00%.Your terminal shows the worst loss at -$67.63. Propr rounds this to -$68.Propr's analytics tab shows a Net P&L of +$173.66, but their own equity reads $10,173.67, revealing a 1-cent display drift.Your terminal uses raw ledger execution data with exact Decimal.js precision. Your numbers are the mathematical truth. Keep your precise values, but consider adding a tooltip mapping them to Propr's rounded display numbers so you don't mistakenly think your API connection is broken during a session.4. Zero is NeutralIn the Overview tab, Payouts withdrawn: ₹0.00 is styled in bright green. Zero is a neutral state, not a positive achievement. Keep it a muted grey until a payout is actually processed.
 
-| Metric | Propr Website (Truth) | Your Terminal | Status | Root Cause |
-| --- | --- | --- | --- | --- |
-| **Explorer Equity** | $10,173.67 | $10,173.67 | **Match** | Exact sync |
-| **Explorer Trade Count** | 21 (11W / 10L) | 21 (11W / 10L) | **Match** | Trade journal sync verified |
-| **Explorer Worst Loss** | -$68.00 | -$68.00 | **Match** | Trade parsing verified |
-| **Explorer Daily Loss Used** | 0.72% ($74.13) | $74.13 / $307.43 | **Match** | Correct snapshot baseline ($10,247.80) |
-| **Explorer Profit Target** | 2.00% / 9% | 1.74% / 9% ($726.33 left) | **Discrepancy** | Propr frontend rounds 1.736% to nearest integer percent |
-| **Starter Risk State** | Imminent breach ($22.40 left) | Tagged CRITICAL, but shows $228.47 buffer | **Risk Bug** | Hero metric displays Max DD buffer instead of Daily buffer |
-| **Min Trading Days** | Unlimited (0 days required)
+The repo's own UI spec says the core hierarchy is financial header → account risk → account universe → exposure, with strict separation between actual cash, trading metrics, and freshness state.
 
- | 4 / 5 d & 5 / 5 d | **Rule Bug** | Hardcoded legacy 5-day rule not present in Propr Turbo
+The 7 changes I would make now
+1. Fix the Live Risk radar color logic
 
- |
+This is the biggest visible problem in the newest screenshots.
 
----
+You have:
 
-**Critical Calculation & Logic Discrepancies**
+Starter
+$22.40 room
+86% daily loss burned
+CRITICAL
+████████████████████ red
 
-**1. False Sense of Security: Hero Buffer Displays Max DD Instead of Daily Floor**
-On Starter 1-Step Turbo (`#fju6`), the account is marked `CRITICAL`, but the primary hero number reads **`$228.47 USD buffer to breach floor`**.
+and:
 
-* The max drawdown floor is $4,850.00 (headroom: $228.47).
-* The daily loss floor is $5,056.07 (headroom: **$22.40**), with 86% of the daily loss budget already burned ($133.97 / $156.37).
-* If the account loses $22.50 today, it breaches and terminates immediately. The true breach distance is $22.40, not $228.47.
+Explorer
+$233.31 room
+24% daily loss burned
+SAFE
+████████ red
 
+The second account is marked SAFE, but its radar bar is still red.
 
-* **The Fix:** The card's hero metric must dynamically evaluate the closest failure threshold:
+That creates a conflict:
 
-$$\text{effectiveBuffer} = \min(\text{drawdownBuffer}, \text{dailyLossRoom})$$
+the badge says safe, the graphic says danger.
 
+Make the radar semantic:
 
-$$\text{activeBreachFloor} = \max(\text{drawdownFloor}, \text{dailyLossFloor})$$
+0–49% consumed     green / neutral
+50–74%             amber
+75–89%             orange
+90–99%             red
+100%               breached
 
+And apply the same threshold system everywhere.
 
+So Explorer should look approximately:
 
-When an account has burned more than 70% of its daily loss budget, the card must anchor its hero metric and progress slider to the daily room ($22.40), not the overall drawdown buffer.
+Explorer 1-Step Turbo                         $233.31 room
+████████████░░░░░░░░░░░░░░░░░░░░░░
+24% used                                      SAFE
 
-**2. Profit Target: Mathematical Precision vs. Propr Display Rounding**
-For Explorer (`#3XGK`), Propr displays **`2.00% / 9%`**, while your terminal displays **`1.74% / 9% ($726.33 left)`**.
+while Starter is:
 
-* Total net profit is +$173.67 on a $10,000 initial account.
-* $\frac{\$173.67}{\$10,000} = 1.7367\%$ (rounds mathematically to **1.74%**).
-* Your terminal is calculating the actual math correctly ($173.67 / 900 = 19.30\%$ progress towards the $900 target). Propr's frontend rounds the displayed progress to the nearest whole integer (`Math.round(1.74) = 2%`) and appends `.00%`. Keep your calculation, as it reflects true dollar progress ($726.33 left), but add a tooltip showing `Propr UI: 2.00%`.
+Starter 1-Step Turbo                          $22.40 room
+███████████████████████████░░
+86% used                                      CRITICAL
 
-**3. Phantom Minimum Trading Days (`4 / 5 d` and `5 / 5 d`)**
-Both active cards display a `Trading Days: 4 / 5 d` or `5 / 5 d` metric.
+This is exactly in line with the design requirement that healthy states remain restrained while breach threats use saturated semantic accents.
 
-* Under Propr's Turbo evaluation rules, there are **no minimum trading days**, no time limits, and no consistency rules.
+2. Make the account card say which risk is actually binding
 
+The newest card contains:
 
-* Propr's official dashboard displays `Days remaining: Unlimited` without a target day count.
-* **The Fix:** Remove the `/ 5 d` denominator. Display `Active Trading Days: 4` as an informational stat, or replace it with Propr's daily reset countdown (`Resets in 3h 31m`).
+$22.40 USD buffer
+Daily floor $5,056.07
+(DD floor: $4,850.00)
 
----
+Then separately:
 
-**UI & UX Design Review**
+Drawdown 0.00% / 3%
+Daily room $22.40
 
-**Tighten the Daily Loss Danger State**
-The red progress bar on Starter (`$133.97 / $156.37 · 86% BURNED`) is clear, but the slider directly above it still displays the wider $228.47 buffer. Switch the slider track to reflect the 86% burned state so both the bar and the slider tell the same story.
+The user has to infer why the account is critical.
 
-**Reorganize the Breach Proximity Radar**
-In the Live Risk tab, the top radar ranking sorts by the $228.47 vs $473.67 drawdown buffer. Because Starter is only $22.40 away from a daily breach, it needs to show a bar indicating 86% daily burn rather than a grey bar sitting comfortably at $228.47.
+Give the card one explicit line:
 
-**Clean Up the Directory Table Sparklines**
-In the Accounts Directory overview, the `TRADE TRAJECTORY` column squeezes a micro sparkline together with text (`Gradual across 16 trades (worst -$86.06)`). On standard 1080p displays, this causes horizontal crowding. Drop the words "Gradual across" and show just the sparkline alongside `16 trades · Max loss: -$86.06`.
+BINDING LIMIT
+Daily loss
 
-**Standardize P&L Color Hierarchy**
-In the Explorer card, `+$173.67 (+1.74%)` is displayed in light cyan/green, while Starter uses the same green despite being in an active critical daily drawdown. Reserve bright alert colors (red `#ef4444` and amber `#f59e0b`) strictly for breach warnings, and keep equity gains in muted emerald (`#10b981`).
+or:
 
-skill:
-eval.md:
-# No AI slop eval
+BINDING LIMIT
+Daily loss threshold
+$22.40 remaining
 
-Use this after the rewrite. Answer each check with pass or fail. If any check fails, fix the draft before returning it.
+For Explorer:
 
-For detect requests, make sure the response names each pattern found with a quoted line and a short fix, without rewriting the draft.
+BINDING LIMIT
+Daily loss threshold
+$233.31 remaining
 
-## Editing principles
+Then underneath:
 
-1. Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?
-2. Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?
-3. Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?
-4. Is the amount of cutting proportional to the actual slop, with no aggressive compression that strips out character?
-5. Does the draft lead with what the reader needs while keeping personal setup that adds context, tension, or character?
-6. Are points front-loaded where that improves clarity without forcing every unit into the same structure?
-7. Do sentences earn their place, with concrete facts, protected details, and direct verbs where the draft supports them?
-8. Does every generic sentence pass the portability test, or was it cut or made specific to this subject?
-9. Does the draft use active voice with human subjects where possible?
-10. Does the edit keep useful edge and preserve structure unless the structure was hurting the piece?
-11. Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?
+Drawdown room
+$228.47
 
-## Words to cut
+Now the card explains itself.
 
-1. Are banned words, filler phrases, often-empty adverbs, and inflated claims removed unless quoted as examples?
+I would also rename:
 
-## Patterns to cut
+Daily floor → Daily-loss threshold
 
-1. Are binary contrasts, negative listings, rhetorical setups, and throat-clearing openers removed?
-2. Are faux-insight setups, colon reveals, superficial analysis, fake-strong verbs, synonym cycling, dramatic fragments, and robotic rhythm fixed?
-3. Are importance puffery and weasel attribution replaced with plain facts and named sources, or flagged for the user when no source exists?
-4. Is interpretive metadiscourse removed, including authorial metacommentary, reader guidance, emphasis markers, and redundant glossing?
-5. Are fake-profound kicker lines deleted instead of rewritten into better metaphors?
-6. Are summary-recap endings cut so the piece ends on a concrete point, takeaway, or next action?
-7. Is formatting slop removed: Emoji headings, decorative bold, bullets that should be prose, headers over tiny sections?
-8. Are colons sentence case unless grammar, a proper noun, a title, or code requires otherwise?
-9. Are em dashes used sparingly: Usually none in short copy, and only 1-2 in longer drafts when they clearly help?
+because "floor" naturally sounds like the account's liquidation/equity floor, while your separate DD floor already owns that terminology.
 
-## Final read
+The product's documented use case is explicitly to inspect remaining drawdown budget and daily-loss headroom before trading.
 
-1. Does the draft avoid robotic symmetry, repeated sentence shapes, and stacked punchy fragments?
-2. Would the writer recognize the edited draft as their own voice?
-3. Would the edited draft sound natural if read to a sharp colleague?
-4. Does the final output include the full edited draft and a short **What changed** section?
-5. For detect requests, does the response name each pattern with a quoted line and a short fix, without rewriting, scoring, or claiming AI authorship?
+3. Make "Active Capital at Risk" visually subordinate to actual cash
 
-skill.md:
----
-name: no-ai-slop
-description: Edit drafts into sharper, more human writing while preserving the writer's personal voice, or detect AI-slop patterns without rewriting. Use when the user wants a draft clearer, more direct, more opinionated, or less AI-sounding, or asks whether writing reads as AI.
----
+The finance numbers themselves are correct.
 
-# No AI slop
+The repo explicitly defines:
 
-You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.
+ACTIVE CAPITAL = actual bank cash currently at risk in active evaluation/funded accounts, currently ₹7,336.19.
 
-## Two jobs
+So don't change the number.
 
-**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below and return the edited draft plus a What changed section.
+But the visual presentation:
 
-**Detect.** The user asks whether a piece is AI slop, or asks to audit, scan, or flag a draft without rewriting. Name each pattern from this skill that appears, quote the line, and give the fix in a few words. Do not rewrite, score the draft, or guess whether AI wrote it. AI detectors guess. Named patterns are evidence the user can check. Offer to edit the draft after.
+₹7,336.19
+Active Capital at Risk (2 Evals)
 
-## What to ask for
+sits almost equally beside:
 
-If the user has not provided a draft, ask them to paste it.
+₹25,394.83
+Total Capital Outflow
 
-If the audience or format is unclear, ask one question: Who is this for and where will it be published?
+I would make the relationship clearer:
 
-If the goal is unclear, ask what the reader should think, feel, or do after reading it.
+TOTAL CASH SPENT
+₹25,394.83
 
-## Editing principles
+ACTIVE CASH STILL AT RISK
+₹7,336.19
+2 active evaluations
 
-- **Preserve the writer's real voice.** First notice the draft's vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish. Keep the traits that feel personal to the writer. Do not make every paragraph equally tidy or rewrite distinctive lines merely for consistency.
-- **Make the minimum effective edit.** Fix AI patterns, errors, repetition, and unclear passages. Leave strong human sentences alone. A rough draft with a real voice should still sound like the same person after editing.
-- **Lead with the point when the setup adds nothing.** Cut generic throat-clearing. Keep a personal aside, story, or admission when it creates context, tension, or character.
-- **Front-load only when it improves clarity.** Put conclusions early when that helps the reader. Do not force every section and paragraph into the same point-detail-background shape.
-- **Keep the user's meaning.** Don't invent claims, examples, stats, or opinions. If something is unclear, ask.
-- **Open it up, don't dumb it down.** Keep the substance, nuance, and precision. Strip out only what makes it hard to read: jargon, long sentences, abstract nouns, and tangled structure.
-- **Use active voice.** "The team shipped it Tuesday" beats "the decision emerged." Never let inanimate things do human verbs.
-- **Make every sentence earn its place.** Cut empty qualifiers and throat-clearing. Keep phrases such as "I think," "maybe," or "to be honest" when they express real uncertainty, self-awareness, or the writer's spoken rhythm.
-- **Untangle sentences without flattening the cadence.** Split sentences and paragraphs when they are genuinely hard to follow. Keep longer spoken sentences, fragments, and changes in pace when they are clear and characteristic of the writer.
-- **Be concrete and specific.** Abstraction is where writing goes to die. "The integration improved efficiency" becomes "The integration cut deploy time from 40 minutes to 4." Names, numbers, dates, mechanisms, and examples beat abstractions.
-- **Use the portability test.** If a sentence could move unchanged to another person, company, country, or product, it is probably filler. Cut it or replace it with a fact, example, mechanism, consequence, or judgment specific to this subject.
-- **Always show, don't tell the reader what to think.** Make facts, actions, examples, and consequences carry the emphasis. Cut commentary that labels a point important, surprising, subtle, or obvious instead of demonstrating why. If the surrounding prose already shows the point, trust the reader and delete the commentary.
-- **Protect the specific fact.** Don't smooth a useful detail into generic importance. "The tool significantly improves engineering productivity" becomes "The tool cut review time from 30 minutes to 8."
-- **Make verbs do the work.** Replace weak verb phrases with direct verbs. "Made a decision" becomes "decided." "Has the ability to" becomes "can."
-- **Know the job.** Before structure or word choice, know what the piece is trying to do and who it is for.
-- **Preserve useful edge and character.** Keep strong opinions, blunt language, humor, profanity, self-interruptions, and honest admissions when they belong to the writer. Don't replace them with safer or more professional wording.
-- **Keep structure unless it's hurting the piece.** Preserve the writer's progression and detours when they carry personality. If you reorganize, say why in the What changed section.
+and keep:
 
-## Words to cut
+Estimated face value
+$75.00
 
-Banned outright: delve, foster, leverage, utilize, facilitate, empower, streamline, robust, cutting-edge, paradigm shift, game changer, this is huge, this changes everything, tapestry, realm, beacon, multifaceted, meticulous, intricate, paramount, transformative, elevate, embark, supercharge, harness, ever-evolving.
+as a small secondary line.
 
-Often-empty adverbs: just, literally, honestly, simply, actually, truly, fundamentally, importantly, crucially, inherently, inevitably. Cut them when they add nothing. Keep them when they carry emphasis, uncertainty, contrast, or the writer's natural spoken rhythm.
+That reinforces the three-layer accounting model instead of making $15,000 Trading Capital visually compete with actual INR cash.
 
-Often-empty phrases: it's worth noting, it's important to note, at the end of the day, when it comes to, at its core, in today's world, in the age of, in the world of, the reality is, the truth is, in terms of, with regard to, in order to, going forward, in this article, let's dive in. Cut them when they delay the point. Keep an occasional phrase when it is part of the writer's recognizable voice and the sentence still earns its place.
+The repo specifically requires the UI to avoid equating nominal challenge value with actual cash spent.
 
-## Patterns to cut
+4. Remove the arrows between Finance cards
 
-**Binary contrasts.** "This is not X. It's Y." / "The question isn't X, it's Y." / "It's not just X but Y." State Y directly. "The question isn't the model. It's the eval." becomes "The eval matters more than the model."
+This:
 
-**Throat-clearing openers.** "Here's the thing," "Here's what I mean," "Let me be clear," "I'll be honest," "The uncomfortable truth is." Cut them and state the point.
+Total Capital Outflow
+        →
+Active Capital at Risk
+        →
+Payouts Received
+        →
+Net Capital Outflow
 
-**Faux-insight setups.** "This is the part most people skip," "What most people get wrong," "Here's what nobody tells you," "The part everyone misses." These flatter the writer as the lone expert. Cut the setup and make the claim stand on its own. "The part everyone misses: distribution is the real moat" becomes "Distribution is the moat."
+looks like a four-step process.
 
-**Colon reveals.** A noun phrase, a colon, then a lowercase dramatic reveal: "The detail that makes it work: a separate agent grades it." "The best part: it learns." Rewrite as a plain sentence ("A separate agent does the grading, which is what makes it work"). Use colons for lists, labels, and quotes, not fake drama. Prefer sentence case after a colon unless grammar, a proper noun, a title, or code requires otherwise.
+It isn't.
 
-**Superficial analysis.** Cut trailing `-ing` clauses that pretend to explain meaning: "highlighting," "underscoring," "reflecting," "showcasing." "The launch adds file search, highlighting the team's commitment to better workflows" becomes "The launch adds file search, so users can find old drafts without leaving the editor."
+Active Capital at Risk is a subset of current purchases, while payouts are a separate cash movement.
 
-**Importance puffery.** "Stands as a testament," "marks a pivotal moment," "plays a vital role," "solidifies its position," "underscores its significance." State the fact and let the reader judge whether it matters. "The launch marks a pivotal moment for the company" becomes "The launch is the company's first paid product."
+So the arrows imply a relationship that doesn't exist.
 
-**Interpretive metadiscourse.** Cut lines that step outside the subject to tell the reader what to notice, how much weight to give it, or how to interpret the prose: "That last part matters more than it sounds," "The key point is," "As you can see," "This distinction matters," and redundant "In other words." If the point is clear, delete the aside. Otherwise, replace it with support or facts already in the content.
+I'd replace the four cards with:
 
-**Weasel attribution.** "Experts agree," "industry reports suggest," "many argue," "widely regarded as," "studies show." Name the source or cut the claim. If the user has no source, ask instead of inventing one.
+CASH RECONCILIATION
 
-**Fake-strong verbs.** Prefer "is" and "has" when they are clearer. "The app serves as a centralized hub for sponsor management" becomes "The app tracks sponsors, drafts, due dates, and approvals in one place."
+TOTAL CASH SPENT                     ₹25,394.83
+ACTIVE CASH AT RISK                   ₹7,336.19
+PAYOUTS RECEIVED                           ₹0.00
 
-**Synonym cycling.** If the clear word is right, repeat it. Don't rotate terms for style. "The agent reviews the draft. The assistant scores the piece. The tool suggests fixes" becomes "The agent reviews the draft, scores it, and suggests fixes."
+──────────────────────────────────────────────
 
-**Negative listing.** "Not a X. Not a Y. A Z." Just say Z.
+NET CASH OUTFLOW                      -₹25,394.83
 
-**Dramatic fragmentation.** "X. And Y. And Z." or "That's it. That's the whole thing." Use complete sentences.
+Or retain four cards but remove the arrows.
 
-**Robotic rhythm.** Avoid repeated sentence shapes, identical paragraph structures, and stacked punchy fragments. Vary the shape only when it helps the point.
+This is a small visual change with a large semantic improvement.
 
-**Rhetorical setups.** "What if I told you...", "Think about it:", "Plot twist:", and self-answered "Question? Answer." pairs. Drop them and make the point.
+5. The Overview account cards contain too much duplicated information
 
-**Fake-profound kickers.** Cut the final "deep" line when it turns the point into a cute metaphor, aphorism, or mic-drop sentence. Do not rewrite it into a better metaphor. Do not preserve the rhythm. Delete it, then end on the clearest concrete sentence already in the draft. If the ending needs more closure, add a plain takeaway or next action.
+You're showing:
 
-**Summary-recap endings.** "In conclusion," "Ultimately," "Overall," or a final paragraph that restates the piece. The reader was just there. End on the last concrete point, takeaway, or next action instead.
+Active account card
+        ↓
+Active Accounts table
+        ↓
+Archived / Breached Accounts
 
-**Formatting slop.** Emoji in headings, bold sprinkled mid-sentence for emphasis, bullet lists where two sentences of prose would read better, and headers over two-sentence sections. Format should follow the content, not decorate it.
+The card already contains:
 
-**Em dashes.** Do not use them as a default rhythm crutch. In short copy, use none. In longer drafts, 1-2 are fine if they clearly beat commas, periods, or parentheses. Remove clusters and decorative dashes.
+equity
+daily room
+drawdown
+target
+trade trajectory
+balance
+active days
 
-## Workflow
+Then the table repeats:
 
-1. Read the full draft before editing.
-2. Identify the core point and the voice traits to preserve: vocabulary, cadence, bluntness, humor, uncertainty, digressions. If you cannot identify the core point, ask the user.
-3. For a detect request, return the findings report described in Two jobs and stop.
-4. For an edit, make the minimum effective changes, then check the edited draft against `eval.md` yourself.
-5. If any check fails, fix the draft and run the checks again.
-6. Output the full edited draft and a short **What changed** section.
+account
+balance
+equity
+buffer
+daily room
+trajectory
+target
+risk state
+
+That is a lot of repeated scanning.
+
+I'd make the Overview table much lighter:
+
+ACTIVE ACCOUNTS (2)
+
+Account                  Equity       Risk        Room
+Starter 1-Step Turbo     $5,078.47    CRITICAL    $22.40
+Explorer 1-Step Turbo    $10,173.67   SAFE       $233.31
+
+The cards own the detail.
+
+The table owns comparison.
+
+That's a much cleaner division.
+
+6. The System page is now structurally good
+
+This version is substantially better:
+
+REST API       HEALTHY
+WEBSOCKET      DISCONNECTED
+DATA PIPELINE  FRESH
+
+REST → CACHE → UI
+15s polling
+
+The repo explicitly requires stale/disconnected states to be visible and not masqueraded as live.
+
+One thing still bothers me:
+
+FILLS order.filled
+
+inside the log.
+
+Because this is a read-only terminal, a user could interpret that as "the terminal executed an order."
+
+The repository explicitly says the application has zero order-placement/modification endpoints and is observational only.
+
+Change the event label to something like:
+
+UPSTREAM_FILL
+Observed order.filled event
+
+or:
+
+FILL_EVENT
+Upstream execution observed
+
+That removes the ambiguity without hiding useful telemetry.
+
+7. Rename the sidebar footer states
+
+Currently:
+
+● REST connected
+● Data synchronized
+
+I would use:
+
+● REST API healthy
+● Data updated 15s ago
+
+The second line is particularly important.
+
+"Data synchronized" sounds binary. It doesn't tell you how fresh the data is.
+
+Your top bar already handles relative freshness, and the design spec explicitly calls for relative timestamps such as "Just now" / "12s ago" with stale degradation after the threshold.
+
+So the footer should reinforce that rather than introduce another status vocabulary.
+
+One change I would make to the Overview header
+
+You currently have:
+
+POLLING (15s)
+Synced 25s ago
+● REST   ● WS
+
+This is much better than the old LIVE behavior.
+
+But I'd simplify it to:
+
+● POLLING · 15s
+Updated 25s ago
+REST ●   WS ○
+
+And when WS connects:
+
+● LIVE · REALTIME
+Updated 2s ago
+REST ●   WS ●
+
+The repo currently still has code in TopBar that derives the main status from REST health rather than WS state, so the actual source code needs to keep this distinction intact rather than relying only on the visual treatment.
+
+The visual hierarchy I would lock in
+
+At this point I'd establish this as the final hierarchy:
+
+1. BINDING RISK
+   How close am I to losing the account?
+
+2. DAILY LOSS ROOM
+   How much can I lose today?
+
+3. DRAWDOWN ROOM
+   How much equity buffer remains?
+
+4. EQUITY / BALANCE
+   Where am I now?
+
+5. PROFIT TARGET
+   How far am I from passing?
+
+6. TRADE TRAJECTORY
+   What has today's trading looked like?
+
+7. ACCOUNT METADATA
+   Phase / days / model / IDs
+
+And for Finance:
+
+1. TOTAL CASH SPENT
+2. ACTIVE CASH AT RISK
+3. PAYOUTS
+4. NET CASH POSITION
+5. BANK LEDGER
+
+That matches the actual jobs described in your specification: pre-trade risk checking, intraday monitoring, account-state management, and cash-flow audit.
+
+What I would NOT change anymore
+
+I would leave these alone:
+
+Dark theme.
+It fits the monitoring-terminal use case.
+
+JetBrains Mono for financial values.
+The design spec explicitly calls for monospace numeric alignment.
+
+Red/amber/green semantic colors.
+They're appropriate here.
+
+15s polling presentation.
+The degraded POLLING state is honest.
+
+Breach-proximity ranking.
+That's one of the most useful additions you've made.
+
+Trade trajectory mini-chart.
+Keep it, but make its meaning slightly clearer.
+
+Read-only behavior.
+The UI should remain observational and never acquire trading controls.
+
+The next pass should be small
+
+I would make the next implementation pass only these changes:
+
+P0
+✓ Risk radar colors follow actual severity
+✓ Show BINDING LIMIT on every active account
+✓ Rename Daily floor → Daily-loss threshold
+✓ Remove Finance arrows
+✓ Remove duplicated metrics from Overview table
+✓ Rename upstream FILLS in diagnostics
+✓ Make sidebar freshness explicit
+
+P1
+✓ Standardize all risk thresholds
+✓ Clarify trade trajectory
+✓ Tighten spacing by ~5–10%
+✓ Verify mobile/tablet layout
+
+At that point, I would stop redesigning and do a real UX/accessibility pass: keyboard focus, 44px touch targets, text contrast, responsive breakpoints, loading/error states, and whether every number answers a concrete trader question. Your UI spec explicitly calls for those shell/navigation behaviors as well.
+
+The no-slop guidance also points in the same direction: keep concrete information, remove redundant framing, avoid robotic repetition, and preserve the actual character of the product rather than replacing it with a generic polished dashboard.

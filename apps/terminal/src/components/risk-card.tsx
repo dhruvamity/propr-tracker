@@ -120,35 +120,58 @@ export function RiskCard({ account, rank }: RiskCardProps) {
       </div>
 
       {/* Dominant: Closest Breach Buffer & Active Breach Floor */}
-      <div className="pl-1">
+      <div className="pl-1 space-y-2">
         <div className="flex items-baseline justify-between">
           <div className={`text-2xl md:text-3xl font-mono font-bold ${dominantColor}`}>
             {formatUSD(effectiveBuffer)}{" "}
             <span className="text-xs font-normal text-zinc-500 font-sans">
-              USD {isDailyConstrained ? "buffer (daily limit)" : "buffer"}
+              USD buffer
             </span>
           </div>
           <div className="text-xs font-mono text-zinc-400">
             Equity <span className="text-white font-medium">{formatUSD(equityNum)} USD</span>
           </div>
         </div>
-        <div className="text-xs font-mono text-zinc-400 mt-0.5 flex items-center gap-1.5">
-          <span>{isDailyConstrained ? "Daily floor" : "Drawdown floor"}</span>
-          <span className={`${isDailyConstrained ? "text-red-400 font-semibold" : "text-red-400/90 font-medium"}`}>
-            {formatUSD(activeBreachFloor)}
-          </span>
-          {isDailyConstrained && (
-            <span className="text-zinc-500 text-[10px] ml-1">
-              (DD floor: {formatUSD(breachFloorNum)})
+
+        {/* Explicit Binding Limit Indicator (Prompt Requirement §2) */}
+        <div className="flex items-center justify-between py-1.5 px-2.5 rounded bg-zinc-900/90 border border-zinc-800 text-[11px] font-mono">
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-500 text-[9px] font-bold tracking-wider uppercase">BINDING LIMIT</span>
+            <span className="text-zinc-300 font-medium">
+              {isDailyConstrained ? "Daily-loss threshold" : "Drawdown floor"}
             </span>
-          )}
+          </div>
+          <span className={`font-semibold ${isDailyConstrained && dailyRoomNum < 50 ? "text-red-400" : "text-zinc-200"}`}>
+            {formatUSD(effectiveBuffer)} remaining
+          </span>
+        </div>
+
+        <div className="text-xs font-mono text-zinc-400 flex items-center justify-between pt-0.5">
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span>{isDailyConstrained ? "Daily-loss threshold:" : "Drawdown floor:"}</span>
+            <span className={isDailyConstrained ? "text-red-400 font-semibold" : "text-red-400/90 font-medium"}>
+              {formatUSD(activeBreachFloor)}
+            </span>
+            {isDailyConstrained && (
+              <span className="text-zinc-500 text-[10px]">
+                (DD floor: {formatUSD(breachFloorNum)})
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-zinc-400">
+            {isDailyConstrained ? (
+              <span>Drawdown room: <span className="text-zinc-300 font-medium">{formatUSD(drawdownBufferNum)}</span></span>
+            ) : (
+              <span>Daily room: <span className="text-zinc-300 font-medium">{formatUSD(dailyRoomNum)}</span></span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ─── 1. Breach Floor Ruler (Dynamically anchored to active constraint) ─── */}
       <div className="pl-1 space-y-1">
         <div className="flex justify-between text-[10px] font-mono text-zinc-500">
-          <span>{isDailyConstrained ? "Daily Floor" : "Drawdown Floor"} {formatUSD(activeBreachFloor)}</span>
+          <span>{isDailyConstrained ? "Daily-loss threshold" : "Drawdown floor"} {formatUSD(activeBreachFloor)}</span>
           <span className={isDailyConstrained ? "text-red-400 font-semibold" : "text-zinc-400"}>
             {isDailyConstrained
               ? `Room ${formatUSD(effectiveBuffer)} (${dailyConsumedPct.toFixed(0)}% burned)`
@@ -159,7 +182,11 @@ export function RiskCard({ account, rank }: RiskCardProps) {
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               isDailyConstrained
-                ? "bg-red-500"
+                ? dailyConsumedPct >= 90
+                  ? "bg-red-500"
+                  : dailyConsumedPct >= 75
+                  ? "bg-orange-500"
+                  : "bg-amber-500"
                 : riskStatus === "SAFE"
                 ? "bg-zinc-500"
                 : riskStatus === "WATCH"
@@ -171,7 +198,9 @@ export function RiskCard({ account, rank }: RiskCardProps) {
           <div
             className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${
               isDailyConstrained
-                ? "bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.8)]"
+                ? dailyConsumedPct >= 75
+                  ? "bg-red-400 shadow-[0_0_8px_rgba(239,68,68,0.8)]"
+                  : "bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.8)]"
                 : "bg-white shadow-[0_0_6px_rgba(255,255,255,0.5)]"
             } border-2 border-zinc-950 transition-all duration-500`}
             style={{ left: `calc(${rulerPercentage}% - 6px)` }}
@@ -208,8 +237,10 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         <div className="relative h-2 w-full bg-zinc-900 rounded-full border border-zinc-800 overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              dailyConsumedPct >= 75
+              dailyConsumedPct >= 90
                 ? "bg-red-500"
+                : dailyConsumedPct >= 75
+                ? "bg-orange-500"
                 : dailyConsumedPct >= 50
                 ? "bg-amber-500"
                 : "bg-emerald-500/80"
@@ -219,7 +250,7 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </div>
 
         <div className="flex justify-between text-[10px] font-mono">
-          <span className="text-zinc-500">Floor: {formatUSD(account.dailyLossFloor)}</span>
+          <span className="text-zinc-500">Threshold: {formatUSD(account.dailyLossFloor)}</span>
           <span className={`font-semibold ${dailyRoomNum < 50 ? "text-red-400" : "text-emerald-400"}`}>
             Room left: {formatUSD(dailyRoomNum)}
           </span>

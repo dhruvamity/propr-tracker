@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -61,6 +62,50 @@ const navSections: NavSection[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggleCollapsed, mobileNavOpen, setMobileNavOpen } = useShell();
+
+  const [relativeTime, setRelativeTime] = useState("15s ago");
+  const [restHealthy, setRestHealthy] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    let lastSync = Date.now() - 15000;
+
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          if (data.health?.lastSyncAt) {
+            lastSync = new Date(data.health.lastSyncAt).getTime();
+          }
+          setRestHealthy(data.health?.restStatus === "HEALTHY");
+        }
+      } catch {
+        if (isMounted) setRestHealthy(false);
+      }
+    };
+
+    void fetchHealth();
+    const fetchInterval = setInterval(fetchHealth, 30000);
+
+    const updateRelative = () => {
+      const now = Date.now();
+      const diffSec = Math.max(0, Math.floor((now - lastSync) / 1000));
+      if (diffSec < 10) setRelativeTime("just now");
+      else if (diffSec < 60) setRelativeTime(`${diffSec}s ago`);
+      else if (diffSec < 3600) setRelativeTime(`${Math.floor(diffSec / 60)}m ago`);
+      else setRelativeTime(`${Math.floor(diffSec / 3600)}h ago`);
+    };
+
+    updateRelative();
+    const ticker = setInterval(updateRelative, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(fetchInterval);
+      clearInterval(ticker);
+    };
+  }, []);
 
   const renderNavContent = (isMobile = false) => (
     <div className="flex flex-col h-full bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] select-none">
@@ -159,16 +204,16 @@ export function Sidebar() {
 
       {/* Bottom Health Indicators */}
       <div className="px-3.5 py-3 border-t border-[var(--border-primary)] bg-black/20 text-[10px] font-mono space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+        <div className="flex items-center gap-2" title={`REST API: ${restHealthy ? "HEALTHY" : "OFFLINE"}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${restHealthy ? "bg-emerald-400" : "bg-red-500"}`} />
           {(!collapsed || isMobile) && (
-            <span className="text-zinc-400">REST connected</span>
+            <span className="text-zinc-400">{restHealthy ? "REST API healthy" : "REST API offline"}</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" title="Telemetry freshness">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           {(!collapsed || isMobile) && (
-            <span className="text-zinc-400">Data synchronized</span>
+            <span className="text-zinc-400">Data updated {relativeTime}</span>
           )}
         </div>
       </div>

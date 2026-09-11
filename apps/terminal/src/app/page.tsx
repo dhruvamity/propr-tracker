@@ -97,7 +97,7 @@ export default async function OverviewPage() {
               <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Net Capital Outflow (₹0 Payouts)
+              Net Capital Outflow
             </div>
           </div>
         </div>
@@ -107,7 +107,7 @@ export default async function OverviewPage() {
           <div className="flex items-center gap-4">
             <span>Propr: <strong className="text-zinc-200">{formatINR(finance.proprActualCashCostINR)}</strong></span>
             <span>Breakout: <strong className="text-zinc-200">{formatINR(finance.breakoutActualCashCostINR)}</strong></span>
-            <span>Payouts: <strong className="text-emerald-400">{formatINR(totalPayoutsINR)}</strong></span>
+            <span>Payouts: <strong className={totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-400"}>{formatINR(totalPayoutsINR)}</strong></span>
           </div>
           <a href="/finance" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-4">
             View full audited ledger →
@@ -143,14 +143,14 @@ export default async function OverviewPage() {
         )}
       </div>
 
-      {/* ─── 3. Accounts Directory: Active First + Collapsed History ─── */}
+      {/* ─── 3. Accounts Directory: High-Level Comparison (Prompt Requirement §5) ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             Active Accounts ({rankedActiveAccounts.length})
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            Monitored evaluations in USD
+            High-level account risk comparison
           </span>
         </div>
 
@@ -160,13 +160,11 @@ export default async function OverviewPage() {
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
                 <th className="py-2.5 px-3 text-center">Stage</th>
                 <th className="py-2.5 px-3 text-left">Account</th>
-                <th className="py-2.5 px-3 text-right">Balance</th>
                 <th className="py-2.5 px-3 text-right">Equity</th>
-                <th className="py-2.5 px-3 text-right">Active Buffer</th>
-                <th className="py-2.5 px-3 text-right">Daily Room</th>
-                <th className="py-2.5 px-3 text-left">Trade Trajectory</th>
-                <th className="py-2.5 px-3 text-right">Target</th>
                 <th className="py-2.5 px-3 text-center">Risk State</th>
+                <th className="py-2.5 px-3 text-right">Binding Room</th>
+                <th className="py-2.5 px-3 text-right">Daily Room</th>
+                <th className="py-2.5 px-3 text-right">Drawdown Room</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
@@ -176,9 +174,24 @@ export default async function OverviewPage() {
                 const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
                 const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
                 const dailyBurn = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
+                const ddConsumed = Number(acc.drawdownLimitConsumedPercent || 0);
                 const isDailyConstrained = dailyBurn >= 70 || (dailyRoom > 0 && dailyRoom < ddBuffer);
                 const effectiveBuffer = isDailyConstrained ? dailyRoom : ddBuffer;
-                const isCritical = dailyBurn >= 75 || dailyRoom <= 35;
+                const pctUsed = isDailyConstrained ? dailyBurn : ddConsumed;
+
+                let riskBadgeClass = "bg-emerald-950/50 text-emerald-400 border-emerald-800/40";
+                let riskLabel = "SAFE";
+
+                if (pctUsed >= 90) {
+                  riskBadgeClass = "bg-red-950/60 text-red-400 border-red-800/50 animate-pulse";
+                  riskLabel = "CRITICAL";
+                } else if (pctUsed >= 75) {
+                  riskBadgeClass = "bg-orange-950/60 text-orange-400 border-orange-800/50";
+                  riskLabel = "CRITICAL";
+                } else if (pctUsed >= 50) {
+                  riskBadgeClass = "bg-amber-950/50 text-amber-400 border-amber-800/40";
+                  riskLabel = "CAUTION";
+                }
 
                 return (
                   <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
@@ -188,51 +201,40 @@ export default async function OverviewPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-left font-medium text-white">
-                      {acc.challengeName || "Starter Turbo"}
-                        <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
-                        <span className="text-zinc-500 text-[10px]">({formatShortId(acc.accountId)})</span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-medium text-zinc-200 whitespace-nowrap">
-                      {formatUSD(acc.balance)}
+                      {acc.challengeName || "Starter Turbo"}{" "}
+                      <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
+                      <span className="text-zinc-500 text-[10px]">({formatShortId(acc.accountId)})</span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
                       {formatUSD(acc.equity)}
                     </td>
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${riskBadgeClass}`}>
+                        {riskLabel}
+                      </span>
+                    </td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                      <span className={`font-semibold ${isDailyConstrained ? "text-red-400 font-bold" : "text-zinc-200"}`}>
+                      <span className={`font-semibold ${pctUsed >= 75 ? "text-red-400 font-bold" : "text-zinc-200"}`}>
                         {formatUSD(effectiveBuffer)}
                       </span>
                       <span className="text-[10px] text-zinc-500 block">
-                        {isDailyConstrained ? `Daily limit (DD: ${formatUSD(ddBuffer)})` : `Floor: ${formatUSD(acc.breachFloor)}`}
+                        {isDailyConstrained ? "Daily-loss limit" : "Drawdown floor"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                      <span className={`font-bold ${isCritical ? "text-red-400" : "text-emerald-400"}`}>
+                      <span className={`font-medium ${dailyRoom < 50 ? "text-red-400 font-bold" : "text-emerald-400"}`}>
                         {formatUSD(dailyRoom)}
                       </span>
                       <span className="text-[10px] text-zinc-500 block">
-                        {isCritical ? `⚠ ${dailyBurn.toFixed(0)}% burned` : "Normal room"}
+                        {dailyBurn.toFixed(0)}% used
                       </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-left whitespace-nowrap">
-                      <TrendSparkline trades={acc.trades} width={80} height={18} showInsight={true} />
                     </td>
                     <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
-                      <span
-                        className="font-medium text-white cursor-help"
-                        title={`Math: ${formatPercent(acc.profitTargetPct, 2)}. Propr UI displays 2.00% (rounded).`}
-                      >
-                        {formatPercent(acc.profitTargetPct, 2)}
-                        <span className="text-zinc-500 font-normal ml-1">/ {acc.profitTargetPercent || "9"}%</span>
+                      <span className="font-medium text-zinc-200">
+                        {formatUSD(ddBuffer)}
                       </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        isCritical
-                          ? "bg-red-950/60 text-red-400 border-red-800/50 animate-pulse"
-                          : "bg-emerald-950/50 text-emerald-400 border-emerald-800/40"
-                      }`}>
-                        {isCritical ? "CRITICAL" : "SAFE"}
+                      <span className="text-[10px] text-zinc-500 block">
+                        Max {acc.maxDrawdownPercent || "3"}%
                       </span>
                     </td>
                   </tr>

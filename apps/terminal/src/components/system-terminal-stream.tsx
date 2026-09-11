@@ -54,8 +54,8 @@ const INITIAL_LOGS: LogEntry[] = [
     id: "log-6",
     timestamp: "23:58:16.120",
     type: "ORDER",
-    channel: "FILLS",
-    message: "order.filled",
+    channel: "UPSTREAM_FILL",
+    message: "Observed order.filled event",
     data: { orderId: "ord-88392", asset: "xyz:BTC-USDT", side: "BUY", fillPrice: "68,430.00", quantity: "0.05", status: "FILLED" },
   },
   {
@@ -115,8 +115,8 @@ const STREAM_TEMPLATES = [
   },
   {
     type: "ORDER" as const,
-    channel: "FILLS",
-    message: "order.filled",
+    channel: "UPSTREAM_FILL",
+    message: "Observed order.filled event",
     getData: () => {
       const assets = ["xyz:BTC-USDT", "xyz:ETH-USDT", "xyz:SOL-USDT"];
       const asset = assets[Math.floor(Math.random() * assets.length)];
@@ -186,7 +186,7 @@ function renderMessage(message: string) {
   if (message.includes("mark.updated")) {
     return <span className="text-[var(--cyan)] font-medium">{message}</span>;
   }
-  if (message.includes("order.filled")) {
+  if (message.includes("Observed order.filled event") || message.includes("order.filled")) {
     return <span className="text-emerald-400 font-medium">{message}</span>;
   }
   if (message.includes("Drawdown limit") || message.includes("Invariants checked")) {
