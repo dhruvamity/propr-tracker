@@ -1,5 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { XCircle } from "lucide-react";
+import { TradeDrawer } from "@/components/trade-drawer";
 
 export const revalidate = 15;
 
@@ -29,7 +30,7 @@ export default async function HistoryPage() {
           Historical & Breached Account Archive
         </h1>
         <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-          Past challenge attempts, breach triggers, and closed accounts.
+          Past challenge attempts, breach triggers, closed accounts, and full trade execution history.
         </p>
       </div>
 
@@ -43,13 +44,18 @@ export default async function HistoryPage() {
               <th className="py-2.5 px-3 text-right">Initial</th>
               <th className="py-2.5 px-3 text-right">Ending Balance</th>
               <th className="py-2.5 px-3">Breach / Failure Reason</th>
+              <th className="py-2.5 px-3">Trade History</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
             {historicalAccounts.map((acc) => (
-              <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
+              <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors align-top">
                 <td className="py-2.5 px-3">
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/60 text-[var(--red)] border border-red-800/40">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                    acc.stage === "PASSED"
+                      ? "bg-emerald-950/60 text-[var(--green)] border-emerald-800/40"
+                      : "bg-red-950/60 text-[var(--red)] border-red-800/40"
+                  }`}>
                     {acc.stage}
                   </span>
                 </td>
@@ -67,6 +73,14 @@ export default async function HistoryPage() {
                 </td>
                 <td className="py-2.5 px-3 text-zinc-400 font-normal">
                   {acc.failureReason ? acc.failureReason.replace(/_/g, " ") : "Closed"}
+                </td>
+                <td className="py-2.5 px-3">
+                  <TradeDrawer
+                    accountId={acc.accountId}
+                    trades={acc.trades || []}
+                    initialBalance={acc.initialBalance}
+                    endingBalance={acc.balance}
+                  />
                 </td>
               </tr>
             ))}

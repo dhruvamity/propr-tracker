@@ -10,6 +10,8 @@ import type {
   OrderSnapshot,
   AuditLogEntry,
   DecimalString,
+  TradeSnapshot,
+  TradeType,
 } from "@propr/data-model";
 import { toDecimal, fromDecimal, ds } from "@propr/data-model";
 import {
@@ -17,6 +19,7 @@ import {
   calculateEquity,
   sumUnrealizedPnl,
   sumCrossUnrealizedPnl,
+  recalculateAccountRisk,
 } from "@propr/calculations";
 import type { DataStore } from "./store.js";
 
@@ -30,6 +33,42 @@ export interface WsSyncConfig {
   wsUrl?: string;
   store: DataStore;
   onResyncNeeded?: () => Promise<void>;
+}
+
+export function normalizeTrade(data: Record<string, unknown>): TradeSnapshot {
+  return {
+    tradeId: String(data.tradeId || `tr-${Date.now()}`),
+    userId: String(data.userId || ""),
+    accountId: String(data.accountId || ""),
+    orderId: String(data.orderId || ""),
+    positionId: String(data.positionId || ""),
+    exchangeTradeId: data.exchangeTradeId ? String(data.exchangeTradeId) : null,
+    transactionHash: data.transactionHash ? String(data.transactionHash) : null,
+    exchange: String(data.exchange || "hyperliquid"),
+    productType: String(data.productType || "perpetual"),
+    type: (data.type || "open") as TradeType,
+    liquidityType: (data.liquidityType || "taker") as "maker" | "taker",
+    asset: String(data.asset || ""),
+    base: String(data.base || ""),
+    quote: String(data.quote || "USDC"),
+    side: (data.side || "buy") as "buy" | "sell",
+    positionSide: (data.positionSide || "long") as "long" | "short",
+    quantity: ds(String(data.quantity ?? "0")),
+    price: ds(String(data.price ?? "0")),
+    quoteQuantity: ds(String(data.quoteQuantity ?? "0")),
+    fee: ds(String(data.fee ?? "0")),
+    feeAsset: String(data.feeAsset || "USDC"),
+    feeRate: ds(String(data.feeRate ?? "0")),
+    leverage: ds(String(data.leverage ?? "1")),
+    marginMode: (data.marginMode || "cross") as "cross" | "isolated",
+    realizedPnl: ds(String(data.realizedPnl ?? "0")),
+    positionSizeBefore: ds(String(data.positionSizeBefore ?? "0")),
+    slippage: ds(String(data.slippage ?? "0")),
+    markPriceAtOrder: ds(String(data.markPriceAtOrder ?? data.price ?? "0")),
+    isLiquidation: Boolean(data.isLiquidation),
+    executedAt: String(data.executedAt || new Date().toISOString()),
+    createdAt: String(data.createdAt || new Date().toISOString()),
+  };
 }
 
 export class WsSyncWorker {
@@ -269,6 +308,16 @@ export class WsSyncWorker {
     if (data.highWaterMark !== undefined)
       account.highWaterMark = ds(data.highWaterMark as string);
 
+    const totalUpnl = sumUnrealizedPnl(account.positions || []);
+    const isolatedMargin = toDecimal(account.isolatedPositionMargin || "0");
+    account.unrealizedPnl = totalUpnl;
+    account.equity = fromDecimal(
+      toDecimal(account.balance || account.initialBalance || "0")
+        .plus(toDecimal(totalUpnl))
+        .plus(isolatedMargin)
+    );
+    recalculateAccountRisk(account);
+
     account.lastRealtimeUpdateAt = new Date().toISOString();
     account.lastUpdatedAt = new Date().toISOString();
     account.dataSource = "LIVE_CALCULATED";
@@ -310,8 +359,20 @@ export class WsSyncWorker {
       (p) => !toDecimal(p.quantity || "0").isZero()
     );
     account.openPositionCount = account.positions.length;
+
+    const totalUpnl = sumUnrealizedPnl(account.positions);
+    const isolatedMargin = toDecimal(account.isolatedPositionMargin || "0");
+    account.unrealizedPnl = totalUpnl;
+    account.equity = fromDecimal(
+      toDecimal(account.balance || account.initialBalance || "0")
+        .plus(toDecimal(totalUpnl))
+        .plus(isolatedMargin)
+    );
+    recalculateAccountRisk(account);
+
     account.lastRealtimeUpdateAt = new Date().toISOString();
     account.lastUpdatedAt = new Date().toISOString();
+    account.dataSource = "LIVE_CALCULATED";
 
     await this.store.setSnapshot(snapshot);
   }
@@ -334,8 +395,20 @@ export class WsSyncWorker {
       (p) => p.positionId !== positionId
     );
     account.openPositionCount = account.positions.length;
+
+    const totalUpnl = sumUnrealizedPnl(account.positions);
+    const isolatedMargin = toDecimal(account.isolatedPositionMargin || "0");
+    account.unrealizedPnl = totalUpnl;
+    account.equity = fromDecimal(
+      toDecimal(account.balance || account.initialBalance || "0")
+        .plus(toDecimal(totalUpnl))
+        .plus(isolatedMargin)
+    );
+    recalculateAccountRisk(account);
+
     account.lastRealtimeUpdateAt = new Date().toISOString();
     account.lastUpdatedAt = new Date().toISOString();
+    account.dataSource = "LIVE_CALCULATED";
 
     await this.store.setSnapshot(snapshot);
   }
@@ -381,11 +454,81 @@ export class WsSyncWorker {
   private async handleTradeCreated(
     data: Record<string, unknown>
   ): Promise<void> {
-    // Trade events are logged but don't require immediate recalculation
-    // The position.updated event handles the position changes
-    console.log(
-      `[WS] Trade: ${data.type} ${(data.side as string)?.toUpperCase()} ${data.quantity} ${data.base} @ ${data.price}`
+    const accountId = data.accountId as string;
+    if (!accountId) return;
+
+    const trade = normalizeTrade(data);
+    await this.store.appendTrade(accountId, trade);
+
+    const snapshot = await this.store.getSnapshot();
+    if (!snapshot) return;
+
+    const account = snapshot.find((a) => a.accountId === accountId);
+    if (!account) return;
+
+    account.trades = await this.store.getTrades(accountId);
+
+    // Update realized PnL and fees
+    const tradeRealizedPnl = toDecimal(trade.realizedPnl || "0");
+    const tradeFee = toDecimal(trade.fee || "0");
+
+    if (!tradeRealizedPnl.isZero() || !tradeFee.isZero()) {
+      account.realizedPnl = fromDecimal(
+        toDecimal(account.realizedPnl || "0").plus(tradeRealizedPnl)
+      );
+      account.fees = fromDecimal(
+        toDecimal(account.fees || "0").plus(tradeFee)
+      );
+      // Net cash impact on balance = realizedPnl - fee
+      account.balance = fromDecimal(
+        toDecimal(account.balance || account.initialBalance || "0")
+          .plus(tradeRealizedPnl)
+          .minus(tradeFee)
+      );
+    }
+
+    // Reconcile positions:
+    if (trade.positionId) {
+      const posIdx = account.positions.findIndex(
+        (p) => p.positionId === trade.positionId
+      );
+      if (posIdx >= 0) {
+        if (trade.type === "close" || trade.type === "liquidation") {
+          account.positions.splice(posIdx, 1);
+        } else if (trade.type === "reduce") {
+          const currentQty = toDecimal(account.positions[posIdx].quantity);
+          const tradeQty = toDecimal(trade.quantity);
+          const newQty = currentQty.minus(tradeQty);
+          if (newQty.lessThanOrEqualTo(0)) {
+            account.positions.splice(posIdx, 1);
+          } else {
+            account.positions[posIdx].quantity = fromDecimal(newQty);
+          }
+        }
+      }
+      account.openPositionCount = account.positions.length;
+    }
+
+    // Recalculate equity and risk
+    const totalUpnl = sumUnrealizedPnl(account.positions);
+    const isolatedMargin = toDecimal(account.isolatedPositionMargin || "0");
+    account.unrealizedPnl = totalUpnl;
+    account.totalPnl = fromDecimal(
+      toDecimal(account.realizedPnl || "0").plus(toDecimal(totalUpnl))
     );
+    account.equity = fromDecimal(
+      toDecimal(account.balance || account.initialBalance || "0")
+        .plus(toDecimal(totalUpnl))
+        .plus(isolatedMargin)
+    );
+
+    recalculateAccountRisk(account);
+
+    account.lastRealtimeUpdateAt = new Date().toISOString();
+    account.lastUpdatedAt = new Date().toISOString();
+    account.dataSource = "LIVE_CALCULATED";
+
+    await this.store.setSnapshot(snapshot);
   }
 
   /**
@@ -399,6 +542,7 @@ export class WsSyncWorker {
     let changed = false;
 
     for (const account of snapshot) {
+      let positionChanged = false;
       for (const position of account.positions) {
         const markPrice =
           this.marks[position.exchange]?.[position.asset];
@@ -411,19 +555,24 @@ export class WsSyncWorker {
         position.notionalValue = notionalValue;
         position.returnOnEquity = roe;
         position.markPrice = ds(markPrice);
+        positionChanged = true;
         changed = true;
       }
 
-      if (changed && account.balance) {
+      if (positionChanged && account.balance) {
         // Recalculate account-level equity
         const totalUpnl = sumUnrealizedPnl(account.positions);
         const isolatedMargin = toDecimal(account.isolatedPositionMargin || "0");
         account.unrealizedPnl = totalUpnl;
+        account.totalPnl = fromDecimal(
+          toDecimal(account.realizedPnl || "0").plus(toDecimal(totalUpnl))
+        );
         account.equity = fromDecimal(
           toDecimal(account.balance)
             .plus(toDecimal(totalUpnl))
             .plus(isolatedMargin)
         );
+        recalculateAccountRisk(account);
         account.dataSource = "LIVE_CALCULATED";
         account.lastRealtimeUpdateAt = new Date().toISOString();
         account.lastUpdatedAt = new Date().toISOString();

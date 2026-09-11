@@ -8,6 +8,7 @@ import type {
   AuditLogEntry,
   FinanceTransaction,
   PayoutRecord,
+  TradeSnapshot,
 } from "@propr/data-model";
 
 /**
@@ -36,6 +37,10 @@ export interface DataStore {
   getLedger(): Promise<FinanceTransaction[]>;
   setLedger(transactions: FinanceTransaction[]): Promise<void>;
 
+  // ─── Trades ───────────────────────────────────────────────────────
+  appendTrade(accountId: string, trade: TradeSnapshot): Promise<void>;
+  getTrades(accountId: string, limit?: number, offset?: number): Promise<TradeSnapshot[]>;
+
   // ─── Audit Log ────────────────────────────────────────────────────
   appendAuditLog(entry: AuditLogEntry): Promise<void>;
   getAuditLog(limit?: number): Promise<AuditLogEntry[]>;
@@ -52,12 +57,24 @@ export class MemoryStore implements DataStore {
   private payouts: PayoutRecord[] = [];
   private ledger: FinanceTransaction[] = [];
   private auditLog: AuditLogEntry[] = [];
+  private tradesByAccount = new Map<string, TradeSnapshot[]>();
 
   async getSnapshot() {
     return this.snapshot;
   }
   async setSnapshot(accounts: AccountSnapshot[]) {
     this.snapshot = accounts;
+    for (const acc of accounts) {
+      if (acc.trades && acc.trades.length > 0) {
+        const existing = this.tradesByAccount.get(acc.accountId) || [];
+        for (const tr of acc.trades) {
+          if (!existing.some((t) => t.tradeId === tr.tradeId)) {
+            existing.push(tr);
+          }
+        }
+        this.tradesByAccount.set(acc.accountId, existing);
+      }
+    }
   }
 
   async getMarks() {
@@ -86,6 +103,27 @@ export class MemoryStore implements DataStore {
   }
   async setLedger(transactions: FinanceTransaction[]) {
     this.ledger = transactions;
+  }
+
+  async appendTrade(accountId: string, trade: TradeSnapshot) {
+    const list = this.tradesByAccount.get(accountId) || [];
+    if (!list.some((t) => t.tradeId === trade.tradeId)) {
+      list.push(trade);
+      this.tradesByAccount.set(accountId, list);
+    }
+    if (this.snapshot) {
+      const acc = this.snapshot.find((a) => a.accountId === accountId);
+      if (acc) {
+        acc.trades = this.tradesByAccount.get(accountId) || [];
+      }
+    }
+  }
+
+  async getTrades(accountId: string, limit?: number, offset?: number) {
+    const list = this.tradesByAccount.get(accountId) || [];
+    const start = offset || 0;
+    const end = limit !== undefined ? start + limit : undefined;
+    return list.slice(start, end);
   }
 
   async appendAuditLog(entry: AuditLogEntry) {
@@ -162,6 +200,28 @@ export class RedisStore implements DataStore {
   }
   async setLedger(transactions: FinanceTransaction[]) {
     await this.setJson("propr:finance:ledger", transactions);
+  }
+
+  async appendTrade(accountId: string, trade: TradeSnapshot) {
+    const key = `propr:trades:${accountId}`;
+    await this.redis.rpush(key, JSON.stringify(trade));
+    const snapshot = await this.getSnapshot();
+    if (snapshot) {
+      const acc = snapshot.find((a) => a.accountId === accountId);
+      if (acc) {
+        acc.trades = acc.trades || [];
+        if (!acc.trades.some((t) => t.tradeId === trade.tradeId)) {
+          acc.trades.push(trade);
+          await this.setSnapshot(snapshot);
+        }
+      }
+    }
+  }
+
+  async getTrades(accountId: string, limit = 100, offset = 0) {
+    const key = `propr:trades:${accountId}`;
+    const items = await this.redis.lrange(key, offset, offset + limit - 1);
+    return items.map((item) => JSON.parse(item) as TradeSnapshot);
   }
 
   async appendAuditLog(entry: AuditLogEntry) {

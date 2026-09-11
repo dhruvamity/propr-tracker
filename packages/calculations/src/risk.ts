@@ -2,7 +2,7 @@
 // Drawdown, daily loss, profit target progress, breach price, and liquidation.
 // Uses exact Propr formulas from the integration docs.
 
-import type { DecimalString, DrawdownType } from "@propr/data-model";
+import type { DecimalString, DrawdownType, AccountSnapshot } from "@propr/data-model";
 import { toDecimal, fromDecimal, ds, ZERO } from "@propr/data-model";
 import Decimal from "decimal.js";
 import { MMR } from "./pnl";
@@ -60,6 +60,34 @@ export function calculateDrawdownUsedPercent(
   return fromDecimal(used.dividedBy(starting).times(100));
 }
 
+/** Alias for calculateDrawdownUsedPercent */
+export const calculateDrawdownUsedPct = calculateDrawdownUsedPercent;
+
+/**
+ * Calculate drawdown limit consumed as a percentage of the allowed limit.
+ * Formula: (drawdownUsedAmount / maxDrawdownAmount) × 100
+ */
+export function calculateDrawdownLimitConsumedPercent(
+  equity: DecimalString | string,
+  config: DrawdownConfig
+): DecimalString {
+  const ddPercent = toDecimal(config.maxDrawdownPercent);
+  const initial = toDecimal(config.initialBalance);
+  const maxDdAmount = ddPercent.dividedBy(100).times(initial);
+  if (maxDdAmount.isZero()) return ZERO;
+
+  const starting = toDecimal(
+    config.startingBalance || config.initialBalance
+  );
+  const ref =
+    config.drawdownType === "trailing"
+      ? toDecimal(config.highWaterMark || starting)
+      : starting;
+
+  const used = Decimal.max(ref.minus(toDecimal(equity)), 0);
+  return fromDecimal(used.dividedBy(maxDdAmount).times(100));
+}
+
 /**
  * Calculate remaining drawdown buffer.
  * Formula: equity - drawdownLimit
@@ -107,6 +135,23 @@ export function calculateDailyLossUsedPercent(
 }
 
 /**
+ * Calculate daily loss limit consumed as a percentage of the allowed limit.
+ * Formula: (dailyLossUsedAmount / maxDailyLossAmount) × 100
+ */
+export function calculateDailyLossLimitConsumedPercent(
+  equity: DecimalString | string,
+  config: DailyLossConfig
+): DecimalString {
+  const base = toDecimal(config.dailyLossBase);
+  const pct = toDecimal(config.maxDailyLossPercent);
+  const maxDlAmount = pct.dividedBy(100).times(base);
+  if (maxDlAmount.isZero()) return ZERO;
+
+  const used = Decimal.max(base.minus(toDecimal(equity)), 0);
+  return fromDecimal(used.dividedBy(maxDlAmount).times(100));
+}
+
+/**
  * Calculate remaining daily loss buffer.
  * Formula: equity - dailyLossLimit
  */
@@ -119,6 +164,27 @@ export function calculateDailyLossRemaining(
 }
 
 // ─── Profit Target ────────────────────────────────────────────────────────────
+
+/**
+ * Calculate current profit percentage relative to phase starting balance.
+ * Formula: ((equity - phaseStartingBalance) / phaseStartingBalance) × 100
+ */
+export function calculateProfitTargetPercent(
+  equity: DecimalString | string,
+  phaseStartingBalance: DecimalString | string
+): DecimalString {
+  const psb = toDecimal(phaseStartingBalance);
+  if (psb.isZero()) return ZERO;
+
+  const pnlPercent = toDecimal(equity)
+    .minus(psb)
+    .dividedBy(psb)
+    .times(100);
+  return fromDecimal(pnlPercent);
+}
+
+/** Alias for calculateProfitTargetPercent */
+export const calculateProfitTargetPct = calculateProfitTargetPercent;
 
 /**
  * Calculate profit target progress as a percentage.
@@ -266,3 +332,68 @@ export function calculateCrossLiquidationPrice(
   if (denominator.isZero()) return ZERO;
   return fromDecimal(numerator.dividedBy(denominator));
 }
+
+// ─── Centralized Risk Recalculation ──────────────────────────────────────────
+
+/**
+ * Centralized risk recalculation for an account.
+ * Updates high water mark (if trailing and equity exceeds current HWM),
+ * drawdown used, drawdown limit consumed, remaining buffer, breach floor,
+ * daily loss used and consumed, and profit target percentage and progress.
+ */
+export function recalculateAccountRisk(account: AccountSnapshot): void {
+  const equity = account.equity || account.balance || ZERO;
+  const initial = account.initialBalance || ZERO;
+  const starting = account.startingBalance || initial;
+  const phaseStarting = account.phaseStartingBalance || initial;
+  const drawdownType = (account.drawdownType || "static") as DrawdownType;
+  const maxDrawdownPercent = account.maxDrawdownPercent || ZERO;
+  const maxDailyLossPercent = account.maxDailyLossPercent || ZERO;
+  const profitTargetPercent = account.profitTargetPercent || ZERO;
+
+  let hwm: DecimalString = account.highWaterMark || starting;
+  if (toDecimal(equity).greaterThan(toDecimal(hwm))) {
+    hwm = fromDecimal(toDecimal(equity));
+    account.highWaterMark = hwm;
+  }
+
+  const ddConfig: DrawdownConfig = {
+    drawdownType,
+    maxDrawdownPercent,
+    initialBalance: initial,
+    startingBalance: starting,
+    highWaterMark: hwm,
+  };
+
+  if (!toDecimal(maxDrawdownPercent).isZero()) {
+    account.drawdownUsedPercent = calculateDrawdownUsedPercent(equity, ddConfig);
+    account.drawdownLimitConsumedPercent = calculateDrawdownLimitConsumedPercent(equity, ddConfig);
+    account.drawdownRemaining = calculateDrawdownRemaining(equity, ddConfig);
+    account.breachFloor = calculateDrawdownLimit(ddConfig);
+  }
+
+  const dailyLossBase = account.startingBalance || initial;
+  const dlConfig: DailyLossConfig = {
+    maxDailyLossPercent,
+    dailyLossBase,
+  };
+
+  if (!toDecimal(maxDailyLossPercent).isZero()) {
+    account.dailyLossUsedPercent = calculateDailyLossUsedPercent(equity, dlConfig);
+    account.dailyLossLimitConsumedPercent = calculateDailyLossLimitConsumedPercent(equity, dlConfig);
+    account.dailyLossRemaining = calculateDailyLossRemaining(equity, dlConfig);
+    account.dailyLossFloor = calculateDailyLossLimit(dlConfig);
+  }
+
+  if (!toDecimal(phaseStarting).isZero()) {
+    account.profitTargetPct = calculateProfitTargetPercent(equity, phaseStarting);
+    if (!toDecimal(profitTargetPercent).isZero()) {
+      account.profitTargetProgressPercent = calculateProfitTargetProgress(
+        equity,
+        phaseStarting,
+        profitTargetPercent
+      );
+    }
+  }
+}
+

@@ -8,6 +8,7 @@ import type {
   PositionSnapshot,
   OrderSnapshot,
   TradeSnapshot,
+  TradeQueryParams,
   PayoutRecord,
   UserProfile,
   PaginatedResponse,
@@ -181,18 +182,20 @@ export class ProprClient {
   ): Promise<T[]> {
     const allItems: T[] = [];
     let offset = 0;
+    const pageSize =
+      typeof params?.limit === "number" ? params.limit : this.pageSize;
 
     while (true) {
       const result = await this.request<PaginatedResponse<T>>(path, {
         ...params,
-        limit: this.pageSize,
+        limit: pageSize,
         offset,
       });
 
       allItems.push(...result.data);
 
       // If we got fewer items than the page size, we've reached the end
-      if (result.data.length < this.pageSize || allItems.length >= result.total) {
+      if (result.data.length < pageSize || allItems.length >= result.total) {
         break;
       }
       offset += result.data.length;
@@ -365,11 +368,36 @@ export class ProprClient {
 
   async getTrades(
     accountId: string,
-    limit?: number
+    params?: TradeQueryParams | number
   ): Promise<TradeSnapshot[]> {
+    const queryParams: Record<string, string | number | undefined> = {};
+    if (typeof params === "number") {
+      queryParams.limit = params;
+    } else if (params) {
+      if (params.tradeId !== undefined) queryParams.tradeId = params.tradeId;
+      if (params.positionId !== undefined) queryParams.positionId = params.positionId;
+      if (params.orderId !== undefined) queryParams.orderId = params.orderId;
+      if (params.base !== undefined) queryParams.base = params.base;
+      if (params.quote !== undefined) queryParams.quote = params.quote;
+      if (params.side !== undefined) queryParams.side = params.side;
+      if (params.limit !== undefined) queryParams.limit = params.limit;
+      if (params.offset !== undefined) queryParams.offset = params.offset;
+    }
+
+    // If offset is explicitly passed, fetch that specific page
+    if (typeof params === "object" && params?.offset !== undefined) {
+      const result = await this.request<PaginatedResponse<unknown>>(
+        `/accounts/${accountId}/trades`,
+        queryParams
+      );
+      return result.data.map((item) =>
+        ProprTradeSchema.parse(item)
+      ) as unknown as TradeSnapshot[];
+    }
+
     const items = await this.fetchAllPages<unknown>(
       `/accounts/${accountId}/trades`,
-      { limit: limit || this.pageSize }
+      queryParams
     );
     return items.map((item) =>
       ProprTradeSchema.parse(item)

@@ -16,10 +16,15 @@ import { ds, ZERO, toDecimal, fromDecimal, add, sub } from "@propr/data-model";
 import { ProprClient } from "@propr/client";
 import {
   deriveAccountStage,
+  calculateDrawdownLimit,
   calculateDrawdownUsedPercent,
+  calculateDrawdownLimitConsumedPercent,
   calculateDrawdownRemaining,
+  calculateDailyLossLimit,
   calculateDailyLossUsedPercent,
+  calculateDailyLossLimitConsumedPercent,
   calculateDailyLossRemaining,
+  calculateProfitTargetPercent,
   calculateProfitTargetProgress,
   sumUnrealizedPnl,
 } from "@propr/calculations";
@@ -36,11 +41,12 @@ interface NormalizeOptions {
  * Steps (per prompt §4):
  * 1. Retrieve all challenge attempts (all statuses)
  * 2. Retrieve all funded issuances (all statuses)
- * 3. Deduplicate by accountId
- * 4. Determine lifecycle stage
- * 5. Retrieve positions, orders, trades for each
- * 6. Retrieve daily metrics (with fallback)
- * 7. Normalize into AccountSnapshot[]
+ * 3. Retrieve challenges to enrich attempt metadata
+ * 4. Deduplicate by accountId
+ * 5. Determine lifecycle stage
+ * 6. Retrieve positions, orders, trades for each
+ * 7. Retrieve daily metrics (with fallback)
+ * 8. Normalize into AccountSnapshot[]
  */
 export async function buildAccountUniverse(
   client: ProprClient,
@@ -50,10 +56,17 @@ export async function buildAccountUniverse(
 ): Promise<AccountSnapshot[]> {
   const now = new Date().toISOString();
 
-  const [allAttempts, allIssuances] = await Promise.all([
+  const [allAttempts, allIssuances, rawChallenges] = await Promise.all([
     client.getAllChallengeAttempts(),
     client.getAllFundedIssuances(),
+    client.getChallenges().catch(() => []),
   ]);
+
+  const challengeMap = new Map<string, Record<string, unknown>>();
+  for (const ch of rawChallenges as Array<Record<string, unknown>>) {
+    const id = (ch.challengeId || ch.id) as string;
+    if (id) challengeMap.set(id, ch);
+  }
 
   // Map: accountId -> { attempt?, issuance? }
   const accountMap = new Map<
@@ -107,6 +120,7 @@ export async function buildAccountUniverse(
         ledgerByAccount.get(accountId) || [],
         payoutsByAccount.get(accountId) || [],
         now,
+        challengeMap,
         options
       );
       snapshots.push(snapshot);
@@ -128,6 +142,7 @@ async function normalizeAccount(
   accountLedger: FinanceTransaction[],
   accountPayouts: PayoutRecord[],
   now: string,
+  challengeMap: Map<string, Record<string, unknown>>,
   options: NormalizeOptions
 ): Promise<AccountSnapshot> {
   const { stage, source } = deriveAccountStage(attempt, issuance);
@@ -135,23 +150,37 @@ async function normalizeAccount(
   const [positions, orders, trades, dailyMetrics] = await Promise.all([
     client.getOpenPositions(accountId).catch(() => [] as PositionSnapshot[]),
     client.getOpenOrders(accountId).catch(() => [] as OrderSnapshot[]),
-    client.getTrades(accountId, 50).catch(() => []),
+    client.getTrades(accountId).catch(() => []),
     client.getDailyMetrics(accountId).catch(() => null),
   ]);
 
-  const challengeConfig = attempt?.challenge;
+  const fallbackChallenge = (attempt?.challengeId
+    ? challengeMap.get(attempt.challengeId)
+    : undefined) as Record<string, unknown> | undefined;
+
+  const challengeConfig = {
+    ...fallbackChallenge,
+    ...attempt?.challenge,
+  } as ProprChallengeAttempt["challenge"];
+
   const fundedConfig = issuance;
+  const rawAcc = attempt?.account as Record<string, unknown> | undefined;
 
   const initialBalance = ds(
     issuance?.initialBalance ||
       challengeConfig?.initialBalance ||
+      (rawAcc?.balance as string | undefined) ||
       "0"
   );
   const startingBalance = ds(
-    dailyMetrics?.startingBalance || initialBalance
+    dailyMetrics?.startingBalance ||
+      (rawAcc?.startingBalance as string | undefined) ||
+      initialBalance
   );
   const phaseStartingBalance = ds(
-    challengeConfig?.initialBalance || initialBalance
+    (attempt?.phases as Array<{ startingBalance?: string }>)?.[0]?.startingBalance ||
+      challengeConfig?.initialBalance ||
+      initialBalance
   );
 
   const totalUpnl = sumUnrealizedPnl(positions);
@@ -179,6 +208,12 @@ async function normalizeAccount(
     challengeConfig?.profitTargetPercent || "0"
   );
 
+  const highWaterMark = ds(
+    (rawAcc?.highWaterMark as string | undefined) ||
+      (issuance?.highWaterMark as string | undefined) ||
+      startingBalance
+  );
+
   // Use attempt-level totalPnl if available (more reliable than summing positions)
   const attemptTotalPnl = attempt?.totalPnl
     ? ds(attempt.totalPnl)
@@ -199,11 +234,22 @@ async function normalizeAccount(
     maxDrawdownPercent,
     initialBalance,
     startingBalance,
+    highWaterMark,
   };
+
+  const breachFloor =
+    maxDrawdownPercent !== ZERO
+      ? calculateDrawdownLimit(ddConfig)
+      : ZERO;
 
   const drawdownUsedPercent =
     maxDrawdownPercent !== ZERO
       ? calculateDrawdownUsedPercent(equity, ddConfig)
+      : ZERO;
+
+  const drawdownLimitConsumedPercent =
+    maxDrawdownPercent !== ZERO
+      ? calculateDrawdownLimitConsumedPercent(equity, ddConfig)
       : ZERO;
 
   const drawdownRemaining =
@@ -220,17 +266,30 @@ async function normalizeAccount(
     : startingBalance;
 
   const dlConfig = { maxDailyLossPercent, dailyLossBase };
+  const dailyLossFloor =
+    maxDailyLossPercent !== ZERO
+      ? calculateDailyLossLimit(dlConfig)
+      : ZERO;
   const dailyLossUsedPercent =
     maxDailyLossPercent !== ZERO
       ? calculateDailyLossUsedPercent(equity, dlConfig)
+      : ZERO;
+  const dailyLossLimitConsumedPercent =
+    maxDailyLossPercent !== ZERO
+      ? calculateDailyLossLimitConsumedPercent(equity, dlConfig)
       : ZERO;
   const dailyLossRemaining =
     maxDailyLossPercent !== ZERO
       ? calculateDailyLossRemaining(equity, dlConfig)
       : ZERO;
 
+  const profitTargetPct =
+    phaseStartingBalance !== ZERO
+      ? calculateProfitTargetPercent(equity, phaseStartingBalance)
+      : ZERO;
+
   const profitTargetProgressPercent =
-    profitTargetPercent !== ZERO
+    profitTargetPercent !== ZERO && phaseStartingBalance !== ZERO
       ? calculateProfitTargetProgress(
           equity,
           phaseStartingBalance,
@@ -287,13 +346,19 @@ async function normalizeAccount(
 
     drawdownType,
     profitTargetPercent,
+    profitTargetPct,
     profitTargetProgressPercent,
     maxDrawdownPercent,
     drawdownUsedPercent,
+    drawdownLimitConsumedPercent,
     drawdownRemaining,
+    breachFloor,
     maxDailyLossPercent,
     dailyLossUsedPercent,
+    dailyLossLimitConsumedPercent,
     dailyLossRemaining,
+    dailyLossFloor,
+    highWaterMark,
 
     tradingDays: attempt?.tradingDays,
     requiredTradingDays: challengeConfig?.requiredTradingDays,

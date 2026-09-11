@@ -101,7 +101,12 @@ export default async function AccountsPage() {
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
-                    {acc.profitTargetProgressPercent || "0"}%
+                    <span className="text-[var(--text-primary)] font-medium">
+                      {acc.profitTargetProgressPercent || "0"}%
+                    </span>
+                    <span className="text-[10px] text-[var(--text-muted)] block">
+                      {Number(acc.profitTargetPct || 0) >= 0 ? "+" : ""}{acc.profitTargetPct || "0"}% gain
+                    </span>
                   </td>
                   <td className="py-2.5 px-3 text-center whitespace-nowrap">
                     {acc.failureReason ? (

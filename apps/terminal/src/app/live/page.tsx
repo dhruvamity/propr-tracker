@@ -193,6 +193,9 @@ export default async function LiveMonitorPage() {
                       <span className="text-[var(--text-secondary)]">Profit Target Progress</span>
                       <span className="text-[var(--cyan)] font-bold">
                         {acc.profitTargetProgressPercent || "0"}%
+                        <span className="text-[10px] text-zinc-400 ml-1.5 font-normal">
+                          ({Number(acc.profitTargetPct || 0) >= 0 ? "+" : ""}{acc.profitTargetPct || "0"}% gain)
+                        </span>
                       </span>
                     </div>
                     <div

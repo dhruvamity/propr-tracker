@@ -44,6 +44,7 @@ export interface AccountSnapshot {
   totalPnl: string;
   drawdownType?: string;
   profitTargetPercent: string;
+  profitTargetPct?: string;
   profitTargetProgressPercent: string;
   maxDrawdownPercent: string;
   drawdownUsedPercent: string;
@@ -63,6 +64,7 @@ export interface AccountSnapshot {
   openOrderCount: number;
   positions: PositionData[];
   orders: OrderData[];
+  trades?: TradeData[];
   purchaseId?: string;
   purchaseCostUSD: string;
   payoutsWithdrawnUSD: string;
@@ -104,6 +106,32 @@ export interface OrderData {
   price?: string;
   triggerPrice?: string;
   cumulativeQuantity: string;
+  createdAt: string;
+}
+
+export interface TradeData {
+  tradeId: string;
+  userId?: string;
+  accountId: string;
+  orderId?: string;
+  positionId?: string;
+  exchange?: string;
+  type: string;
+  liquidityType: "maker" | "taker";
+  asset: string;
+  base: string;
+  quote: string;
+  side: "buy" | "sell";
+  positionSide: "long" | "short";
+  quantity: string;
+  price: string;
+  quoteQuantity: string;
+  fee: string;
+  feeAsset?: string;
+  feeRate?: string;
+  realizedPnl: string;
+  slippage?: string;
+  executedAt: string;
   createdAt: string;
 }
 
@@ -296,6 +324,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       closedIssuances,
       reviewIssuances,
       payoutsRaw,
+      challengesRaw,
     ] = await Promise.all([
       fetchAllPages<Record<string, unknown>>("/challenge-attempts", { status: "active" }).catch(() => []),
       fetchAllPages<Record<string, unknown>>("/challenge-attempts", { status: "passed" }).catch(() => []),
@@ -304,7 +333,14 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       fetchAllPages<Record<string, unknown>>("/book-account-issuances", { status: "closed" }).catch(() => []),
       fetchAllPages<Record<string, unknown>>("/book-account-issuances", { status: "review_pending" }).catch(() => []),
       fetchAllPages<Record<string, unknown>>("/payouts/history").catch(() => []),
+      fetchAllPages<Record<string, unknown>>("/challenges").catch(() => []),
     ]);
+
+    const challengeMap = new Map<string, Record<string, unknown>>();
+    for (const ch of challengesRaw) {
+      const id = (ch.challengeId || ch.id) as string;
+      if (id) challengeMap.set(id, ch);
+    }
 
     const allAttempts = [...activeAttempts, ...passedAttempts, ...failedAttempts];
     const allIssuances = [...activeIssuances, ...closedIssuances, ...reviewIssuances];
@@ -385,12 +421,43 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         allPositions.push(...positions);
         allOrders.push(...orders);
 
-        const challenge = attempt?.challenge as Record<string, unknown> | undefined;
+        const fallbackChallenge = attempt?.challengeId ? challengeMap.get(attempt.challengeId as string) : undefined;
+        const challenge = {
+          ...fallbackChallenge,
+          ...(attempt?.challenge as Record<string, unknown> | undefined),
+        };
         const rawAcc = (attempt?.account || issuance?.account) as Record<string, unknown> | undefined;
         const purchaseId = (attempt?.purchaseId || issuance?.purchaseId) as string | undefined;
         const drawdownType = (challenge?.drawdownType || "static") as string;
 
-        const initialBalance = (issuance?.initialBalance || challenge?.initialBalance || "0") as string;
+        const tradesRaw = await fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/trades`).catch(() => []);
+        const trades: TradeData[] = tradesRaw.map((t) => ({
+          tradeId: t.tradeId as string,
+          userId: t.userId as string | undefined,
+          accountId: t.accountId as string,
+          orderId: t.orderId as string | undefined,
+          positionId: t.positionId as string | undefined,
+          exchange: (t.exchange as string) || "hyperliquid",
+          type: (t.type as string) || "open",
+          liquidityType: (t.liquidityType as "maker" | "taker") || "taker",
+          asset: t.asset as string,
+          base: t.base as string,
+          quote: (t.quote as string) || "USDC",
+          side: t.side as "buy" | "sell",
+          positionSide: (t.positionSide as "long" | "short") || "long",
+          quantity: (t.quantity as string) || "0",
+          price: (t.price as string) || "0",
+          quoteQuantity: (t.quoteQuantity as string) || "0",
+          fee: (t.fee as string) || "0",
+          feeAsset: (t.feeAsset as string) || "USDC",
+          feeRate: (t.feeRate as string) || "0",
+          realizedPnl: (t.realizedPnl as string) || "0",
+          slippage: (t.slippage as string) || "0",
+          executedAt: (t.executedAt as string) || (t.createdAt as string) || now,
+          createdAt: (t.createdAt as string) || now,
+        }));
+
+        const initialBalance = (issuance?.initialBalance || challenge?.initialBalance || rawAcc?.balance || "0") as string;
         const maxDrawdownPercent = (issuance?.maxDrawdownPercent || challenge?.maxDrawdownPercent || "0") as string;
         const maxDailyLossPercent = (issuance?.maxDailyLossPercent || challenge?.maxDailyLossPercent || "0") as string;
         const profitTargetPercent = (challenge?.profitTargetPercent || "0") as string;
@@ -449,6 +516,10 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           ? dlUsedAmount.div(maxDlAmount).times(100)
           : new Decimal(0);
 
+        const profitTargetPct = d(initialBalance).gt(0)
+          ? equity.minus(d(initialBalance)).div(d(initialBalance)).times(100)
+          : new Decimal(0);
+
         const ptProgress = d(profitTargetPercent).gt(0)
           ? equity.minus(d(initialBalance)).div(d(initialBalance)).times(100).div(d(profitTargetPercent)).times(100)
           : new Decimal(0);
@@ -482,6 +553,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           totalPnl: ds(attemptPnl.gt(0) ? attemptPnl : totalRpnl.plus(totalUpnl)),
           drawdownType,
           profitTargetPercent,
+          profitTargetPct: ds(profitTargetPct),
           profitTargetProgressPercent: ds(Decimal.min(Decimal.max(ptProgress, 0), 100)),
           maxDrawdownPercent,
           drawdownUsedPercent: ds(Decimal.max(ddUsedPct, 0)),
@@ -501,6 +573,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           openOrderCount: orders.length,
           positions,
           orders,
+          trades,
           purchaseId,
           purchaseCostUSD: "0",
           payoutsWithdrawnUSD: "0",

@@ -122,6 +122,19 @@ export interface OrderSnapshot {
   updatedAt: string;
 }
 
+// ─── Trade Query Params ───────────────────────────────────────────────────────
+
+export interface TradeQueryParams {
+  tradeId?: string;
+  positionId?: string;
+  orderId?: string;
+  base?: string;
+  quote?: string;
+  side?: "buy" | "sell";
+  limit?: number;
+  offset?: number;
+}
+
 // ─── Trade Snapshot ───────────────────────────────────────────────────────────
 
 export type TradeType =
@@ -264,13 +277,18 @@ export interface AccountSnapshot {
   // Challenge/funded risk config
   drawdownType?: DrawdownType;
   profitTargetPercent?: DecimalString;
+  profitTargetPct?: DecimalString;
   profitTargetProgressPercent?: DecimalString;
   maxDrawdownPercent?: DecimalString;
   drawdownUsedPercent?: DecimalString;
+  drawdownLimitConsumedPercent?: DecimalString;
   drawdownRemaining?: DecimalString;
+  breachFloor?: DecimalString;
   maxDailyLossPercent?: DecimalString;
   dailyLossUsedPercent?: DecimalString;
+  dailyLossLimitConsumedPercent?: DecimalString;
   dailyLossRemaining?: DecimalString;
+  dailyLossFloor?: DecimalString;
   highWaterMark?: DecimalString;
 
   // Trading days

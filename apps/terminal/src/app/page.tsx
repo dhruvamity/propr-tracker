@@ -194,7 +194,12 @@ export default async function OverviewPage() {
                 <div>
                   <div className="flex justify-between text-[11px] font-mono mb-1">
                     <span className="text-[var(--text-secondary)]">Profit Target Progress</span>
-                    <span className="text-[var(--cyan)] font-bold">{acc.profitTargetProgressPercent || "0"}%</span>
+                    <span className="text-[var(--cyan)] font-bold">
+                      {acc.profitTargetProgressPercent || "0"}%
+                      <span className="text-[10px] text-zinc-400 ml-1 font-normal">
+                        ({Number(acc.profitTargetPct || 0) >= 0 ? "+" : ""}{acc.profitTargetPct || "0"}% gain)
+                      </span>
+                    </span>
                   </div>
                   <div
                     className="h-3.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
@@ -364,7 +369,12 @@ export default async function OverviewPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
-                      {acc.profitTargetProgressPercent || "0"}%
+                      <span className="text-[var(--text-primary)] font-medium">
+                        {acc.profitTargetProgressPercent || "0"}%
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] block">
+                        {Number(acc.profitTargetPct || 0) >= 0 ? "+" : ""}{acc.profitTargetPct || "0"}% gain
+                      </span>
                     </td>
                     <td className="py-2.5 px-3 text-center whitespace-nowrap">
                       {acc.failureReason ? (
