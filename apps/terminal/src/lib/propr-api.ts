@@ -376,12 +376,17 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           ? equity.minus(d(initialBalance)).div(d(initialBalance)).times(100).div(d(profitTargetPercent)).times(100)
           : new Decimal(0);
 
+        const rawName = challenge?.name;
+        const challengeName = typeof rawName === "object" && rawName !== null
+          ? (rawName as Record<string, string>).en || Object.values(rawName as Record<string, string>)[0] || "Starter Turbo"
+          : (rawName as string) || "Starter Turbo";
+
         accounts.push({
           accountId,
           firm: "Propr",
           stage,
           source,
-          challengeName: (challenge?.name || attempt?.challengeId || "") as string,
+          challengeName,
           challengeId: attempt?.challengeId as string,
           attemptId: attempt?.attemptId as string,
           issuanceId: issuance?.issuanceId as string,
