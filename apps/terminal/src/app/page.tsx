@@ -4,7 +4,10 @@ import {
   CheckCircle2,
   XCircle,
   Activity,
+  TrendingUp,
+  ListOrdered,
 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 
 export const revalidate = 15; // Revalidate data every 15 seconds
 
@@ -57,10 +60,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--text-primary)]">
             {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             Propr Face: {formatUSD(finance.totalInvestedUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             Propr {formatINR(finance.proprActualCashCostINR)} + Breakout {formatINR(finance.breakoutActualCashCostINR)}
           </div>
         </div>
@@ -74,10 +77,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--cyan)]">
             {formatINR(finance.activeActualCashCostINR || finance.activeCapitalINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             Active Face: {formatUSD(finance.activeCapitalUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             Est Face INR: {formatINR(finance.activeCapitalINR)}
           </div>
         </div>
@@ -91,10 +94,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--green)]">
             {formatINR(finance.totalPayoutsINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             {formatUSD(finance.totalPayoutsUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             Processed Bank Cash
           </div>
         </div>
@@ -108,10 +111,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--red)]">
             {formatINR(finance.actualCashPnLINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             Net Outflow: {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             All Prop Firms Combined
           </div>
         </div>
@@ -194,7 +197,7 @@ export default async function OverviewPage() {
                     <span className="text-[var(--cyan)] font-bold">{acc.profitTargetProgressPercent || "0"}%</span>
                   </div>
                   <div
-                    className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
+                    className="h-3.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
                     role="progressbar"
                     aria-valuenow={Number(acc.profitTargetProgressPercent || 0)}
                     aria-valuemin={0}
@@ -202,7 +205,7 @@ export default async function OverviewPage() {
                     aria-label="Profit Target Progress"
                   >
                     <div
-                      className="h-full bg-[var(--cyan)] transition-all duration-500"
+                      className="h-full bg-[var(--cyan)] rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, Math.max(0, Number(acc.profitTargetProgressPercent || 0)))}%` }}
                     />
                   </div>
@@ -214,13 +217,13 @@ export default async function OverviewPage() {
                     <span className="text-[var(--text-secondary)]">Max Drawdown Consumed</span>
                     <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : Number(acc.drawdownLimitConsumedPercent || 0) > 40 ? "text-[var(--amber)] font-semibold" : "text-[var(--text-primary)]"}>
                       {acc.drawdownLimitConsumedPercent || "0"}% of limit
-                      <span className="text-[10px] text-[var(--text-muted)] ml-1 font-normal">
+                      <span className="text-[10px] text-zinc-400 ml-1 font-normal">
                         ({acc.drawdownUsedPercent || "0"}% loss)
                       </span>
                     </span>
                   </div>
                   <div
-                    className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
+                    className="h-3.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
                     role="progressbar"
                     aria-valuenow={Number(acc.drawdownLimitConsumedPercent || 0)}
                     aria-valuemin={0}
@@ -228,7 +231,7 @@ export default async function OverviewPage() {
                     aria-label="Max Drawdown Consumed"
                   >
                     <div
-                      className={`h-full transition-all duration-500 ${
+                      className={`h-full rounded-full transition-all duration-500 ${
                         Number(acc.drawdownLimitConsumedPercent || 0) > 75
                           ? "bg-[var(--red)]"
                           : Number(acc.drawdownLimitConsumedPercent || 0) > 40
@@ -282,11 +285,11 @@ export default async function OverviewPage() {
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
                 <th className="py-2.5 px-3">Stage</th>
                 <th className="py-2.5 px-3">Account ID</th>
-                <th className="py-2.5 px-3">Starting</th>
-                <th className="py-2.5 px-3">Balance</th>
-                <th className="py-2.5 px-3">Equity</th>
-                <th className="py-2.5 px-3">DD Used</th>
-                <th className="py-2.5 px-3">Target</th>
+                <th className="py-2.5 px-3 text-right">Starting</th>
+                <th className="py-2.5 px-3 text-right">Balance</th>
+                <th className="py-2.5 px-3 text-right">Equity</th>
+                <th className="py-2.5 px-3 text-right">DD Used</th>
+                <th className="py-2.5 px-3 text-right">Target</th>
                 <th className="py-2.5 px-3">Status Detail</th>
               </tr>
             </thead>
@@ -318,16 +321,16 @@ export default async function OverviewPage() {
                         {acc.challengeName || "Starter Turbo"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                       {formatUSD(acc.startingBalance)}
                     </td>
-                    <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
+                    <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
                       {formatUSD(acc.balance)}
                     </td>
-                    <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
+                    <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
                       {formatUSD(acc.equity)}
                     </td>
-                    <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                       <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : "text-[var(--text-primary)]"}>
                         {acc.drawdownLimitConsumedPercent || "0"}%
                       </span>
@@ -335,12 +338,12 @@ export default async function OverviewPage() {
                         {acc.drawdownUsedPercent || "0"}% loss
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                       {acc.profitTargetProgressPercent || "0"}%
                     </td>
                     <td className="py-2.5 px-3 text-[10px]">
                       {acc.failureReason ? (
-                        <span className="text-[var(--red)]">
+                        <span className="text-zinc-400 font-normal">
                           {acc.failureReason.replace(/_/g, " ")}
                         </span>
                       ) : isActive ? (
@@ -368,9 +371,12 @@ export default async function OverviewPage() {
             <span className="text-[10px] font-mono text-[var(--text-muted)]">LIVE MARKS</span>
           </div>
           {allPositions.length === 0 ? (
-            <div className="py-8 text-center text-xs font-mono text-[var(--text-muted)]">
-              No open positions.
-            </div>
+            <EmptyState
+              icon={TrendingUp}
+              title="No Open Positions"
+              description="Active positions across your accounts will appear here in real time."
+              className="py-8"
+            />
           ) : (
             <div className="space-y-2">
               {allPositions.map((pos) => (
@@ -395,9 +401,12 @@ export default async function OverviewPage() {
             <span className="text-[10px] font-mono text-[var(--text-muted)]">PENDING EXECUTION</span>
           </div>
           {allOrders.length === 0 ? (
-            <div className="py-8 text-center text-xs font-mono text-[var(--text-muted)]">
-              No pending orders.
-            </div>
+            <EmptyState
+              icon={ListOrdered}
+              title="No Pending Orders"
+              description="Resting limit orders, trigger orders, and protective stops will be listed here."
+              className="py-8"
+            />
           ) : (
             <div className="space-y-2">
               {allOrders.map((ord) => (

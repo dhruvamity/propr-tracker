@@ -24,7 +24,9 @@ export default function RootLayout({
           <div className="flex-1 flex flex-col overflow-hidden">
             <TopBar />
             <main className="flex-1 overflow-y-auto grid-pattern p-4 md:p-6">
-              {children}
+              <div className="max-w-screen-2xl mx-auto w-full">
+                {children}
+              </div>
             </main>
           </div>
         </div>

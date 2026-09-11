@@ -50,11 +50,11 @@ export default async function AccountsPage() {
             <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
               <th className="py-2.5 px-3">Stage</th>
               <th className="py-2.5 px-3">Account ID / Challenge</th>
-              <th className="py-2.5 px-3">Starting</th>
-              <th className="py-2.5 px-3">Balance</th>
-              <th className="py-2.5 px-3">Equity</th>
-              <th className="py-2.5 px-3">Drawdown Status</th>
-              <th className="py-2.5 px-3">Target Progress</th>
+              <th className="py-2.5 px-3 text-right">Starting</th>
+              <th className="py-2.5 px-3 text-right">Balance</th>
+              <th className="py-2.5 px-3 text-right">Equity</th>
+              <th className="py-2.5 px-3 text-right">Drawdown Status</th>
+              <th className="py-2.5 px-3 text-right">Target Progress</th>
               <th className="py-2.5 px-3">Account State</th>
             </tr>
           </thead>
@@ -83,16 +83,16 @@ export default async function AccountsPage() {
                       {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD)
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                     {formatUSD(acc.startingBalance)}
                   </td>
-                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
                     {formatUSD(acc.balance)}
                   </td>
-                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
                     {formatUSD(acc.equity)}
                   </td>
-                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                     <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : "text-[var(--text-primary)]"}>
                       {acc.drawdownLimitConsumedPercent || "0"}% of limit
                     </span>
@@ -100,12 +100,12 @@ export default async function AccountsPage() {
                       {acc.drawdownUsedPercent || "0"}% account loss
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                     {acc.profitTargetProgressPercent || "0"}%
                   </td>
                   <td className="py-2.5 px-3 text-[10px]">
                     {acc.failureReason ? (
-                      <span className="text-[var(--red)] font-semibold">
+                      <span className="text-zinc-400 font-normal">
                         {acc.failureReason.replace(/_/g, " ")}
                       </span>
                     ) : isActive ? (

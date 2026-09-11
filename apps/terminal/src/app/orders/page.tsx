@@ -1,4 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
+import { ListOrdered } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 
 export const revalidate = 15;
 
@@ -22,29 +24,32 @@ export default async function OrdersPage() {
         </span>
       </div>
 
-      <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono">
-          <thead>
-            <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
-              <th className="py-2.5 px-3">Asset</th>
-              <th className="py-2.5 px-3">Side</th>
-              <th className="py-2.5 px-3">Type</th>
-              <th className="py-2.5 px-3">Status</th>
-              <th className="py-2.5 px-3">Size</th>
-              <th className="py-2.5 px-3">Price / Trigger</th>
-              <th className="py-2.5 px-3">Account</th>
-              <th className="py-2.5 px-3">Created</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border-subtle)]">
-            {allOrders.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="py-12 text-center text-xs font-mono text-[var(--text-muted)]">
-                  No pending orders.
-                </td>
+      {allOrders.length === 0 ? (
+        <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] p-12">
+          <EmptyState
+            icon={ListOrdered}
+            title="No Pending Orders"
+            description="Resting limit orders, trigger orders, and protective stops across accounts will appear here."
+            statusBadge="Order engine active"
+          />
+        </div>
+      ) : (
+        <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
+            <thead>
+              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
+                <th className="py-2.5 px-3">Asset</th>
+                <th className="py-2.5 px-3">Side</th>
+                <th className="py-2.5 px-3">Type</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 text-right">Size</th>
+                <th className="py-2.5 px-3 text-right">Price / Trigger</th>
+                <th className="py-2.5 px-3">Account</th>
+                <th className="py-2.5 px-3">Created</th>
               </tr>
-            ) : (
-              allOrders.map((ord) => (
+            </thead>
+            <tbody className="divide-y divide-[var(--border-subtle)]">
+              {allOrders.map((ord) => (
                 <tr key={ord.orderId} className="hover:bg-white/[0.02] transition-colors">
                   <td className="py-2.5 px-3 font-bold text-[var(--text-primary)]">{ord.asset}</td>
                   <td className="py-2.5 px-3">
@@ -58,16 +63,16 @@ export default async function OrdersPage() {
                       {ord.status}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">{ord.quantity}</td>
-                  <td className="py-2.5 px-3 text-[var(--cyan)] font-semibold">{ord.price || ord.triggerPrice || "MARKET"}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">{ord.quantity}</td>
+                  <td className="py-2.5 px-3 text-right text-[var(--cyan)] font-semibold">{ord.price || ord.triggerPrice || "MARKET"}</td>
                   <td className="py-2.5 px-3 text-[var(--text-secondary)]">{ord.accountId.slice(0, 12)}...</td>
                   <td className="py-2.5 px-3 text-[var(--text-muted)]">{new Date(ord.createdAt).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: false })} IST</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

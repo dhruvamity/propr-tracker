@@ -1,4 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
+import { TrendingUp } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 
 export const revalidate = 15;
 
@@ -34,30 +36,33 @@ export default async function PositionsPage() {
         </span>
       </div>
 
-      <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono">
-          <thead>
-            <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
-              <th className="py-2.5 px-3">Asset</th>
-              <th className="py-2.5 px-3">Side</th>
-              <th className="py-2.5 px-3">Account</th>
-              <th className="py-2.5 px-3">Size</th>
-              <th className="py-2.5 px-3">Entry Price</th>
-              <th className="py-2.5 px-3">Mark Price</th>
-              <th className="py-2.5 px-3">Margin / Mode</th>
-              <th className="py-2.5 px-3">Unrealized PnL</th>
-              <th className="py-2.5 px-3">ROE</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border-subtle)]">
-            {allPositions.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="py-12 text-center text-xs font-mono text-[var(--text-muted)]">
-                  No open positions.
-                </td>
+      {allPositions.length === 0 ? (
+        <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] p-12">
+          <EmptyState
+            icon={TrendingUp}
+            title="No Open Positions"
+            description="Active trading positions across your evaluation and funded accounts will appear here in real time."
+            statusBadge="Position stream active"
+          />
+        </div>
+      ) : (
+        <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
+            <thead>
+              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
+                <th className="py-2.5 px-3">Asset</th>
+                <th className="py-2.5 px-3">Side</th>
+                <th className="py-2.5 px-3">Account</th>
+                <th className="py-2.5 px-3 text-right">Size</th>
+                <th className="py-2.5 px-3 text-right">Entry Price</th>
+                <th className="py-2.5 px-3 text-right">Mark Price</th>
+                <th className="py-2.5 px-3 text-right">Margin / Mode</th>
+                <th className="py-2.5 px-3 text-right">Unrealized PnL</th>
+                <th className="py-2.5 px-3 text-right">ROE</th>
               </tr>
-            ) : (
-              allPositions.map((pos) => (
+            </thead>
+            <tbody className="divide-y divide-[var(--border-subtle)]">
+              {allPositions.map((pos) => (
                 <tr key={pos.positionId} className="hover:bg-white/[0.02] transition-colors">
                   <td className="py-2.5 px-3 font-bold text-[var(--text-primary)]">{pos.asset}</td>
                   <td className="py-2.5 px-3">
@@ -66,24 +71,24 @@ export default async function PositionsPage() {
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-[var(--text-secondary)]">{pos.accountId.slice(0, 12)}...</td>
-                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">{pos.quantity}</td>
-                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">${pos.entryPrice}</td>
-                  <td className="py-2.5 px-3 text-[var(--cyan)] font-semibold">${pos.markPrice}</td>
-                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">{pos.quantity}</td>
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">${pos.entryPrice}</td>
+                  <td className="py-2.5 px-3 text-right text-[var(--cyan)] font-semibold">${pos.markPrice}</td>
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                     {formatUSD(pos.marginUsed)} <span className="text-[10px] uppercase text-[var(--text-muted)]">({pos.marginMode})</span>
                   </td>
-                  <td className={`py-2.5 px-3 font-bold ${Number(pos.unrealizedPnl) >= 0 ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
+                  <td className={`py-2.5 px-3 text-right font-bold ${Number(pos.unrealizedPnl) >= 0 ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
                     {formatUSD(pos.unrealizedPnl)}
                   </td>
-                  <td className={`py-2.5 px-3 font-semibold ${Number(pos.returnOnEquity) >= 0 ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
+                  <td className={`py-2.5 px-3 text-right font-semibold ${Number(pos.returnOnEquity) >= 0 ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
                     {pos.returnOnEquity}%
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

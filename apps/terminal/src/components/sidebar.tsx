@@ -71,7 +71,7 @@ export function Sidebar() {
                 "flex items-center gap-3 px-4 py-2.5 text-[11px] font-medium tracking-wider transition-all",
                 "hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
                 isActive
-                  ? "bg-[var(--bg-elevated)] text-[var(--cyan)] border-r-2 border-[var(--cyan)]"
+                  ? "bg-cyan-950/40 text-[var(--cyan)] border-r-2 border-[var(--cyan)] shadow-[inset_0_0_12px_rgba(0,229,255,0.06)] font-semibold"
                   : "text-[var(--text-secondary)]"
               )}
             >

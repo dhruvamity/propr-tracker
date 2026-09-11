@@ -40,8 +40,8 @@ export default async function HistoryPage() {
               <th className="py-2.5 px-3">Stage</th>
               <th className="py-2.5 px-3">Account ID</th>
               <th className="py-2.5 px-3">Challenge Type</th>
-              <th className="py-2.5 px-3">Initial</th>
-              <th className="py-2.5 px-3">Ending Balance</th>
+              <th className="py-2.5 px-3 text-right">Initial</th>
+              <th className="py-2.5 px-3 text-right">Ending Balance</th>
               <th className="py-2.5 px-3">Breach / Failure Reason</th>
             </tr>
           </thead>
@@ -59,13 +59,13 @@ export default async function HistoryPage() {
                 <td className="py-2.5 px-3 text-[var(--text-secondary)]">
                   {acc.challengeName || "Starter Turbo"}
                 </td>
-                <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
                   {formatUSD(acc.initialBalance)}
                 </td>
-                <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
+                <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
                   {formatUSD(acc.balance)}
                 </td>
-                <td className="py-2.5 px-3 text-[var(--red)] font-semibold">
+                <td className="py-2.5 px-3 text-zinc-400 font-normal">
                   {acc.failureReason ? acc.failureReason.replace(/_/g, " ") : "Closed"}
                 </td>
               </tr>

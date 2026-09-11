@@ -42,10 +42,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--text-primary)]">
             {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             Propr: {formatINR(finance.proprActualCashCostINR)} | Breakout: {formatINR(finance.breakoutActualCashCostINR)}
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             Propr Face: {formatUSD(finance.totalInvestedUSD)} USD
           </div>
         </div>
@@ -58,10 +58,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--cyan)]">
             {formatINR(finance.activeActualCashCostINR || finance.activeCapitalINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             Active Face: {formatUSD(finance.activeCapitalUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             Est Face INR: {formatINR(finance.activeCapitalINR)}
           </div>
         </div>
@@ -74,10 +74,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--green)]">
             {formatINR(finance.totalPayoutsINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             {formatUSD(finance.totalPayoutsUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             Processed Bank Cash
           </div>
         </div>
@@ -90,10 +90,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--red)]">
             {formatINR(finance.actualCashPnLINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
+          <div className="mt-1 text-xs font-mono text-zinc-300">
             Net Outflow: {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
             All Prop Firms Combined
           </div>
         </div>
@@ -118,8 +118,8 @@ export default async function FinancePage() {
                 <th className="py-2.5 px-3">Date</th>
                 <th className="py-2.5 px-3">Firm</th>
                 <th className="py-2.5 px-3">Challenge Name</th>
-                <th className="py-2.5 px-3">Face Value (USD)</th>
-                <th className="py-2.5 px-3">Actual Bank Debit (INR)</th>
+                <th className="py-2.5 px-3 text-right">Face Value (USD)</th>
+                <th className="py-2.5 px-3 text-right">Actual Bank Debit (INR)</th>
                 <th className="py-2.5 px-3">Bank Reference / Invoice</th>
                 <th className="py-2.5 px-3">Verification</th>
               </tr>
@@ -138,10 +138,10 @@ export default async function FinancePage() {
                   <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
                     {tx.challengeName}
                   </td>
-                  <td className="py-2.5 px-3 font-mono font-bold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--text-primary)]">
                     {tx.amountUSD && Number(tx.amountUSD) > 0 ? formatUSD(tx.amountUSD) : "N/A"}
                   </td>
-                  <td className="py-2.5 px-3 font-mono font-bold text-[var(--cyan)]">
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--cyan)]">
                     {formatINR(tx.actualCashCostINR || tx.amountINR)}
                   </td>
                   <td className="py-2.5 px-3 text-[var(--text-muted)]">

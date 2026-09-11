@@ -1,5 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { Radio } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 
 export const revalidate = 15;
 
@@ -38,7 +39,16 @@ export default async function LiveMonitorPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {liveAccounts.length === 0 ? (
+        <div className="rounded border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8">
+          <EmptyState
+            icon={Radio}
+            title="No Active Accounts"
+            description="Active evaluation and funded accounts will appear here with live risk meters."
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {liveAccounts.map((acc) => (
           <div
             key={acc.accountId}
@@ -71,9 +81,9 @@ export default async function LiveMonitorPage() {
                     {acc.drawdownLimitConsumedPercent || "0"}% of limit
                   </span>
                 </div>
-                <div className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+                <div className="h-3.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
                   <div
-                    className={`h-full transition-all duration-500 ${Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "bg-[var(--red)]" : "bg-[var(--cyan)]"}`}
+                    className={`h-full rounded-full transition-all duration-500 ${Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "bg-[var(--red)]" : "bg-[var(--cyan)]"}`}
                     style={{ width: `${Math.min(100, Math.max(0, Number(acc.drawdownLimitConsumedPercent || 0)))}%` }}
                   />
                 </div>
@@ -84,9 +94,9 @@ export default async function LiveMonitorPage() {
                   <span className="text-[var(--text-secondary)]">Profit Target Progress</span>
                   <span className="text-[var(--cyan)] font-bold">{acc.profitTargetProgressPercent || "0"}%</span>
                 </div>
-                <div className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+                <div className="h-3.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
                   <div
-                    className="h-full bg-[var(--cyan)] transition-all duration-500"
+                    className="h-full bg-[var(--cyan)] rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(0, Number(acc.profitTargetProgressPercent || 0)))}%` }}
                   />
                 </div>
@@ -95,6 +105,7 @@ export default async function LiveMonitorPage() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
