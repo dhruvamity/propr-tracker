@@ -561,3 +561,142 @@ describe("Historical Account Reconciliation", () => {
     expect(acc!.trades![1].tradeId).toBe("snap-trade-2");
   });
 });
+
+
+// ─── 4. Dynamic API Phase Rules & Real Balance Ingestion ─────────────────────
+
+describe("Dynamic API Phase Rules & Real Balance Ingestion", () => {
+  it("extracts rules from challenge.phases instead of root object", () => {
+    // Propr API structure: challenge rules live inside phases[0]
+    const rawChallenge = {
+      challengeId: "urn:prp-challenge:P7teVAQ6512k",
+      initialBalance: "10000",
+      phases: [
+        {
+          profitTargetPercent: "9",
+          maxDailyLossPercent: "3",
+          maxDrawdownPercent: "3",
+          drawdownType: "static",
+        },
+      ],
+    };
+
+    const phase = rawChallenge.phases[0];
+    expect(phase.profitTargetPercent).toBe("9");
+    expect(phase.maxDrawdownPercent).toBe("3");
+    expect(phase.maxDailyLossPercent).toBe("3");
+    expect(phase.drawdownType).toBe("static");
+  });
+
+  it("calculates accurate live risk metrics for $10,173.67 balance on Explorer 10k", () => {
+    const account = seedActiveAccount({
+      accountId: "urn:prp-account:J9wNi8oj3XGK",
+      initialBalance: ds("10000"),
+      startingBalance: ds("10141.07"), // Day-start equity from daily-metrics
+      phaseStartingBalance: ds("10000"),
+      balance: ds("10173.67"),
+      equity: ds("10173.67"),
+      highWaterMark: ds("10398.98"),
+      profitTargetPercent: ds("9"),
+      maxDrawdownPercent: ds("3"),
+      maxDailyLossPercent: ds("3"),
+      drawdownType: "static",
+    });
+
+    recalculateAccountRisk(account);
+
+    // Target: 9% = $900 profit. Current profit: +$173.67 (+1.74%)
+    expect(toDecimal(account.profitTargetPct!).toFixed(2)).toBe("1.74");
+    // Target progress: 173.67 / 900 * 100 = 19.30%
+    expect(toDecimal(account.profitTargetProgressPercent!).toFixed(1)).toBe("19.3");
+
+    // Drawdown: Static 3% of 10000 = $300 max DD -> breach floor = $9,700
+    expect(toDecimal(account.breachFloor!).toFixed(0)).toBe("9700");
+    // Drawdown loss is 0% since equity > initial
+    expect(toDecimal(account.drawdownUsedPercent!).toFixed(1)).toBe("0.0");
+    expect(toDecimal(account.drawdownLimitConsumedPercent!).toFixed(1)).toBe("0.0");
+    // Drawdown buffer: $10,173.67 - $9,700.00 = $473.67
+    expect(toDecimal(account.drawdownRemaining!).toFixed(2)).toBe("473.67");
+  });
+
+  it("calculates accurate intraday daily loss metrics for $5,078.47 balance on Starter 5k", () => {
+    // Day-start equity from daily-metrics was $5,177.86
+    const account = seedActiveAccount({
+      accountId: "urn:prp-account:4D8XWuQ3fju6",
+      initialBalance: ds("5000"),
+      startingBalance: ds("5177.86"), // Day-start base
+      phaseStartingBalance: ds("5000"),
+      balance: ds("5078.47"),
+      equity: ds("5078.47"),
+      highWaterMark: ds("5416.70"),
+      profitTargetPercent: ds("9"),
+      maxDrawdownPercent: ds("3"),
+      maxDailyLossPercent: ds("3"),
+      drawdownType: "static",
+    });
+
+    recalculateAccountRisk(account);
+
+    // Target: 9% = $450 profit. Current profit: +$78.47 (+1.57%)
+    expect(toDecimal(account.profitTargetPct!).toFixed(2)).toBe("1.57");
+    // Target progress: 78.47 / 450 * 100 = 17.44%
+    expect(toDecimal(account.profitTargetProgressPercent!).toFixed(1)).toBe("17.4");
+
+    // Breach floor: $5,000 - $150 = $4,850.00
+    expect(toDecimal(account.breachFloor!).toFixed(0)).toBe("4850");
+    // Drawdown buffer: $5,078.47 - $4,850 = $228.47
+    expect(toDecimal(account.drawdownRemaining!).toFixed(2)).toBe("228.47");
+
+    // Daily loss limit: 3% of $5,177.86 = $155.34 -> floor = $5,022.52
+    expect(toDecimal(account.dailyLossFloor!).toFixed(2)).toBe("5022.52");
+    // Daily loss incurred: $5,177.86 - $5,078.47 = $99.39 (1.92% loss)
+    expect(toDecimal(account.dailyLossUsedPercent!).toFixed(2)).toBe("1.92");
+    // Daily loss consumed: $99.39 / $155.34 * 100 = 63.98%
+    expect(toDecimal(account.dailyLossLimitConsumedPercent!).toFixed(0)).toBe("64");
+    // Daily remaining buffer: $5,078.47 - $5,022.52 = $55.95
+    expect(toDecimal(account.dailyLossRemaining!).toFixed(2)).toBe("55.95");
+  });
+
+  it("verifies breached account stats for max_daily_loss and max_drawdown", () => {
+    // Account R5gEZ1R363NC: ending balance $4,701.47 on $5,000 initial
+    const dailyLossBreached = seedActiveAccount({
+      accountId: "urn:prp-account:R5gEZ1R363NC",
+      initialBalance: ds("5000"),
+      startingBalance: ds("5000"),
+      phaseStartingBalance: ds("5000"),
+      balance: ds("4701.47"),
+      equity: ds("4701.47"),
+      maxDrawdownPercent: ds("6"),
+      maxDailyLossPercent: ds("3"),
+      drawdownType: "static",
+    });
+
+    recalculateAccountRisk(dailyLossBreached);
+
+    // Daily loss: $298.53 loss against $150 limit (3% of 5000) -> 199% consumed!
+    expect(toDecimal(dailyLossBreached.dailyLossLimitConsumedPercent!).toFixed(0)).toBe("199");
+    expect(toDecimal(dailyLossBreached.dailyLossRemaining!).toFixed(2)).toBe("-148.53");
+
+    // Account B7KaXYv9iAqi: ending balance $4,845.48 on $5,000 initial with 3% max DD ($150 limit)
+    const ddBreached = seedActiveAccount({
+      accountId: "urn:prp-account:B7KaXYv9iAqi",
+      initialBalance: ds("5000"),
+      startingBalance: ds("5000"),
+      phaseStartingBalance: ds("5000"),
+      balance: ds("4845.48"),
+      equity: ds("4845.48"),
+      maxDrawdownPercent: ds("3"),
+      maxDailyLossPercent: ds("3"),
+      drawdownType: "static",
+    });
+
+    recalculateAccountRisk(ddBreached);
+
+    // Drawdown used: 5000 - 4845.48 = $154.52 (3.09% loss)
+    expect(toDecimal(ddBreached.drawdownUsedPercent!).toFixed(2)).toBe("3.09");
+    // Drawdown consumed: 154.52 / 150 * 100 = 103% of allowed limit (BREACHED!)
+    expect(toDecimal(ddBreached.drawdownLimitConsumedPercent!).toFixed(0)).toBe("103");
+    expect(toDecimal(ddBreached.drawdownRemaining!).toFixed(2)).toBe("-4.52");
+  });
+});
+

@@ -332,12 +332,12 @@ export default async function LiveMonitorPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
-                      {formatUSD(acc.startingBalance)}
+                      {formatUSD(acc.initialBalance)}
                     </td>
                     <td className="py-2.5 px-3 text-right font-bold text-[var(--red)] whitespace-nowrap">
                       {formatUSD(breachFloor)}
                       <span className="text-[9px] text-zinc-400 block font-normal">
-                        ({acc.maxDrawdownPercent || "5"}% max DD)
+                        ({acc.maxDrawdownPercent || "3"}% max DD)
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-bold text-[var(--cyan)] whitespace-nowrap">
@@ -349,18 +349,18 @@ export default async function LiveMonitorPage() {
                     <td className="py-2.5 px-3 text-right font-bold text-purple-400 whitespace-nowrap">
                       {formatUSD(acc.dailyLossRemaining)}
                       <span className="text-[9px] text-zinc-400 block font-normal">
-                        ({acc.maxDailyLossPercent || "4"}% daily cap)
+                        ({acc.maxDailyLossPercent || "3"}% daily cap)
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-bold text-[var(--text-primary)] whitespace-nowrap">
                       {formatUSD(
                         (
-                          (Number(acc.startingBalance) * Number(acc.profitTargetPercent || 10)) /
+                          (Number(acc.phaseStartingBalance || acc.initialBalance) * Number(acc.profitTargetPercent || 0)) /
                           100
                         ).toFixed(2)
                       )}
                       <span className="text-[9px] text-zinc-400 block font-normal">
-                        ({acc.profitTargetPercent || "10"}% target)
+                        ({acc.profitTargetPercent || "0"}% target)
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center whitespace-nowrap text-zinc-300">

@@ -459,8 +459,9 @@ export interface WsAccountUpdate {
 // ─── Daily Metrics (may not exist in API) ─────────────────────────────────────
 
 export interface DailyMetrics {
-  accountId: string;
+  accountId?: string;
   startingBalance: DecimalString;
+  startingEquity?: DecimalString;
   startingIsolatedPositionMargin: DecimalString;
   date: string;
 }

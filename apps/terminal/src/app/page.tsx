@@ -352,7 +352,7 @@ export default async function OverviewPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
-                      {formatUSD(acc.startingBalance)}
+                      {formatUSD(acc.initialBalance || acc.startingBalance)}
                     </td>
                     <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)] whitespace-nowrap">
                       {formatUSD(acc.balance)}

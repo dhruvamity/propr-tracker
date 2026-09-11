@@ -286,6 +286,22 @@ export class ProprClient {
     return ProprFundedIssuanceSchema.parse(raw) as ProprFundedIssuance;
   }
 
+  // ─── Accounts ───────────────────────────────────────────────────────────────
+
+  async getAccount(accountId: string): Promise<Record<string, unknown> | null> {
+    try {
+      return await this.request<Record<string, unknown>>(`/accounts/${accountId}`);
+    } catch (err) {
+      if (
+        err instanceof ProprApiError &&
+        (err.status === 404 || err.status === 400 || err.status === 403)
+      ) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
   // ─── Orders ─────────────────────────────────────────────────────────────────
 
   async getOrders(

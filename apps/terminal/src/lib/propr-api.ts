@@ -426,9 +426,11 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           ...fallbackChallenge,
           ...(attempt?.challenge as Record<string, unknown> | undefined),
         };
-        const rawAcc = (attempt?.account || issuance?.account) as Record<string, unknown> | undefined;
+        let rawAcc = (attempt?.account || issuance?.account) as Record<string, unknown> | undefined;
+        if (!rawAcc || !rawAcc.balance) {
+          rawAcc = await proprGet<Record<string, unknown>>(`/accounts/${accountId}`).catch(() => rawAcc);
+        }
         const purchaseId = (attempt?.purchaseId || issuance?.purchaseId) as string | undefined;
-        const drawdownType = (challenge?.drawdownType || "static") as string;
 
         const tradesRaw = await fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/trades`).catch(() => []);
         const trades: TradeData[] = tradesRaw.map((t) => ({
@@ -457,12 +459,34 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           createdAt: (t.createdAt as string) || now,
         }));
 
-        const initialBalance = (issuance?.initialBalance || challenge?.initialBalance || rawAcc?.balance || "0") as string;
-        const maxDrawdownPercent = (issuance?.maxDrawdownPercent || challenge?.maxDrawdownPercent || "0") as string;
-        const maxDailyLossPercent = (issuance?.maxDailyLossPercent || challenge?.maxDailyLossPercent || "0") as string;
-        const profitTargetPercent = (challenge?.profitTargetPercent || "0") as string;
-        const highWaterMark = (rawAcc?.highWaterMark || issuance?.highWaterMark || initialBalance) as string;
-        const isolatedMargin = d(rawAcc?.isolatedPositionMargin as string || "0");
+        // Dynamically extract rules from challenge phases
+        const currentPhaseIdx = typeof attempt?.currentPhase === "number" ? (attempt.currentPhase - 1) : 0;
+        const phases = ((challenge?.phases || attempt?.phases) as Array<Record<string, unknown>>) || [];
+        const phase = phases[currentPhaseIdx] || phases[0] || {};
+
+        const initialBalance = (issuance?.initialBalance || phase?.startingBalance || challenge?.initialBalance || rawAcc?.balance || "0") as string;
+        const maxDrawdownPercent = (issuance?.maxDrawdownPercent || phase?.maxDrawdownPercent || challenge?.maxDrawdownPercent || "0") as string;
+        const maxDailyLossPercent = (issuance?.maxDailyLossPercent || phase?.maxDailyLossPercent || challenge?.maxDailyLossPercent || "0") as string;
+        const profitTargetPercent = (phase?.profitTargetPercent || challenge?.profitTargetPercent || "0") as string;
+        const drawdownType = (phase?.drawdownType || challenge?.drawdownType || issuance?.drawdownType || "static") as string;
+
+        // Query daily metrics for live daily loss tracking
+        const dailyMetrics = await proprGet<Record<string, unknown>>(`/accounts/${accountId}/daily-metrics`).catch(() => null);
+
+        const dayStartEquity = dailyMetrics?.startingEquity as string | undefined;
+        const dayStartBalance = (dailyMetrics?.startingBalance || (attempt?.failureDetails as Record<string, unknown>)?.dayStartBalance) as string | undefined;
+        const startingBalance = dayStartEquity || dayStartBalance || initialBalance;
+        const phaseStartingBalance = (phase?.startingBalance as string) || initialBalance;
+
+        // Real cash balance directly from account object
+        const rawBalance = (rawAcc?.balance || rawAcc?.marginBalance || rawAcc?.crossWalletBalance) as string | undefined;
+        const balance = rawBalance
+          ? d(rawBalance)
+          : attempt?.totalPnl
+          ? d(initialBalance).plus(d(attempt.totalPnl as string))
+          : d(initialBalance);
+
+        const isolatedMargin = d((rawAcc?.isolatedPositionMargin as string) || "0");
 
         let totalUpnl = new Decimal(0);
         let totalRpnl = new Decimal(0);
@@ -473,23 +497,16 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           totalFees = totalFees.plus(d(pos.cumulativeTradingFees));
         }
 
-        const attemptPnl = attempt?.totalPnl ? d(attempt.totalPnl as string) : new Decimal(0);
-        const balance = d(initialBalance).plus(attemptPnl);
         const equity = balance.plus(totalUpnl).plus(isolatedMargin);
+        const highWaterMark = (rawAcc?.highWaterMark || issuance?.highWaterMark || (equity.gt(d(initialBalance)) ? ds(equity) : initialBalance)) as string;
 
         // Drawdown calculation (static vs trailing)
         const maxDdPct = d(maxDrawdownPercent);
         const maxDdAmount = maxDdPct.div(100).times(d(initialBalance));
-        let ddLimit = d(initialBalance).minus(maxDdAmount);
-        let ddUsedAmount = Decimal.max(d(initialBalance).minus(equity), 0);
-
-        if (drawdownType === "trailing") {
-          const hwm = d(highWaterMark || initialBalance);
-          ddLimit = Decimal.min(hwm.minus(maxDdAmount), d(initialBalance));
-          ddUsedAmount = Decimal.max(hwm.minus(equity), 0);
-        }
-
-        const ddRemaining = equity.minus(ddLimit);
+        const ddRef = drawdownType === "trailing" ? d(highWaterMark || initialBalance) : d(initialBalance);
+        const ddLimit = ddRef.minus(maxDdAmount);
+        const ddUsedAmount = Decimal.max(ddRef.minus(equity), 0);
+        const ddRemaining = Decimal.max(equity.minus(ddLimit), 0);
         const ddUsedPct = d(initialBalance).gt(0)
           ? ddUsedAmount.div(d(initialBalance)).times(100)
           : new Decimal(0);
@@ -499,35 +516,36 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
         // Daily loss calculation against day-start base
         const maxDlPct = d(maxDailyLossPercent);
-        const dayStartBalance = d(
-          (attempt?.failureDetails as Record<string, unknown>)?.dayStartBalance as string ||
-          (attempt?.phases as Array<Record<string, unknown>>)?.[0]?.startingBalance as string ||
-          initialBalance
-        );
-        const dailyLossBase = dayStartBalance.plus(isolatedMargin);
-        const maxDlAmount = maxDlPct.div(100).times(dailyLossBase);
-        const dlLimit = dailyLossBase.minus(maxDlAmount);
-        const dlUsedAmount = Decimal.max(dailyLossBase.minus(equity), 0);
-        const dlRemaining = equity.minus(dlLimit);
-        const dlUsedPct = dailyLossBase.gt(0)
-          ? dlUsedAmount.div(dailyLossBase).times(100)
+        const dlBase = d(startingBalance).plus(isolatedMargin);
+        const maxDlAmount = maxDlPct.div(100).times(dlBase);
+        const dlLimit = dlBase.minus(maxDlAmount);
+        const dlUsedAmount = Decimal.max(dlBase.minus(equity), 0);
+        const dlRemaining = Decimal.max(equity.minus(dlLimit), 0);
+        const dlUsedPct = dlBase.gt(0)
+          ? dlUsedAmount.div(dlBase).times(100)
           : new Decimal(0);
         const dlLimitConsumed = maxDlAmount.gt(0)
           ? dlUsedAmount.div(maxDlAmount).times(100)
           : new Decimal(0);
 
-        const profitTargetPct = d(initialBalance).gt(0)
-          ? equity.minus(d(initialBalance)).div(d(initialBalance)).times(100)
+        // Profit target calculations
+        const profitAmount = equity.minus(d(phaseStartingBalance));
+        const profitTargetPct = d(phaseStartingBalance).gt(0)
+          ? profitAmount.div(d(phaseStartingBalance)).times(100)
           : new Decimal(0);
 
-        const ptProgress = d(profitTargetPercent).gt(0)
-          ? equity.minus(d(initialBalance)).div(d(initialBalance)).times(100).div(d(profitTargetPercent)).times(100)
+        const ptTargetAmount = d(phaseStartingBalance).times(d(profitTargetPercent)).div(100);
+        const ptProgress = ptTargetAmount.gt(0)
+          ? profitAmount.div(ptTargetAmount).times(100)
           : new Decimal(0);
 
         const rawName = challenge?.name;
         const challengeName = typeof rawName === "object" && rawName !== null
-          ? (rawName as Record<string, string>).en || Object.values(rawName as Record<string, string>)[0] || "Starter Turbo"
-          : (rawName as string) || "Starter Turbo";
+          ? (rawName as Record<string, string>).en || Object.values(rawName as Record<string, string>)[0] || (attempt?.challengeId as string) || "Starter Turbo"
+          : (rawName as string) || (attempt?.challengeId as string) || "Starter Turbo";
+
+        const attemptPnl = attempt?.totalPnl ? d(attempt.totalPnl as string) : undefined;
+        const totalPnl = attemptPnl ?? (totalRpnl.plus(totalUpnl).isZero() ? equity.minus(d(initialBalance)) : totalRpnl.plus(totalUpnl));
 
         accounts.push({
           accountId,
@@ -543,14 +561,14 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           failureReason: attempt?.failureReason as string,
           closureReason: issuance?.closureReason as string,
           initialBalance,
-          startingBalance: initialBalance,
-          phaseStartingBalance: initialBalance,
+          startingBalance,
+          phaseStartingBalance,
           balance: ds(balance),
           equity: ds(equity),
           realizedPnl: ds(totalRpnl),
           unrealizedPnl: ds(totalUpnl),
           fees: ds(totalFees),
-          totalPnl: ds(attemptPnl.gt(0) ? attemptPnl : totalRpnl.plus(totalUpnl)),
+          totalPnl: ds(totalPnl),
           drawdownType,
           profitTargetPercent,
           profitTargetPct: ds(profitTargetPct),
@@ -567,7 +585,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           dailyLossFloor: ds(dlLimit),
           highWaterMark,
           tradingDays: attempt?.tradingDays as number,
-          requiredTradingDays: challenge?.requiredTradingDays as number,
+          requiredTradingDays: (phase?.minTradingDays || challenge?.requiredTradingDays) as number,
           winRate: attempt?.winRate as string,
           openPositionCount: positions.length,
           openOrderCount: orders.length,

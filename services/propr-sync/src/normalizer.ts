@@ -164,21 +164,33 @@ async function normalizeAccount(
   } as ProprChallengeAttempt["challenge"];
 
   const fundedConfig = issuance;
-  const rawAcc = attempt?.account as Record<string, unknown> | undefined;
+  let rawAcc = attempt?.account as Record<string, unknown> | undefined;
+  if (!rawAcc || !rawAcc.balance) {
+    const directAcc = await client.getAccount(accountId).catch(() => null);
+    if (directAcc) rawAcc = directAcc;
+  }
+
+  // Dynamically extract rules from challenge phases
+  const currentPhaseIndex = typeof attempt?.currentPhase === "number" ? attempt.currentPhase - 1 : 0;
+  const phases = ((challengeConfig?.phases || attempt?.phases) as Array<Record<string, unknown>>) || [];
+  const phase = phases[currentPhaseIndex] || phases[0] || {};
 
   const initialBalance = ds(
     issuance?.initialBalance ||
+      (phase?.startingBalance as string) ||
       challengeConfig?.initialBalance ||
       (rawAcc?.balance as string | undefined) ||
       "0"
   );
   const startingBalance = ds(
-    dailyMetrics?.startingBalance ||
+    dailyMetrics?.startingEquity ||
+      dailyMetrics?.startingBalance ||
       (rawAcc?.startingBalance as string | undefined) ||
       initialBalance
   );
   const phaseStartingBalance = ds(
-    (attempt?.phases as Array<{ startingBalance?: string }>)?.[0]?.startingBalance ||
+    (phase?.startingBalance as string) ||
+      (attempt?.phases as Array<{ startingBalance?: string }>)?.[0]?.startingBalance ||
       challengeConfig?.initialBalance ||
       initialBalance
   );
@@ -193,40 +205,49 @@ async function normalizeAccount(
 
   const maxDrawdownPercent = ds(
     issuance?.maxDrawdownPercent ||
+      (phase?.maxDrawdownPercent as string) ||
       challengeConfig?.maxDrawdownPercent ||
       "0"
   );
   const maxDailyLossPercent = ds(
     issuance?.maxDailyLossPercent ||
+      (phase?.maxDailyLossPercent as string) ||
       challengeConfig?.maxDailyLossPercent ||
       "0"
   );
   const drawdownType = (issuance?.drawdownType ||
+    (phase?.drawdownType as string) ||
     challengeConfig?.drawdownType ||
     "static") as "static" | "trailing";
   const profitTargetPercent = ds(
-    challengeConfig?.profitTargetPercent || "0"
+    (phase?.profitTargetPercent as string) ||
+      challengeConfig?.profitTargetPercent ||
+      "0"
+  );
+
+  const rawBalance = (rawAcc?.balance as string | undefined) ||
+    (rawAcc?.marginBalance as string | undefined) ||
+    (rawAcc?.crossWalletBalance as string | undefined);
+
+  const attemptTotalPnl = attempt?.totalPnl
+    ? ds(attempt.totalPnl)
+    : undefined;
+
+  const estimatedBalance = rawBalance
+    ? ds(rawBalance)
+    : attemptTotalPnl
+    ? fromDecimal(toDecimal(initialBalance).plus(toDecimal(attemptTotalPnl)))
+    : initialBalance;
+
+  const isolatedMargin = toDecimal((rawAcc?.isolatedPositionMargin as string) || "0");
+  const equity = fromDecimal(
+    toDecimal(estimatedBalance).plus(toDecimal(totalUpnl)).plus(isolatedMargin)
   );
 
   const highWaterMark = ds(
     (rawAcc?.highWaterMark as string | undefined) ||
       (issuance?.highWaterMark as string | undefined) ||
-      startingBalance
-  );
-
-  // Use attempt-level totalPnl if available (more reliable than summing positions)
-  const attemptTotalPnl = attempt?.totalPnl
-    ? ds(attempt.totalPnl)
-    : undefined;
-
-  // Estimate balance from initial + totalPnl (if no account.updated data yet)
-  const estimatedBalance = attemptTotalPnl
-    ? fromDecimal(toDecimal(initialBalance).plus(toDecimal(attemptTotalPnl)))
-    : initialBalance;
-
-  // Calculate equity (simplified without account.updated event data)
-  const equity = fromDecimal(
-    toDecimal(estimatedBalance).plus(toDecimal(totalUpnl))
+      (toDecimal(equity).greaterThan(toDecimal(initialBalance)) ? equity : startingBalance)
   );
 
   const ddConfig = {
@@ -322,7 +343,12 @@ async function normalizeAccount(
     stage,
     source,
 
-    challengeName: challengeConfig?.name || attempt?.challengeId,
+    challengeName:
+      typeof challengeConfig?.name === "object" && challengeConfig?.name !== null
+        ? (challengeConfig.name as Record<string, string>).en ||
+          Object.values(challengeConfig.name as Record<string, string>)[0] ||
+          attempt?.challengeId
+        : (challengeConfig?.name as string) || attempt?.challengeId,
     challengeId: attempt?.challengeId,
     attemptId: attempt?.attemptId,
     issuanceId: issuance?.issuanceId,
@@ -342,7 +368,11 @@ async function normalizeAccount(
     realizedPnl: fromDecimal(totalRealizedPnl),
     unrealizedPnl: totalUpnl,
     fees: fromDecimal(totalFees),
-    totalPnl: attemptTotalPnl || fromDecimal(totalRealizedPnl.plus(toDecimal(totalUpnl))),
+    totalPnl:
+      attemptTotalPnl ||
+      (totalRealizedPnl.plus(toDecimal(totalUpnl)).isZero()
+        ? fromDecimal(toDecimal(equity).minus(toDecimal(initialBalance)))
+        : fromDecimal(totalRealizedPnl.plus(toDecimal(totalUpnl)))),
 
     drawdownType,
     profitTargetPercent,
@@ -361,7 +391,9 @@ async function normalizeAccount(
     highWaterMark,
 
     tradingDays: attempt?.tradingDays,
-    requiredTradingDays: challengeConfig?.requiredTradingDays,
+    requiredTradingDays:
+      ((phase?.minTradingDays as number | undefined) ||
+        challengeConfig?.requiredTradingDays),
 
     winRate: attempt?.winRate ? ds(attempt.winRate) : undefined,
 

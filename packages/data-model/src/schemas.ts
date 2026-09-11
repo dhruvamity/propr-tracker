@@ -287,9 +287,10 @@ export const ServiceHealthSchema = z.object({
 // ─── Daily Metrics (may not exist) ────────────────────────────────────────────
 
 export const DailyMetricsSchema = z.object({
-  accountId: z.string(),
+  accountId: z.string().optional(),
   startingBalance: z.string(),
-  startingIsolatedPositionMargin: z.string(),
+  startingEquity: z.string().optional(),
+  startingIsolatedPositionMargin: z.string().optional().default("0"),
   date: z.string(),
 }).passthrough();
 
