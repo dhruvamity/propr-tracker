@@ -457,3 +457,26 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
 }
+
+// ─── HIP-3 Asset Normalization ───────────────────────────────────────────────
+
+/** Known HIP-3 equity and commodity asset symbols */
+export const HIP3_ASSETS = new Set([
+  "AAPL", "TSLA", "NVDA", "MSFT", "AMZN", "GOOGL", "META", "NFLX", "AMD",
+  "GOLD", "SILVER", "CL", "OIL", "US500", "US100", "US30",
+]);
+
+/**
+ * Normalizes an asset ticker for Propr API queries.
+ * HIP-3 assets require the 'xyz:' prefix (e.g. xyz:AAPL, xyz:GOLD)
+ * to avoid 404 exchange_asset_not_found errors.
+ */
+export function normalizeAssetTicker(asset: string): string {
+  if (!asset) return asset;
+  if (asset.startsWith("xyz:")) return asset;
+  const upper = asset.toUpperCase();
+  if (HIP3_ASSETS.has(upper)) {
+    return `xyz:${upper}`;
+  }
+  return asset;
+}

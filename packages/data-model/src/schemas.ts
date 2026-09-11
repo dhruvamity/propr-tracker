@@ -292,3 +292,30 @@ export const DailyMetricsSchema = z.object({
   startingIsolatedPositionMargin: z.string(),
   date: z.string(),
 }).passthrough();
+
+// ─── Leverage Limits & Wallet Credentials ─────────────────────────────────────
+
+export const LeverageLimitsSchema = z.record(
+  z.string(),
+  z.object({
+    maxLeverage: z.string().or(z.number()),
+    defaultLeverage: z.string().or(z.number()).optional(),
+  }).passthrough()
+);
+
+export const WalletCredentialsSchema = z.union([
+  z.array(
+    z.object({
+      credentialId: z.string(),
+      address: z.string().optional(),
+      network: z.string().optional(),
+    }).passthrough()
+  ),
+  z.record(z.string(), z.unknown()),
+]);
+
+export const OrderCancelResponseSchema = z.object({
+  orderId: z.string().optional(),
+  status: z.string().optional(),
+  success: z.boolean().optional(),
+}).passthrough();

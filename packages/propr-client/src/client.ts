@@ -25,6 +25,9 @@ import {
   DailyMetricsSchema,
   HealthCheckSchema,
   ServiceHealthSchema,
+  LeverageLimitsSchema,
+  WalletCredentialsSchema,
+  normalizeAssetTicker,
 } from "@propr/data-model";
 
 const DEFAULT_BASE_URL = "https://api.propr.xyz/v1";
@@ -34,6 +37,7 @@ export interface ProprClientConfig {
   apiKey: string;
   baseUrl?: string;
   pageSize?: number;
+  builderCode?: string;
 }
 
 export class ProprApiError extends Error {
@@ -51,11 +55,26 @@ export class ProprClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly pageSize: number;
+  private readonly builderCode?: string;
 
   constructor(config: ProprClientConfig) {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || DEFAULT_BASE_URL;
     this.pageSize = config.pageSize || DEFAULT_PAGE_SIZE;
+    this.builderCode = config.builderCode;
+  }
+
+  // ─── Headers ────────────────────────────────────────────────────────────────
+
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "X-API-Key": this.apiKey,
+      "Content-Type": "application/json",
+    };
+    if (this.builderCode) {
+      headers["X-Builder-Code"] = this.builderCode;
+    }
+    return headers;
   }
 
   // ─── Internal Fetch ─────────────────────────────────────────────────────────
@@ -75,10 +94,7 @@ export class ProprClient {
 
     const response = await fetch(url.toString(), {
       method: "GET",
-      headers: {
-        "X-API-Key": this.apiKey,
-        "Content-Type": "application/json",
-      },
+      headers: this.getHeaders(),
     });
 
     if (!response.ok) {
@@ -87,6 +103,63 @@ export class ProprClient {
         errorBody = (await response.json()) as { code?: number; message?: string };
       } catch {
         // ignore parse errors
+      }
+      throw new ProprApiError(
+        response.status,
+        errorBody.code,
+        errorBody.message
+      );
+    }
+
+    return response.json() as Promise<T>;
+  }
+
+  private async post<T>(path: string, body?: unknown): Promise<{ data: T; status: number }> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok && response.status !== 201) {
+      let errorBody: { code?: number; message?: string } = {};
+      try {
+        errorBody = (await response.json()) as { code?: number; message?: string };
+      } catch {
+        // ignore
+      }
+      throw new ProprApiError(
+        response.status,
+        errorBody.code,
+        errorBody.message
+      );
+    }
+
+    let data: T;
+    try {
+      data = (await response.json()) as T;
+    } catch {
+      data = {} as T;
+    }
+
+    return { data, status: response.status };
+  }
+
+  private async put<T>(path: string, body?: unknown): Promise<T> {
+    const url = new URL(`${this.baseUrl}${path}`);
+    const response = await fetch(url.toString(), {
+      method: "PUT",
+      headers: this.getHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      let errorBody: { code?: number; message?: string } = {};
+      try {
+        errorBody = (await response.json()) as { code?: number; message?: string };
+      } catch {
+        // ignore
       }
       throw new ProprApiError(
         response.status,
@@ -235,6 +308,35 @@ export class ProprClient {
     return [...pending, ...open, ...partiallyFilled];
   }
 
+  async createOrder(
+    accountId: string,
+    orderData: Record<string, unknown>
+  ): Promise<OrderSnapshot> {
+    const res = await this.post<unknown>(
+      `/accounts/${accountId}/orders`,
+      orderData
+    );
+    return ProprOrderSchema.parse(res.data) as unknown as OrderSnapshot;
+  }
+
+  /**
+   * Cancel an order. Accepts both HTTP 200 and HTTP 201 as successful cancellations per API spec.
+   */
+  async cancelOrder(
+    accountId: string,
+    orderId: string
+  ): Promise<{ success: boolean; status: number; orderId: string }> {
+    const res = await this.post<{ orderId?: string; status?: string }>(
+      `/accounts/${accountId}/orders/${orderId}/cancel`
+    );
+    const isSuccess = res.status === 200 || res.status === 201;
+    return {
+      success: isSuccess,
+      status: res.status,
+      orderId,
+    };
+  }
+
   // ─── Positions ──────────────────────────────────────────────────────────────
 
   async getPositions(
@@ -287,10 +389,39 @@ export class ProprClient {
     marginMode: string;
     leverage: string;
   }> {
+    const normalizedAsset = normalizeAssetTicker(asset);
     const raw = await this.request<unknown>(
-      `/accounts/${accountId}/margin-config/${asset}`
+      `/accounts/${accountId}/margin-config/${normalizedAsset}`
     );
     return ProprMarginConfigSchema.parse(raw);
+  }
+
+  async updateMarginConfig(
+    accountId: string,
+    configId: string,
+    configData: {
+      marginMode?: "cross" | "isolated";
+      leverage?: string;
+    }
+  ): Promise<unknown> {
+    return this.put<unknown>(
+      `/accounts/${accountId}/margin-config/${configId}`,
+      configData
+    );
+  }
+
+  // ─── Leverage Limits ────────────────────────────────────────────────────────
+
+  async getEffectiveLeverageLimits(): Promise<Record<string, unknown>> {
+    const raw = await this.request<unknown>("/leverage-limits/effective");
+    return LeverageLimitsSchema.parse(raw);
+  }
+
+  // ─── Wallet Credentials ─────────────────────────────────────────────────────
+
+  async getWalletCredentials(): Promise<unknown> {
+    const raw = await this.request<unknown>("/wallet/credentials");
+    return WalletCredentialsSchema.parse(raw);
   }
 
   // ─── Daily Metrics ──────────────────────────────────────────────────────────

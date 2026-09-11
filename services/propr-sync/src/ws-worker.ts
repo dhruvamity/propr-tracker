@@ -23,7 +23,7 @@ import type { DataStore } from "./store.js";
 const DEFAULT_WS_URL = "wss://api.propr.xyz/ws";
 const INITIAL_RECONNECT_DELAY = 5_000;
 const MAX_RECONNECT_DELAY = 60_000;
-const HEARTBEAT_TIMEOUT = 30_000;
+const HEARTBEAT_TIMEOUT = 20_000;
 
 export interface WsSyncConfig {
   apiKey: string;
