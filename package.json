@@ -1,0 +1,16 @@
+{
+  "name": "propr-tracker",
+  "private": true,
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "apps/terminal"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/terminal",
+    "build": "npm run build --workspace=apps/terminal",
+    "start": "npm run start --workspace=apps/terminal"
+  },
+  "devDependencies": {
+    "next": "16.3.4"
+  }
+}

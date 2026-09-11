@@ -1,0 +1,140 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #06060b;
+  --bg-secondary: #0c0c14;
+  --bg-surface: #11111b;
+  --bg-elevated: #16162a;
+  --border-primary: #1a1a2e;
+  --border-subtle: #141428;
+  --text-primary: #e0e0f0;
+  --text-secondary: #8888aa;
+  --text-muted: #55557a;
+  --green: #00e676;
+  --green-dim: #00a854;
+  --red: #ff3d57;
+  --red-dim: #cc2244;
+  --amber: #ffab00;
+  --amber-dim: #cc8800;
+  --cyan: #00e5ff;
+  --cyan-dim: #00b8d4;
+  --glow: 0 0 20px rgba(0, 229, 255, 0.05);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Terminal monospace numbers */
+.mono { font-family: "JetBrains Mono", "Fira Code", monospace; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Status colors */
+.status-green { color: var(--green); }
+.status-red { color: var(--red); }
+.status-amber { color: var(--amber); }
+.status-cyan { color: var(--cyan); }
+
+/* Subtle glow */
+.terminal-glow {
+  box-shadow: var(--glow);
+}
+
+/* Progress bar base */
+.progress-bar {
+  height: 4px;
+  background: var(--bg-elevated);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Grid pattern overlay */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Skeleton loader */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+.skeleton {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Status chip base */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.chip-eval { background: rgba(0, 229, 255, 0.12); color: var(--cyan); }
+.chip-funded { background: rgba(0, 230, 118, 0.12); color: var(--green); }
+.chip-passed { background: rgba(0, 230, 118, 0.12); color: var(--green); }
+.chip-failed { background: rgba(255, 61, 87, 0.12); color: var(--red); }
+.chip-breached { background: rgba(255, 61, 87, 0.12); color: var(--red); }
+.chip-closed { background: rgba(136, 136, 170, 0.12); color: var(--text-muted); }
+.chip-review { background: rgba(255, 171, 0, 0.12); color: var(--amber); }
+.chip-unknown { background: rgba(136, 136, 170, 0.12); color: var(--text-muted); }
+
+/* Live indicator pulse */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.stale-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  animation: live-pulse 1s ease-in-out infinite;
+}
+
+.offline-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+}
