@@ -226,6 +226,7 @@ async function proprGet<T>(path: string, params?: Record<string, string>): Promi
   const res = await fetch(url.toString(), {
     headers: { "X-API-Key": API_KEY, "Content-Type": "application/json" },
     next: { revalidate: 30 }, // ISR: revalidate every 30 seconds
+    signal: AbortSignal.timeout(6000), // 6-second timeout prevents Vercel build worker hanging
   });
   if (!res.ok) {
     throw new Error(`Propr API ${path}: ${res.status} ${res.statusText}`);
@@ -237,15 +238,22 @@ async function fetchAllPages<T>(path: string, params?: Record<string, string>): 
   const all: T[] = [];
   let offset = 0;
   const limit = 100;
-  while (true) {
-    const res = await proprGet<{ data: T[]; total: number }>(path, {
-      ...params,
-      limit: String(limit),
-      offset: String(offset),
-    });
-    all.push(...res.data);
-    if (all.length >= res.total || res.data.length < limit) break;
-    offset += res.data.length;
+  let pageCount = 0;
+  while (pageCount < 10) {
+    pageCount++;
+    try {
+      const res = await proprGet<{ data: T[]; total: number }>(path, {
+        ...params,
+        limit: String(limit),
+        offset: String(offset),
+      });
+      if (!res || !Array.isArray(res.data) || res.data.length === 0) break;
+      all.push(...res.data);
+      if (all.length >= (res.total || 0) || res.data.length < limit) break;
+      offset += res.data.length;
+    } catch {
+      break;
+    }
   }
   return all;
 }
@@ -285,7 +293,35 @@ function dsFixed(v: Decimal, decimals = 2): string { return v.toFixed(decimals);
 
 // ─── Main Data Fetcher ────────────────────────────────────────────────────────
 
+let inFlightDashboardPromise: Promise<DashboardData> | null = null;
+let cachedDashboardResult: { data: DashboardData; timestamp: number } | null = null;
+
 export async function fetchDashboardData(): Promise<DashboardData> {
+  const now = Date.now();
+  // Cache for 10 seconds during server-side static rendering & rapid page generation
+  if (cachedDashboardResult && now - cachedDashboardResult.timestamp < 10000) {
+    return cachedDashboardResult.data;
+  }
+
+  if (inFlightDashboardPromise) {
+    return inFlightDashboardPromise;
+  }
+
+  inFlightDashboardPromise = _fetchDashboardDataInternal()
+    .then((data) => {
+      cachedDashboardResult = { data, timestamp: Date.now() };
+      inFlightDashboardPromise = null;
+      return data;
+    })
+    .catch((err) => {
+      inFlightDashboardPromise = null;
+      throw err;
+    });
+
+  return inFlightDashboardPromise;
+}
+
+async function _fetchDashboardDataInternal(): Promise<DashboardData> {
   const now = new Date().toISOString();
 
   if (!API_KEY) {
@@ -367,12 +403,14 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     const allPositions: PositionData[] = [];
     const allOrders: OrderData[] = [];
 
-    for (const [accountId, { attempt, issuance }] of accountMap) {
-      try {
-        const { stage, source } = deriveStage(
-          attempt?.status as string,
-          issuance?.status as string
-        );
+    const accountEntries = Array.from(accountMap.entries());
+    const accountResults = await Promise.all(
+      accountEntries.map(async ([accountId, { attempt, issuance }]) => {
+        try {
+          const { stage, source } = deriveStage(
+            attempt?.status as string,
+            issuance?.status as string
+          );
 
         // Fetch positions & orders for active accounts
         let positions: PositionData[] = [];
@@ -425,9 +463,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
               createdAt: o.createdAt as string,
             }));
         }
-
-        allPositions.push(...positions);
-        allOrders.push(...orders);
 
         const fallbackChallenge = attempt?.challengeId ? challengeMap.get(attempt.challengeId as string) : undefined;
         const challenge = {
@@ -624,67 +659,81 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         const attemptPnl = attempt?.totalPnl ? d(attempt.totalPnl as string) : undefined;
         const totalPnl = attemptPnl ?? (equity.minus(d(initialBalance)));
 
-        accounts.push({
-          accountId,
-          firm: "Propr",
-          stage,
-          source,
-          challengeName,
-          challengeId: attempt?.challengeId as string,
-          attemptId: attempt?.attemptId as string,
-          issuanceId: issuance?.issuanceId as string,
-          currentPhase: attempt?.currentPhase as number,
-          accountType: issuance?.accountType as string,
-          failureReason: attempt?.failureReason as string,
-          failureDetails,
-          closureReason: issuance?.closureReason as string,
-          initialBalance,
-          startingBalance: ds(dailyLossBase),
-          phaseStartingBalance,
-          balance: ds(balance),
-          equity: ds(equity),
-          realizedPnl: ds(totalTradeRpnl),
-          unrealizedPnl: ds(totalUpnl),
-          fees: ds(totalTradeFees),
-          totalPnl: ds(totalPnl),
-          drawdownType,
-          profitTargetPercent,
-          profitTargetPct: dsFixed(profitTargetPct, 2),
-          profitTargetProgressPercent: dsFixed(Decimal.min(Decimal.max(ptProgress, 0), 100), 2),
-          toTargetAmount: dsFixed(toTargetAmount, 2),
-          maxDrawdownPercent,
-          maxDrawdownAmount: dsFixed(maxDdAmount, 2),
-          drawdownUsedPercent: dsFixed(Decimal.max(ddUsedPct, 0), 2),
-          drawdownUsedAmount: dsFixed(Decimal.max(ddUsedAmount, 0), 2),
-          drawdownLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100), 2),
-          drawdownRemaining: dsFixed(Decimal.max(ddRemaining, 0), 2),
-          breachFloor: dsFixed(ddLimit, 2),
-          maxDailyLossPercent,
-          dailyLossLimitAmount: dsFixed(dlLimitAmount, 2),
-          dailyLossUsedAmount: dsFixed(dlUsedAmount, 2),
-          dailyLossUsedPercent: dsFixed(Decimal.max(dlUsedPct, 0), 2),
-          dailyLossLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100), 2),
-          dailyLossRemaining: dsFixed(Decimal.max(dlRemaining, 0), 2),
-          dailyLossFloor: dsFixed(dlLimit, 2),
-          highWaterMark,
-          tradingDays: dynamicTradingDays,
-          requiredTradingDays: (phase?.minTradingDays || challenge?.requiredTradingDays) as number,
-          winRate: dynamicWinRate,
-          openPositionCount: positions.length,
-          openOrderCount: orders.length,
+        return {
+          account: {
+            accountId,
+            firm: "Propr" as const,
+            stage,
+            source,
+            challengeName,
+            challengeId: attempt?.challengeId as string,
+            attemptId: attempt?.attemptId as string,
+            issuanceId: issuance?.issuanceId as string,
+            currentPhase: attempt?.currentPhase as number,
+            accountType: issuance?.accountType as string,
+            failureReason: attempt?.failureReason as string,
+            failureDetails,
+            closureReason: issuance?.closureReason as string,
+            initialBalance,
+            startingBalance: ds(dailyLossBase),
+            phaseStartingBalance,
+            balance: ds(balance),
+            equity: ds(equity),
+            realizedPnl: ds(totalTradeRpnl),
+            unrealizedPnl: ds(totalUpnl),
+            fees: ds(totalTradeFees),
+            totalPnl: ds(totalPnl),
+            drawdownType,
+            profitTargetPercent,
+            profitTargetPct: dsFixed(profitTargetPct, 2),
+            profitTargetProgressPercent: dsFixed(Decimal.min(Decimal.max(ptProgress, 0), 100), 2),
+            toTargetAmount: dsFixed(toTargetAmount, 2),
+            maxDrawdownPercent,
+            maxDrawdownAmount: dsFixed(maxDdAmount, 2),
+            drawdownUsedPercent: dsFixed(Decimal.max(ddUsedPct, 0), 2),
+            drawdownUsedAmount: dsFixed(Decimal.max(ddUsedAmount, 0), 2),
+            drawdownLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100), 2),
+            drawdownRemaining: dsFixed(Decimal.max(ddRemaining, 0), 2),
+            breachFloor: dsFixed(ddLimit, 2),
+            maxDailyLossPercent,
+            dailyLossLimitAmount: dsFixed(dlLimitAmount, 2),
+            dailyLossUsedAmount: dsFixed(dlUsedAmount, 2),
+            dailyLossUsedPercent: dsFixed(Decimal.max(dlUsedPct, 0), 2),
+            dailyLossLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100), 2),
+            dailyLossRemaining: dsFixed(Decimal.max(dlRemaining, 0), 2),
+            dailyLossFloor: dsFixed(dlLimit, 2),
+            highWaterMark,
+            tradingDays: dynamicTradingDays,
+            requiredTradingDays: (phase?.minTradingDays || challenge?.requiredTradingDays) as number,
+            winRate: dynamicWinRate,
+            openPositionCount: positions.length,
+            openOrderCount: orders.length,
+            positions,
+            orders,
+            trades,
+            purchaseId,
+            purchaseCostUSD: "0",
+            payoutsWithdrawnUSD: "0",
+            actualCashPnLUSD: "0",
+            lastUpdatedAt: now,
+          },
           positions,
           orders,
-          trades,
-          purchaseId,
-          purchaseCostUSD: "0",
-          payoutsWithdrawnUSD: "0",
-          actualCashPnLUSD: "0",
-          lastUpdatedAt: now,
-        });
+        };
       } catch (err) {
         console.error(`Error processing account ${accountId}:`, err);
+        return null;
       }
+    })
+  );
+
+  for (const res of accountResults) {
+    if (res) {
+      accounts.push(res.account);
+      allPositions.push(...res.positions);
+      allOrders.push(...res.orders);
     }
+  }
 
     // Sort accounts: active/funded first, then active evals, etc.
     const sortPriority: Record<AccountStage, number> = {
