@@ -48,14 +48,14 @@ export default async function AccountsPage() {
         <table className="w-full text-left text-xs font-mono">
           <thead>
             <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
-              <th className="py-2.5 px-3">Stage</th>
-              <th className="py-2.5 px-3">Account ID / Challenge</th>
+              <th className="py-2.5 px-3 text-center">Stage</th>
+              <th className="py-2.5 px-3 text-left">Account ID / Challenge</th>
               <th className="py-2.5 px-3 text-right">Starting</th>
               <th className="py-2.5 px-3 text-right">Balance</th>
               <th className="py-2.5 px-3 text-right">Equity</th>
               <th className="py-2.5 px-3 text-right">Drawdown Status</th>
               <th className="py-2.5 px-3 text-right">Target Progress</th>
-              <th className="py-2.5 px-3">Account State</th>
+              <th className="py-2.5 px-3 text-center">Account State</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -64,9 +64,9 @@ export default async function AccountsPage() {
               const isActive = acc.stage === "EVALUATION" || acc.stage === "FUNDED";
               return (
                 <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 px-3">
+                  <td className="py-2.5 px-3 text-center whitespace-nowrap">
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                         isActive
                           ? "bg-cyan-950/60 text-[var(--cyan)] border-cyan-800/50"
                           : isFailed
@@ -77,22 +77,22 @@ export default async function AccountsPage() {
                       {acc.stage}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-[var(--text-primary)] font-medium">
+                  <td className="py-2.5 px-3 text-left text-[var(--text-primary)] font-medium">
                     {acc.accountId.replace(/^urn:prp-account:/, "")}
                     <span className="text-[10px] text-[var(--text-muted)] block">
                       {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD)
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
                     {formatUSD(acc.startingBalance)}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)] whitespace-nowrap">
                     {formatUSD(acc.balance)}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)] whitespace-nowrap">
                     {formatUSD(acc.equity)}
                   </td>
-                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
                     <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : "text-[var(--text-primary)]"}>
                       {acc.drawdownLimitConsumedPercent || "0"}% of limit
                     </span>
@@ -100,18 +100,20 @@ export default async function AccountsPage() {
                       {acc.drawdownUsedPercent || "0"}% account loss
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
                     {acc.profitTargetProgressPercent || "0"}%
                   </td>
-                  <td className="py-2.5 px-3 text-[10px]">
+                  <td className="py-2.5 px-3 text-center whitespace-nowrap">
                     {acc.failureReason ? (
-                      <span className="text-zinc-400 font-normal">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/50 text-[var(--red)] border border-red-800/40">
                         {acc.failureReason.replace(/_/g, " ")}
                       </span>
                     ) : isActive ? (
-                      <span className="text-[var(--green)]">Active Evaluation</span>
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-950/50 text-[var(--cyan)] border border-cyan-800/40">
+                        Active Evaluation
+                      </span>
                     ) : (
-                      <span className="text-[var(--text-muted)]">Completed</span>
+                      <span className="text-[var(--text-muted)] text-[10px]">Completed</span>
                     )}
                   </td>
                 </tr>

@@ -1,5 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { CheckCircle2, Wallet } from "lucide-react";
+import { BankRefBadge } from "@/components/bank-ref-badge";
 
 export const revalidate = 15;
 
@@ -42,11 +43,11 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--text-primary)]">
             {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             Propr: {formatINR(finance.proprActualCashCostINR)} | Breakout: {formatINR(finance.breakoutActualCashCostINR)}
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
-            Propr Face: {formatUSD(finance.totalInvestedUSD)} USD
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
+            Props Face: {formatUSD(finance.totalInvestedUSD)} USD
           </div>
         </div>
 
@@ -58,10 +59,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--cyan)]">
             {formatINR(finance.activeActualCashCostINR || finance.activeCapitalINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             Active Face: {formatUSD(finance.activeCapitalUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             Est Face INR: {formatINR(finance.activeCapitalINR)}
           </div>
         </div>
@@ -74,10 +75,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--green)]">
             {formatINR(finance.totalPayoutsINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             {formatUSD(finance.totalPayoutsUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             Processed Bank Cash
           </div>
         </div>
@@ -90,10 +91,10 @@ export default async function FinancePage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--red)]">
             {formatINR(finance.actualCashPnLINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             Net Outflow: {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             All Prop Firms Combined
           </div>
         </div>
@@ -115,40 +116,40 @@ export default async function FinancePage() {
           <table className="w-full text-left text-xs font-mono">
             <thead>
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Firm</th>
-                <th className="py-2.5 px-3">Challenge Name</th>
+                <th className="py-2.5 px-3 text-left">Date</th>
+                <th className="py-2.5 px-3 text-left">Firm</th>
+                <th className="py-2.5 px-3 text-left">Challenge Name</th>
                 <th className="py-2.5 px-3 text-right">Face Value (USD)</th>
                 <th className="py-2.5 px-3 text-right">Actual Bank Debit (INR)</th>
-                <th className="py-2.5 px-3">Bank Reference / Invoice</th>
-                <th className="py-2.5 px-3">Verification</th>
+                <th className="py-2.5 px-3 text-left">Bank Reference / Invoice</th>
+                <th className="py-2.5 px-3 text-center">Verification</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
               {finance.ledger.map((tx) => (
                 <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 px-3 text-[var(--text-secondary)]">
+                  <td className="py-2.5 px-3 text-left text-[var(--text-secondary)] whitespace-nowrap">
                     {new Date(tx.date).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", year: "numeric", month: "short", day: "numeric" })}
                   </td>
-                  <td className="py-2.5 px-3">
+                  <td className="py-2.5 px-3 text-left">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${tx.firm.toLowerCase() === "breakout" ? "bg-amber-950/60 text-amber-400 border border-amber-800/40" : "bg-cyan-950/60 text-[var(--cyan)] border border-cyan-800/40"}`}>
                       {tx.firm.toUpperCase()}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-left font-semibold text-[var(--text-primary)]">
                     {tx.challengeName}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--text-primary)]">
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--text-primary)] whitespace-nowrap">
                     {tx.amountUSD && Number(tx.amountUSD) > 0 ? formatUSD(tx.amountUSD) : "N/A"}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--cyan)]">
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--cyan)] whitespace-nowrap">
                     {formatINR(tx.actualCashCostINR || tx.amountINR)}
                   </td>
-                  <td className="py-2.5 px-3 text-[var(--text-muted)]">
-                    {tx.bankReference || tx.invoiceNumber || "-"}
+                  <td className="py-2.5 px-3 text-left">
+                    <BankRefBadge reference={tx.bankReference || tx.invoiceNumber || "-"} />
                   </td>
-                  <td className="py-2.5 px-3">
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-950/60 text-[var(--green)] border border-green-800/40">
+                  <td className="py-2.5 px-3 text-center">
+                    <span className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-950/60 text-[var(--green)] border border-green-800/40 whitespace-nowrap">
                       <CheckCircle2 size={11} />
                       BANK VERIFIED
                     </span>
@@ -162,3 +163,4 @@ export default async function FinancePage() {
     </div>
   );
 }
+

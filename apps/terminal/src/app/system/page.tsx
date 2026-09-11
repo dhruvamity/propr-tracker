@@ -1,5 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
-import { CheckCircle2, Server, Lock } from "lucide-react";
+import { CheckCircle2, Server, Lock, TerminalSquare } from "lucide-react";
+import { SystemTerminalStream } from "@/components/system-terminal-stream";
 
 export const revalidate = 15;
 
@@ -11,10 +12,10 @@ export default async function SystemPage() {
       <div>
         <h1 className="text-sm font-mono font-bold tracking-wider text-[var(--text-primary)] uppercase flex items-center gap-2">
           <Server size={15} className="text-[var(--cyan)]" />
-          System Diagnostics
+          System Diagnostics & Real-Time Gateway
         </h1>
         <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-          Sync status, runtime environment, and connection telemetry.
+          Sync status, runtime environment, and live WebSocket telemetry log.
         </p>
       </div>
 
@@ -70,6 +71,21 @@ export default async function SystemPage() {
           </div>
         </div>
       </div>
+
+      {/* Raw WebSocket Event Stream & Connection Terminal (Prompt §Eliminate Lower Viewport) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-mono font-semibold tracking-wider text-[var(--text-secondary)] uppercase flex items-center gap-2">
+            <TerminalSquare size={14} className="text-[var(--cyan)]" />
+            Raw WebSocket Event Stream & Connection Telemetry Console
+          </h2>
+          <span className="text-[10px] font-mono text-[var(--text-muted)]">
+            PORT: WSS (SSL/TLS) • BUFFERED ISR STREAM
+          </span>
+        </div>
+        <SystemTerminalStream />
+      </div>
     </div>
   );
 }
+

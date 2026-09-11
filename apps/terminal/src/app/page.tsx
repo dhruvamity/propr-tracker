@@ -60,10 +60,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--text-primary)]">
             {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             Propr Face: {formatUSD(finance.totalInvestedUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             Propr {formatINR(finance.proprActualCashCostINR)} + Breakout {formatINR(finance.breakoutActualCashCostINR)}
           </div>
         </div>
@@ -77,10 +77,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--cyan)]">
             {formatINR(finance.activeActualCashCostINR || finance.activeCapitalINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             Active Face: {formatUSD(finance.activeCapitalUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             Est Face INR: {formatINR(finance.activeCapitalINR)}
           </div>
         </div>
@@ -94,10 +94,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--green)]">
             {formatINR(finance.totalPayoutsINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             {formatUSD(finance.totalPayoutsUSD)} USD
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             Processed Bank Cash
           </div>
         </div>
@@ -111,10 +111,10 @@ export default async function OverviewPage() {
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--red)]">
             {formatINR(finance.actualCashPnLINR)}
           </div>
-          <div className="mt-1 text-xs font-mono text-zinc-300">
+          <div className="mt-1 text-xs font-mono text-slate-400">
             Net Outflow: {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
-          <div className="mt-0.5 text-[10px] font-mono text-zinc-400">
+          <div className="mt-0.5 text-[10px] font-mono text-slate-400">
             All Prop Firms Combined
           </div>
         </div>
@@ -244,6 +244,31 @@ export default async function OverviewPage() {
                 </div>
               </div>
 
+              {/* Explicit Dollar Risk Buffers */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--border-subtle)] text-[10px] font-mono">
+                <div className="p-2 rounded bg-black/40 border border-zinc-800/80">
+                  <span className="text-[9px] text-[var(--text-muted)] block uppercase tracking-wider">Breach Floor</span>
+                  <span className="text-xs font-bold text-[var(--red)]">
+                    {formatUSD(acc.breachFloor || (Number(acc.equity) - Number(acc.drawdownRemaining)).toFixed(2))}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 block mt-0.5">Min Allowed Equity</span>
+                </div>
+                <div className="p-2 rounded bg-black/40 border border-zinc-800/80">
+                  <span className="text-[9px] text-[var(--text-muted)] block uppercase tracking-wider">Drawdown Buffer</span>
+                  <span className="text-xs font-bold text-[var(--cyan)]">
+                    {formatUSD(acc.drawdownRemaining)}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 block mt-0.5">Cash Headroom</span>
+                </div>
+                <div className="p-2 rounded bg-black/40 border border-zinc-800/80">
+                  <span className="text-[9px] text-[var(--text-muted)] block uppercase tracking-wider">Daily Allowance</span>
+                  <span className="text-xs font-bold text-purple-400">
+                    {formatUSD(acc.dailyLossRemaining)}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 block mt-0.5">Current Day Buffer</span>
+                </div>
+              </div>
+
               {/* Card Meta Stats */}
               <div className="grid grid-cols-4 gap-2 pt-2 border-t border-[var(--border-subtle)] text-[10px] font-mono">
                 <div>
@@ -283,14 +308,14 @@ export default async function OverviewPage() {
           <table className="w-full text-left text-xs font-mono">
             <thead>
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] uppercase">
-                <th className="py-2.5 px-3">Stage</th>
-                <th className="py-2.5 px-3">Account ID</th>
+                <th className="py-2.5 px-3 text-center">Stage</th>
+                <th className="py-2.5 px-3 text-left">Account ID</th>
                 <th className="py-2.5 px-3 text-right">Starting</th>
                 <th className="py-2.5 px-3 text-right">Balance</th>
                 <th className="py-2.5 px-3 text-right">Equity</th>
                 <th className="py-2.5 px-3 text-right">DD Used</th>
                 <th className="py-2.5 px-3 text-right">Target</th>
-                <th className="py-2.5 px-3">Status Detail</th>
+                <th className="py-2.5 px-3 text-center">Status Detail</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -302,9 +327,9 @@ export default async function OverviewPage() {
                     key={acc.accountId}
                     className="hover:bg-white/[0.02] transition-colors"
                   >
-                    <td className="py-2.5 px-3">
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                           isActive
                             ? "bg-cyan-950/60 text-[var(--cyan)] border-cyan-800/50"
                             : isFailed
@@ -315,22 +340,22 @@ export default async function OverviewPage() {
                         {acc.stage}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-[var(--text-primary)] font-medium">
+                    <td className="py-2.5 px-3 text-left text-[var(--text-primary)] font-medium">
                       {formatShortId(acc.accountId)}
                       <span className="text-[10px] text-[var(--text-muted)] block">
                         {acc.challengeName || "Starter Turbo"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
                       {formatUSD(acc.startingBalance)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
+                    <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)] whitespace-nowrap">
                       {formatUSD(acc.balance)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)]">
+                    <td className="py-2.5 px-3 text-right font-semibold text-[var(--text-primary)] whitespace-nowrap">
                       {formatUSD(acc.equity)}
                     </td>
-                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
                       <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : "text-[var(--text-primary)]"}>
                         {acc.drawdownLimitConsumedPercent || "0"}%
                       </span>
@@ -338,18 +363,20 @@ export default async function OverviewPage() {
                         {acc.drawdownUsedPercent || "0"}% loss
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)]">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap">
                       {acc.profitTargetProgressPercent || "0"}%
                     </td>
-                    <td className="py-2.5 px-3 text-[10px]">
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
                       {acc.failureReason ? (
-                        <span className="text-zinc-400 font-normal">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/50 text-[var(--red)] border border-red-800/40">
                           {acc.failureReason.replace(/_/g, " ")}
                         </span>
                       ) : isActive ? (
-                        <span className="text-[var(--green)]">Evaluation Active</span>
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-950/50 text-[var(--cyan)] border border-cyan-800/40">
+                          Evaluation Active
+                        </span>
                       ) : (
-                        <span className="text-[var(--text-muted)]">Completed</span>
+                        <span className="text-[var(--text-muted)] text-[10px]">Completed</span>
                       )}
                     </td>
                   </tr>

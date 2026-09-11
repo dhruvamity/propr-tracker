@@ -49,10 +49,12 @@ export interface AccountSnapshot {
   drawdownUsedPercent: string;
   drawdownLimitConsumedPercent: string;
   drawdownRemaining: string;
+  breachFloor?: string;
   maxDailyLossPercent: string;
   dailyLossUsedPercent: string;
   dailyLossLimitConsumedPercent: string;
   dailyLossRemaining: string;
+  dailyLossFloor?: string;
   highWaterMark?: string;
   tradingDays?: number;
   requiredTradingDays?: number;
@@ -485,10 +487,12 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           drawdownUsedPercent: ds(Decimal.max(ddUsedPct, 0)),
           drawdownLimitConsumedPercent: ds(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100)),
           drawdownRemaining: ds(Decimal.max(ddRemaining, 0)),
+          breachFloor: ds(ddLimit),
           maxDailyLossPercent,
           dailyLossUsedPercent: ds(Decimal.max(dlUsedPct, 0)),
           dailyLossLimitConsumedPercent: ds(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100)),
           dailyLossRemaining: ds(Decimal.max(dlRemaining, 0)),
+          dailyLossFloor: ds(dlLimit),
           highWaterMark,
           tradingDays: attempt?.tradingDays as number,
           requiredTradingDays: challenge?.requiredTradingDays as number,
