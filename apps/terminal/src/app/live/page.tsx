@@ -2,7 +2,7 @@ import { fetchDashboardData } from "@/lib/propr-api";
 import { ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
-import { formatUSD, formatShortId } from "@/lib/utils";
+import { formatUSD, formatShortId, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
@@ -68,7 +68,7 @@ export default async function LiveMonitorPage() {
                   <div className="flex items-baseline justify-between text-xs font-mono mb-1">
                     <span className="text-zinc-300 font-medium">
                       {acc.challengeName || "Starter Turbo"}{" "}
-                      <span className="text-zinc-500 text-[10px]">#{formatShortId(acc.accountId).slice(-4)}</span>
+                      <span className="text-zinc-500 text-[10px]">{formatAccountTag(acc.accountId)}</span>
                     </span>
                     <span className="text-white font-bold">{formatUSD(buffer)} <span className="text-[10px] font-normal text-zinc-500">USD</span></span>
                   </div>

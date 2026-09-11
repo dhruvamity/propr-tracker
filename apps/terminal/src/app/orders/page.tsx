@@ -1,6 +1,7 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { ListOrdered } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
+import { formatShortId, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
@@ -129,7 +130,7 @@ export default async function OrdersPage() {
                           <td className="py-2.5 px-3 font-semibold text-white">
                             {acc.challengeName || "Evaluation"}
                             <span className="text-zinc-500 ml-2 font-normal text-[11px]">
-                              {acc.accountId.replace(/^urn:prp-account:/, "").slice(0, 8)}
+                              {formatAccountTag(acc.accountId)} ({formatShortId(acc.accountId)})
                             </span>
                           </td>
                           <td className="py-2.5 px-3">
@@ -203,7 +204,8 @@ export default async function OrdersPage() {
                     {ord.price || ord.triggerPrice || "MARKET"}
                   </td>
                   <td className="py-2.5 px-3 text-zinc-400">
-                    {ord.accountId.replace(/^urn:prp-account:/, "").slice(0, 8)}
+                    <span className="text-zinc-300 font-medium">{formatAccountTag(ord.accountId)}</span>{" "}
+                    <span className="text-zinc-500 text-[10px]">({formatShortId(ord.accountId)})</span>
                   </td>
                   <td className="py-2.5 px-3 text-zinc-500">
                     {new Date(ord.createdAt).toLocaleTimeString("en-IN", {

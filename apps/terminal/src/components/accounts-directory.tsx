@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { formatUSD, formatPercent, formatShortId } from "@/lib/utils";
+import { formatUSD, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
 import {
   Search,
   Copy,
@@ -43,10 +43,14 @@ export interface AccountItem {
   dailyLossRemaining?: string;
   dailyLossFloor?: string;
   failureReason?: string;
-  currentPhase?: number;
   tradingDays?: number;
   requiredTradingDays?: number;
   winRate?: string;
+  winLossRatio?: string;
+  worstTradeUSD?: string;
+  bestTradeUSD?: string;
+  closedTradesCount?: number;
+  rawFillsCount?: number;
   trades?: any[];
 }
 
@@ -276,7 +280,8 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                       {/* Account ID / Challenge */}
                       <td className="py-2.5 px-3 text-left font-medium text-white">
                         <div className="flex items-center gap-1.5">
-                          <span>{formatShortId(acc.accountId)}</span>
+                          <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>
+                          <span className="text-zinc-500 text-[11px] font-normal">{formatShortId(acc.accountId)}</span>
                           <button
                             type="button"
                             onClick={(e) => copyToClipboard(acc.accountId, e)}
@@ -291,7 +296,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                           </button>
                         </div>
                         <span className="text-[10px] text-zinc-400 block font-normal">
-                          {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD)
+                          {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD • {acc.tradingDays || 1}/{acc.requiredTradingDays || 5} days)
                         </span>
                       </td>
 
@@ -434,8 +439,20 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-zinc-500">Trade count</span>
-                                  <span className="text-zinc-200">{acc.trades?.length || 0} trades</span>
+                                  <span className="text-zinc-200">
+                                    {acc.closedTradesCount || acc.trades?.length || 0} trades
+                                    {acc.winLossRatio ? ` (${acc.winLossRatio})` : ""}
+                                    {acc.rawFillsCount ? ` • ${acc.rawFillsCount} fills` : ""}
+                                  </span>
                                 </div>
+                                {acc.worstTradeUSD && Number(acc.worstTradeUSD) < 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-zinc-500">Worst trade</span>
+                                    <span className="text-red-400 font-medium">
+                                      -${Math.round(Math.abs(Number(acc.worstTradeUSD)))} ({formatUSD(acc.worstTradeUSD)})
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between">
                                   <span className="text-zinc-500">Account URN</span>
                                   <span className="text-zinc-500 text-[10px] truncate max-w-[200px]">{acc.accountId}</span>

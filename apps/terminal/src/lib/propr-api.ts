@@ -66,6 +66,11 @@ export interface AccountSnapshot {
   tradingDays?: number;
   requiredTradingDays?: number;
   winRate?: string;
+  winLossRatio?: string;
+  worstTradeUSD?: string;
+  bestTradeUSD?: string;
+  closedTradesCount?: number;
+  rawFillsCount?: number;
   openPositionCount: number;
   openOrderCount: number;
   positions: PositionData[];
@@ -139,6 +144,7 @@ export interface TradeData {
   slippage?: string;
   executedAt: string;
   createdAt: string;
+  fillsCount?: number;
 }
 
 export interface PayoutData {
@@ -361,21 +367,13 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
 
   try {
     const [
-      activeAttempts,
-      passedAttempts,
-      failedAttempts,
-      activeIssuances,
-      closedIssuances,
-      reviewIssuances,
+      allAttemptsRaw,
+      allIssuancesRaw,
       payoutsRaw,
       challengesRaw,
     ] = await Promise.all([
-      fetchAllPages<Record<string, unknown>>("/challenge-attempts", { status: "active" }).catch(() => []),
-      fetchAllPages<Record<string, unknown>>("/challenge-attempts", { status: "passed" }).catch(() => []),
-      fetchAllPages<Record<string, unknown>>("/challenge-attempts", { status: "failed" }).catch(() => []),
-      fetchAllPages<Record<string, unknown>>("/book-account-issuances", { status: "active" }).catch(() => []),
-      fetchAllPages<Record<string, unknown>>("/book-account-issuances", { status: "closed" }).catch(() => []),
-      fetchAllPages<Record<string, unknown>>("/book-account-issuances", { status: "review_pending" }).catch(() => []),
+      fetchAllPages<Record<string, unknown>>("/challenge-attempts").catch(() => []),
+      fetchAllPages<Record<string, unknown>>("/book-account-issuances").catch(() => []),
       fetchAllPages<Record<string, unknown>>("/payouts/history").catch(() => []),
       fetchAllPages<Record<string, unknown>>("/challenges").catch(() => []),
     ]);
@@ -386,8 +384,8 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
       if (id) challengeMap.set(id, ch);
     }
 
-    const allAttempts = [...activeAttempts, ...passedAttempts, ...failedAttempts];
-    const allIssuances = [...activeIssuances, ...closedIssuances, ...reviewIssuances];
+    const allAttempts = allAttemptsRaw;
+    const allIssuances = allIssuancesRaw;
 
     const accountMap = new Map<string, { attempt?: Record<string, unknown>; issuance?: Record<string, unknown> }>();
     for (const a of allAttempts) {
@@ -476,31 +474,103 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
         const purchaseId = (attempt?.purchaseId || issuance?.purchaseId) as string | undefined;
 
         const tradesRaw = await fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/trades`).catch(() => []);
-        const trades: TradeData[] = tradesRaw.map((t) => ({
-          tradeId: t.tradeId as string,
-          userId: t.userId as string | undefined,
-          accountId: t.accountId as string,
-          orderId: t.orderId as string | undefined,
-          positionId: t.positionId as string | undefined,
-          exchange: (t.exchange as string) || "hyperliquid",
-          type: (t.type as string) || "open",
-          liquidityType: (t.liquidityType as "maker" | "taker") || "taker",
-          asset: t.asset as string,
-          base: t.base as string,
-          quote: (t.quote as string) || "USDC",
-          side: t.side as "buy" | "sell",
-          positionSide: (t.positionSide as "long" | "short") || "long",
-          quantity: (t.quantity as string) || "0",
-          price: (t.price as string) || "0",
-          quoteQuantity: (t.quoteQuantity as string) || "0",
-          fee: (t.fee as string) || "0",
-          feeAsset: (t.feeAsset as string) || "USDC",
-          feeRate: (t.feeRate as string) || "0",
-          realizedPnl: (t.realizedPnl as string) || "0",
-          slippage: (t.slippage as string) || "0",
-          executedAt: (t.executedAt as string) || (t.createdAt as string) || now,
-          createdAt: (t.createdAt as string) || now,
+
+        // Aggregate raw fills by orderId to reconstruct true order executions
+        const orderMap = new Map<string, {
+          tradeId: string;
+          userId?: string;
+          accountId: string;
+          orderId?: string;
+          positionId?: string;
+          exchange: string;
+          type: string;
+          liquidityType: "maker" | "taker";
+          asset: string;
+          base: string;
+          quote: string;
+          side: "buy" | "sell";
+          positionSide: "long" | "short";
+          totalQty: Decimal;
+          totalQuoteQty: Decimal;
+          totalFee: Decimal;
+          totalRpnl: Decimal;
+          fillsCount: number;
+          executedAt: string;
+          createdAt: string;
+        }>();
+
+        for (const t of tradesRaw) {
+          const key = (t.orderId || t.tradeId) as string;
+          if (!orderMap.has(key)) {
+            orderMap.set(key, {
+              tradeId: t.tradeId as string,
+              userId: t.userId as string | undefined,
+              accountId: t.accountId as string,
+              orderId: t.orderId as string | undefined,
+              positionId: t.positionId as string | undefined,
+              exchange: (t.exchange as string) || "hyperliquid",
+              type: (t.type as string) || "open",
+              liquidityType: (t.liquidityType as "maker" | "taker") || "taker",
+              asset: t.asset as string,
+              base: t.base as string,
+              quote: (t.quote as string) || "USDC",
+              side: t.side as "buy" | "sell",
+              positionSide: (t.positionSide as "long" | "short") || "long",
+              totalQty: new Decimal(0),
+              totalQuoteQty: new Decimal(0),
+              totalFee: new Decimal(0),
+              totalRpnl: new Decimal(0),
+              fillsCount: 0,
+              executedAt: (t.executedAt as string) || (t.createdAt as string) || now,
+              createdAt: (t.createdAt as string) || now,
+            });
+          }
+
+          const o = orderMap.get(key)!;
+          const qty = d(t.quantity as string);
+          const px = d(t.price as string);
+          o.totalQty = o.totalQty.plus(qty);
+          o.totalQuoteQty = o.totalQuoteQty.plus(qty.times(px));
+          o.totalFee = o.totalFee.plus(d(t.fee as string));
+          o.totalRpnl = o.totalRpnl.plus(d(t.realizedPnl as string));
+          o.fillsCount++;
+          if (new Date((t.executedAt as string) || 0).getTime() > new Date(o.executedAt).getTime()) {
+            o.executedAt = (t.executedAt as string) || o.executedAt;
+          }
+        }
+
+        const aggregatedOrders: TradeData[] = Array.from(orderMap.values()).map((o) => ({
+          tradeId: o.tradeId,
+          userId: o.userId,
+          accountId: o.accountId,
+          orderId: o.orderId,
+          positionId: o.positionId,
+          exchange: o.exchange,
+          type: o.type,
+          liquidityType: o.liquidityType,
+          asset: o.asset,
+          base: o.base,
+          quote: o.quote,
+          side: o.side,
+          positionSide: o.positionSide,
+          quantity: ds(o.totalQty),
+          price: o.totalQty.gt(0) ? dsFixed(o.totalQuoteQty.dividedBy(o.totalQty), 4) : "0",
+          quoteQuantity: dsFixed(o.totalQuoteQty, 2),
+          fee: dsFixed(o.totalFee, 4),
+          feeAsset: "USDC",
+          realizedPnl: dsFixed(o.totalRpnl, 4),
+          executedAt: o.executedAt,
+          createdAt: o.createdAt,
+          fillsCount: o.fillsCount,
         }));
+
+        // Closed trades are orders that closed/reduced a position with non-zero realized PnL
+        const closedTrades = aggregatedOrders
+          .filter((t) => !d(t.realizedPnl).isZero())
+          .sort((a, b) => new Date(a.executedAt).getTime() - new Date(b.executedAt).getTime());
+
+        // Use closed trades for account performance tracking (matches PROPR Performance tab 1:1)
+        const trades: TradeData[] = closedTrades.length > 0 ? closedTrades : aggregatedOrders;
 
         // Dynamically extract rules from challenge phases
         const currentPhaseIdx = typeof attempt?.currentPhase === "number" ? (attempt.currentPhase - 1) : 0;
@@ -623,33 +693,48 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
         // Trade aggregates (dynamic from all historical trades)
         let totalTradeRpnl = new Decimal(0);
         let totalTradeFees = new Decimal(0);
-        let winningTradesCount = 0;
-        let closedTradesCount = 0;
-        const tradingDaysSet = new Set<string>();
-
-        for (const t of trades) {
-          const rpnl = d(t.realizedPnl);
-          const fee = d(t.fee);
-          totalTradeRpnl = totalTradeRpnl.plus(rpnl);
-          totalTradeFees = totalTradeFees.plus(fee);
-          if (!rpnl.isZero()) {
-            closedTradesCount++;
-            if (rpnl.gt(0)) winningTradesCount++;
-          }
-          if (t.executedAt) {
-            tradingDaysSet.add(t.executedAt.slice(0, 10));
-          }
+        for (const o of aggregatedOrders) {
+          totalTradeRpnl = totalTradeRpnl.plus(d(o.realizedPnl));
+          totalTradeFees = totalTradeFees.plus(d(o.fee));
         }
 
+        let winningTradesCount = 0;
+        let losingTradesCount = 0;
+        let worstTradeNet = new Decimal(0);
+        let bestTradeNet = new Decimal(-Infinity);
+
+        for (const t of closedTrades) {
+          const net = d(t.realizedPnl).minus(d(t.fee));
+          if (net.gt(0)) winningTradesCount++;
+          if (net.lt(0)) losingTradesCount++;
+          if (net.lt(worstTradeNet)) worstTradeNet = net;
+          if (net.gt(bestTradeNet)) bestTradeNet = net;
+        }
+
+        const closedTradesCount = closedTrades.length;
         const dynamicWinRate =
           closedTradesCount > 0
             ? `${((winningTradesCount / closedTradesCount) * 100).toFixed(1)}%`
             : (attempt?.winRate as string) || "0.0%";
 
+        const winLossRatio = `${winningTradesCount}W / ${losingTradesCount}L`;
+        const worstTradeUSD = closedTradesCount > 0 ? dsFixed(worstTradeNet, 2) : "0.00";
+        const bestTradeUSD = closedTradesCount > 0 && !bestTradeNet.equals(-Infinity) ? dsFixed(bestTradeNet, 2) : "0.00";
+
+        const tradingDaysSet = new Set<string>();
+        for (const t of aggregatedOrders) {
+          if (t.executedAt) {
+            tradingDaysSet.add(t.executedAt.slice(0, 10));
+          }
+        }
+
         const dynamicTradingDays =
           tradingDaysSet.size > 0
             ? tradingDaysSet.size
             : (attempt?.tradingDays as number) || 1;
+
+        const requiredTradingDays =
+          ((phase?.minTradingDays || challenge?.requiredTradingDays) as number) || 5;
 
         const rawName = challenge?.name;
         const challengeName = typeof rawName === "object" && rawName !== null
@@ -704,8 +789,13 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
             dailyLossFloor: dsFixed(dlLimit, 2),
             highWaterMark,
             tradingDays: dynamicTradingDays,
-            requiredTradingDays: (phase?.minTradingDays || challenge?.requiredTradingDays) as number,
+            requiredTradingDays,
             winRate: dynamicWinRate,
+            winLossRatio,
+            worstTradeUSD,
+            bestTradeUSD,
+            closedTradesCount,
+            rawFillsCount: tradesRaw.length,
             openPositionCount: positions.length,
             openOrderCount: orders.length,
             positions,

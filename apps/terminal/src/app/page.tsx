@@ -1,5 +1,5 @@
 import { fetchDashboardData } from "@/lib/propr-api";
-import { formatUSD, formatINR, formatPercent, formatShortId } from "@/lib/utils";
+import { formatUSD, formatINR, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
 import { TrendingUp, ListOrdered } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
@@ -14,6 +14,15 @@ export default async function OverviewPage() {
   const activeAccounts = accounts.filter(
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
   );
+  const archivedAccounts = accounts.filter(
+    (a) => a.stage !== "EVALUATION" && a.stage !== "FUNDED"
+  );
+  const ddBreachCount = archivedAccounts.filter(
+    (a) => a.failureReason?.toLowerCase().includes("drawdown")
+  ).length;
+  const dlBreachCount = archivedAccounts.filter(
+    (a) => a.failureReason?.toLowerCase().includes("daily")
+  ).length;
 
   // Sort active accounts by risk proximity (closest to breach floor first)
   const rankedActiveAccounts = [...activeAccounts].sort((a, b) => {
@@ -165,9 +174,8 @@ export default async function OverviewPage() {
                     </td>
                     <td className="py-2.5 px-3 text-left font-medium text-white">
                       {acc.challengeName || "Starter Turbo"}
-                      <span className="text-[10px] text-zinc-400 block font-normal">
-                        #{formatShortId(acc.accountId).slice(-4)} • {formatShortId(acc.accountId)}
-                      </span>
+                        <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
+                        <span className="text-zinc-500 text-[10px]">({formatShortId(acc.accountId)})</span>
                     </td>
                     <td className="py-2.5 px-3 text-right font-medium text-zinc-200 whitespace-nowrap">
                       {formatUSD(acc.balance)}
@@ -212,31 +220,30 @@ export default async function OverviewPage() {
         </div>
 
         {/* Collapsible Archived / Breached Accounts */}
-        <details className="group rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-3 text-xs font-mono">
-          <summary className="cursor-pointer flex items-center justify-between text-zinc-400 select-none hover:text-zinc-200 font-semibold">
-            <span>Archived / Breached Accounts ({accounts.length - activeAccounts.length})</span>
-            <span className="text-[11px] text-zinc-500 font-normal group-open:hidden">
-              Show 6 archived accounts (2 daily loss, 4 drawdown breaches) ▼
-            </span>
-            <span className="text-[11px] text-zinc-500 font-normal hidden group-open:inline">
-              Hide archived accounts ▲
-            </span>
-          </summary>
-          <div className="mt-3 overflow-x-auto border-t border-[var(--border-subtle)] pt-3">
-            <table className="w-full text-left text-xs font-mono">
-              <thead>
-                <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
-                  <th className="py-2 px-3 text-center">Stage</th>
-                  <th className="py-2 px-3 text-left">Account</th>
-                  <th className="py-2 px-3 text-right">Initial</th>
-                  <th className="py-2 px-3 text-right">Ending Balance</th>
-                  <th className="py-2 px-3 text-center">Breach Reason</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
-                {accounts
-                  .filter((a) => a.stage !== "EVALUATION" && a.stage !== "FUNDED")
-                  .map((acc) => (
+        {archivedAccounts.length > 0 && (
+          <details className="group rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-3 text-xs font-mono">
+            <summary className="cursor-pointer flex items-center justify-between text-zinc-400 select-none hover:text-zinc-200 font-semibold">
+              <span>Archived / Breached Accounts ({archivedAccounts.length})</span>
+              <span className="text-[11px] text-zinc-500 font-normal group-open:hidden">
+                Show {archivedAccounts.length} archived accounts ({dlBreachCount} daily loss, {ddBreachCount} drawdown breaches) ▼
+              </span>
+              <span className="text-[11px] text-zinc-500 font-normal hidden group-open:inline">
+                Hide archived accounts ▲
+              </span>
+            </summary>
+            <div className="mt-3 overflow-x-auto border-t border-[var(--border-subtle)] pt-3">
+              <table className="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
+                    <th className="py-2 px-3 text-center">Stage</th>
+                    <th className="py-2 px-3 text-left">Account</th>
+                    <th className="py-2 px-3 text-right">Initial</th>
+                    <th className="py-2 px-3 text-right">Ending Balance</th>
+                    <th className="py-2 px-3 text-center">Breach Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
+                  {archivedAccounts.map((acc) => (
                     <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-2 px-3 text-center">
                         <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/60 text-red-400 border border-red-800/50">
@@ -245,9 +252,8 @@ export default async function OverviewPage() {
                       </td>
                       <td className="py-2 px-3 text-left font-medium text-white">
                         {acc.challengeName || "Starter Turbo"}
-                        <span className="text-[10px] text-zinc-500 block font-normal">
-                          {formatShortId(acc.accountId)}
-                        </span>
+                        <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
+                        <span className="text-zinc-500 text-[10px]">({formatShortId(acc.accountId)})</span>
                       </td>
                       <td className="py-2 px-3 text-right text-zinc-400">
                         {formatUSD(acc.initialBalance || acc.startingBalance)}
@@ -262,10 +268,11 @@ export default async function OverviewPage() {
                       </td>
                     </tr>
                   ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
+                </tbody>
+              </table>
+            </div>
+          </details>
+        )}
       </div>
 
       {/* ─── 5. Open Exposures Summary (Prompt §8) ────────────────────────── */}

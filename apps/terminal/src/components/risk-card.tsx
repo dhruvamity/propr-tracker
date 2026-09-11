@@ -151,15 +151,24 @@ export function RiskCard({ account, rank }: RiskCardProps) {
       {/* ─── 2. Daily Loss Visual Slider (The Real Killer) ─── */}
       <div className="pl-1 pt-1 space-y-1.5">
         <div className="flex justify-between items-baseline text-[11px] font-mono">
-          <span className="text-zinc-400 font-medium flex items-center gap-1.5">
+          <span
+            className="text-zinc-400 font-medium flex items-center gap-1.5 cursor-help"
+            title={`Daily loss budget = ${account.maxDailyLossPercent || "3"}% of day start snapshot (${formatUSD(account.startingBalance)}), not initial balance. Breaches if equity drops below ${formatUSD(account.dailyLossFloor)}.`}
+          >
             Daily loss budget
+            <span className="text-[10px] text-zinc-500 font-normal underline decoration-dotted decoration-zinc-600">
+              (3% of day start)
+            </span>
             {dailyConsumedPct >= 75 && (
               <span className="text-[10px] font-bold text-red-400 animate-pulse">
                 ⚠ {dailyConsumedPct.toFixed(0)}% BURNED
               </span>
             )}
           </span>
-          <span className="text-zinc-300 font-medium">
+          <span
+            className="text-zinc-300 font-medium cursor-help"
+            title={`Used: ${formatUSD(dailyUsedNum)} of ${formatUSD(dailyLimitNum)} limit (Day start base: ${formatUSD(account.startingBalance)})`}
+          >
             {formatUSD(dailyUsedNum)}{" "}
             <span className="text-zinc-500">/ {formatUSD(dailyLimitNum)}</span>
           </span>
@@ -190,7 +199,15 @@ export function RiskCard({ account, rank }: RiskCardProps) {
           <div className="pt-2 border-t border-zinc-800/60">
             <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1">
               <span>Trade trajectory:</span>
-              <span className="text-zinc-400">{account.trades.length} trades recorded</span>
+              <span className="text-zinc-400">
+                {account.closedTradesCount || account.trades.length} trades
+                {account.winLossRatio ? ` (${account.winLossRatio})` : ""}
+                {account.worstTradeUSD && Number(account.worstTradeUSD) < 0 && (
+                  <span className="ml-1 text-red-400/90 font-medium">
+                    • Worst: -${Math.round(Math.abs(Number(account.worstTradeUSD)))}
+                  </span>
+                )}
+              </span>
             </div>
             <TrendSparkline trades={account.trades} width={130} height={24} showInsight={true} />
           </div>
@@ -217,7 +234,12 @@ export function RiskCard({ account, rank }: RiskCardProps) {
       {/* Target Progress — shows actual profit %, bar uses progress toward target */}
       <div className="pl-1 pt-2 border-t border-[var(--border-subtle)]">
         <div className="flex justify-between text-[11px] font-mono mb-1">
-          <span className="text-zinc-500">Profit Target</span>
+          <span
+            className="text-zinc-500 cursor-help"
+            title={`Current PnL: +${formatUSD(account.totalPnl || equityNum - startBalNum)} over starting balance ${formatUSD(account.initialBalance || 10000)} = ${formatPercent(actualProfitPct, 2)}`}
+          >
+            Profit Target
+          </span>
           <span className="text-zinc-300 font-medium">
             {formatPercent(actualProfitPct, 2)}
             <span className="text-zinc-500 ml-1">
@@ -242,9 +264,7 @@ export function RiskCard({ account, rank }: RiskCardProps) {
       <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1 border-t border-[var(--border-subtle)]">
         <span>{account.drawdownType || "static"} DD</span>
         <span>
-          {account.tradingDays ?? 0}
-          {account.requiredTradingDays ? `/${account.requiredTradingDays}` : ""}{" "}
-          days
+          {account.tradingDays ?? 0}/{account.requiredTradingDays || 5} days
         </span>
         <span>Bal {formatUSD(balanceNum)}</span>
       </div>

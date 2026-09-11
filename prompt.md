@@ -1,42 +1,36 @@
+### Redesign check
 
+Good progress on most of the last list: CRITICAL/SAFE now tracks actual daily-loss risk instead of a flat badge, daily loss has its own slider next to drawdown, Overview and Live Risk agree on ordering now (Starter first on both), every figure has a currency label, the Expense Ledger has an account-ID column, and "Active Face" became "Entry Fees." Failed accounts are collapsed by default instead of crowding the main table.
 
-For the terminal itself, roughly in order of impact:
+Two new things worth a look:
 
-### Daily loss is the real killer, and it's the one metric without a visual
+- Overview's Capital Ledger card says "0 Failed," and the "Archived / Breached Accounts" header also says "(0)" — but the toggle right next to it says "Show 6 archived accounts (2 daily loss, 4 drawdown breaches)." Three places, two different counts for what should be one number.
+- "static DD" dropped its old "7/5 days" format for a bare number ("5 days" for Starter, "4 days" for Explorer). The old format told you current day vs. the 5-day minimum; the new one doesn't say which this is anymore.
 
-Look at your own Accounts table: two of the four failed accounts shown died to "max daily loss exceeded," not drawdown. That's half your visible failure history.
+### Terminal vs PROPR: Explorer 1-Step Turbo
 
-Right now Starter (4D8XWuQ3) has burned 86% of its daily loss budget — $133.97 of $156.37 — leaving $22.40 of room. That's one bad trade from tripping the daily limit and failing the account. But it's tagged SAFE in green, same as Explorer, which has $233.31 of daily room. Drawdown gets a slider with a visible handle; daily loss gets two plain numbers in the corner of the card.
+I can only check Explorer directly, since that's the only account you shared PROPR data for.
 
-Give daily loss the same slider treatment, and make SAFE mean something graduated instead of a flat badge that stays green until the account fails. A WATCH or CRITICAL state under some threshold, say 25% room left, would tell you something a green tag currently doesn't.
+| Metric | Terminal | PROPR (source of truth) | Status |
+|---|---|---|---|
+| Equity | $10,173.67 | $10,173.67 | Match |
+| Drawdown floor | $9,700.00 | $9,700.00 | Match |
+| Drawdown used | 0.00% / 3% | 0.00% / 3% | Match |
+| Daily loss used | $74.13 | 0.72% (of $10,247.80 snapshot) | Match |
+| Daily loss budget | $307.43 | 3% (of $10,247.80 snapshot) | Match |
+| Daily floor | $9,940.37 | $10,247.80 - $307.43 | Match |
+| Daily room left | $233.31 | $307.43 - $74.13 = $233.30 | Rounding ($0.01) |
+| Profit target | 1.74% / 9% | 2.00% / 9% | Mismatch |
+| Account ID | J9wNi8oj (#i8oj) | #3XGK | Mismatch |
+| Trades recorded | 82 (trajectory: 60) | 21, all-time (11W/10L) | Mismatch |
+| Worst trade | -$59.71 | -$68 | Mismatch |
 
-### The same numbers wearing three different names
+**Trades, the one to chase first.** PROPR's Performance tab, set to All Time, shows 21 trades for this account. The terminal shows 82 "trades recorded" and describes the trajectory as "60 trades," and its worst-trade figure doesn't match PROPR's either. Since the terminal's count is higher than PROPR's all-time total rather than a subset of it, it's probably counting something more granular, like ticks or partial fills, and labeling it as trades. Whatever it is, the trajectory sparkline and trade counts on both account cards are built on it.
 
-- Total Cash Spent (Overview) = Total Cash Outflow (Finance) = ₹25,394.83
-- Capital at Risk (Overview) = Active Cash At Risk (Finance) = ₹7,336.19
-- Net Outflow (Overview) = Net Cash Position (Finance) = -₹25,394.83
+**Account ID.** The terminal calls this account J9wNi8oj (#i8oj). PROPR calls the same account #3XGK, confirmed by equity matching to the cent. Probably just an internal reference rather than a lookup error, but worth checking that Starter's terminal ID (4D8XWuQ3 / #WuQ3) also maps cleanly to whatever PROPR calls it, since that's the account where getting the mapping right matters more.
 
-The breakdown underneath is identical too — "Propr: ₹21,559.58 / Breakout: ₹3,835.25" appears verbatim on both pages. On Overview alone, -₹25,394.83 shows up twice on the same screen: once as the Net Outflow headline, again as "Net: -₹25,394.83" right below it.
+**Profit target.** Terminal says 1.74%, PROPR's gauge says 2.00%. The terminal's number is exactly what you get from PROPR's own Lifetime P&L (+$173.67) over the $10,000 starting balance, so it lines up with PROPR's other figures. I can't find a clean way to get to 2.00% from anything else on the PROPR page — closest is the $10,247.80 intraday snapshot, which gives 2.48%. The equity chart shows a peak above $10,240 a couple of days back, so my guess is PROPR's gauge hasn't refreshed since then. Flagging it since it's a real mismatch either way, but this reads more like a stale widget on PROPR's side than a terminal bug.
 
-None of this is wrong. With Payouts at ₹0 today, Net Outflow will always equal negative Total Cash Spent until that changes. But it reads like three separate facts when it's one number wearing different labels. One ledger source, with Finance as the detail view and a one-line summary plus link on Overview, would mean renaming a figure doesn't require updating it twice.
+Everything else, equity, drawdown, and the daily-loss chain, reconciles exactly once you know the daily budget is 3% of the day's opening snapshot, not 3% of the $10,000 starting balance. Worth a tooltip somewhere, since $307.43 looks arbitrary until you know where it comes from.
 
-### "#1" means something different on each page
-
-Overview lists Explorer first, Starter second, which lines up with starting balance ($10k vs $5k). Live Risk lists Starter first, Explorer second, because it explicitly sorts by remaining buffer to breach floor, and Starter's buffer is smaller. Both orders make sense on their own page, but the numbered badge reads like a consistent ranking, and it isn't. Either sort both pages by risk, the more useful axis for a risk monitor, or drop the "#1/#2" numbering where it doesn't mean rank.
-
-### Two currencies, no labels
-
-Overview and Finance total everything in ₹. The account cards underneath — equity, floor, daily loss, buffer — are entirely in $. Both symbols are single characters in the same dark, condensed font, and the numbers land close enough in magnitude (₹25,394 next to $10,173) that a fast skim doesn't reliably separate them. Spelling out INR/USD near the biggest figures, or adding a base-currency toggle, would remove a source of misreading that matters more here than on most dashboards.
-
-### Six failed accounts crowd out the two that matter
-
-"All Accounts (8)" is one flat table with no grouping between the 2 active and 6 failed/archived rows. The active accounts are already surfaced as cards above the table, so seeing them again at the top of the table, ahead of the failed rows, adds little. Collapsing the failed accounts by default would free up room for a small trend line per active account, so you can tell whether that $22.40 of daily room disappeared gradually or in one trade.
-
-### Smaller things
-
-- The Expense Ledger has no account-ID column. Three separate $18.75 charges for "Starter 1-Step Turbo" land on the same day, and with at least four accounts sharing that exact name in your Accounts table, there's no way to tell which charge funded which account.
-- "Active Face: $75.00" on Finance is undefined, and its relationship to the ₹7,336.19 figure above it isn't obvious.
-- Invoice refs are truncated to "PRCR/.../24-08-2026" with only a copy button. A hover tooltip with the full reference would save a paste-to-check step.
-- Net Outflow's red styling puts a routine, expected cost (evaluation fees) in the same visual register as an actual account failure. A neutral tone for planned spend would keep red reserved for genuine risk states.
-
-That covers Overview, Live Risk, and Finance. 
+If you can pull Starter's PROPR page, run the same check there before trusting the CRITICAL numbers — that's the account closest to breaching, so it's the one where a trade-count or ID bug would matter most.

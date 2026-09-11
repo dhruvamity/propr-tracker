@@ -1,7 +1,7 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { History } from "lucide-react";
 import { TradeDrawer } from "@/components/trade-drawer";
-import { formatUSD, formatShortId } from "@/lib/utils";
+import { formatUSD, formatShortId, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
@@ -89,7 +89,8 @@ export default async function HistoryPage() {
                   </span>
                 </td>
                 <td className="py-2.5 px-3 font-medium text-white">
-                  {formatShortId(acc.accountId)}
+                  <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
+                  <span className="text-zinc-500 text-[11px]">({formatShortId(acc.accountId)})</span>
                 </td>
                 <td className="py-2.5 px-3 text-zinc-300">
                   {acc.challengeName || "Starter Turbo"}

@@ -1,7 +1,7 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { formatUSD } from "@/lib/utils";
+import { formatUSD, formatShortId, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
@@ -72,8 +72,11 @@ export default async function PositionsPage() {
                         <span className="font-semibold text-white">
                           {acc.challengeName || "Evaluation"}
                         </span>
-                        <span className="text-zinc-500">
-                          {acc.accountId.replace(/^urn:prp-account:/, "").slice(0, 8)}
+                        <span className="text-zinc-400 font-medium">
+                          {formatAccountTag(acc.accountId)}{" "}
+                          <span className="text-zinc-500 font-normal text-[11px]">
+                            ({formatShortId(acc.accountId)})
+                          </span>
                         </span>
                       </div>
 
@@ -199,7 +202,8 @@ export default async function PositionsPage() {
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-zinc-400">
-                    {pos.accountId.replace(/^urn:prp-account:/, "").slice(0, 8)}
+                    <span className="text-zinc-300 font-medium">{formatAccountTag(pos.accountId)}</span>{" "}
+                    <span className="text-zinc-500 text-[10px]">({formatShortId(pos.accountId)})</span>
                   </td>
                   <td className="py-2.5 px-3 text-right font-medium text-white">
                     {pos.quantity}

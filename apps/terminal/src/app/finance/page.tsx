@@ -1,7 +1,7 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { CheckCircle2, Wallet, ArrowDown, GitBranch } from "lucide-react";
 import { BankRefBadge } from "@/components/bank-ref-badge";
-import { formatUSD, formatINR, formatShortId } from "@/lib/utils";
+import { formatUSD, formatINR, formatShortId, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
@@ -195,7 +195,7 @@ export default async function FinancePage() {
                   <td className="py-2.5 px-3 text-left">
                     {tx.accountId && tx.accountId.startsWith("urn:prp-account:") ? (
                       <div>
-                        <span className="text-white font-semibold">#{formatShortId(tx.accountId).slice(-4)}</span>
+                        <span className="text-white font-semibold">{formatAccountTag(tx.accountId)}</span>
                         <span className="text-zinc-500 text-[10px] block font-normal">{formatShortId(tx.accountId)}</span>
                       </div>
                     ) : (

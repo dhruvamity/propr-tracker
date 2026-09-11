@@ -45,6 +45,13 @@ export function formatNumber(val: string | number | undefined | null, decimals =
 }
 
 export function formatShortId(id: string): string {
-  return id.replace(/^urn:prp-account:/, "").slice(0, 8);
+  if (!id) return "";
+  return id.replace(/^urn:[^:]+:/, "");
+}
+
+export function formatAccountTag(id: string): string {
+  if (!id) return "";
+  const raw = id.replace(/^urn:[^:]+:/, "");
+  return `#${raw.slice(-4)}`;
 }
 
