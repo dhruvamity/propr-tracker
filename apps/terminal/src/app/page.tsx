@@ -3,6 +3,7 @@ import { formatUSD, formatINR, formatPercent, formatShortId } from "@/lib/utils"
 import { TrendingUp, ListOrdered } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
+import { TrendSparkline } from "@/components/trend-sparkline";
 
 export const revalidate = 15; // Revalidate data every 15 seconds
 
@@ -142,6 +143,7 @@ export default async function OverviewPage() {
                 <th className="py-2.5 px-3 text-right">Equity</th>
                 <th className="py-2.5 px-3 text-right">Drawdown Buffer</th>
                 <th className="py-2.5 px-3 text-right">Daily Room</th>
+                <th className="py-2.5 px-3 text-left">Trade Trajectory</th>
                 <th className="py-2.5 px-3 text-right">Target</th>
                 <th className="py-2.5 px-3 text-center">Risk State</th>
               </tr>
@@ -183,6 +185,9 @@ export default async function OverviewPage() {
                       <span className="text-[10px] text-zinc-500 block">
                         {isCritical ? "⚠ 1 trade from breach" : "Normal room"}
                       </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-left whitespace-nowrap">
+                      <TrendSparkline trades={acc.trades} width={90} height={20} showInsight={true} />
                     </td>
                     <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
                       <span className="font-medium text-white">

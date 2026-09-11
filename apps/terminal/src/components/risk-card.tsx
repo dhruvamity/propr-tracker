@@ -2,6 +2,7 @@ import React from "react";
 import type { AccountSnapshot } from "@/lib/propr-api";
 import { formatUSD, formatPercent, formatShortId } from "@/lib/utils";
 import { ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
+import { TrendSparkline } from "./trend-sparkline";
 
 interface RiskCardProps {
   account: AccountSnapshot;
@@ -183,6 +184,17 @@ export function RiskCard({ account, rank }: RiskCardProps) {
             Room left: {formatUSD(dailyRoomNum)}
           </span>
         </div>
+
+        {/* Trade Trajectory Sparkline (Prompt: Did room disappear gradually or in one trade?) */}
+        {account.trades && account.trades.length > 0 && (
+          <div className="pt-2 border-t border-zinc-800/60">
+            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1">
+              <span>Trade trajectory:</span>
+              <span className="text-zinc-400">{account.trades.length} trades recorded</span>
+            </div>
+            <TrendSparkline trades={account.trades} width={130} height={24} showInsight={true} />
+          </div>
+        )}
       </div>
 
       {/* Limits & Room Matrix */}
