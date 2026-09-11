@@ -1,924 +1,649 @@
-You are performing a **production-grade end-to-end audit, security review, correctness review, data-integrity review, realtime-system review, and comprehensive testing pass** on this repository.
+# Propr Trading Terminal — Post-Remediation Production Audit & Verification Prompt
 
-Repository:
+You are performing a **second, independent production audit** of the repository:
 
 `https://github.com/dhruvamity/propr-tracker.git`
 
-You have access to the repository source code locally. Treat the actual repository code as the primary source of truth.
+A prior 60-section audit identified multiple production issues. A subsequent remediation pass claims that those issues have been fixed and that:
 
-The application is intended to be a **read-only Propr trading/account terminal** that tracks:
+* 67 tests pass across 13 test files
+* TypeScript passes with zero errors
+* ESLint passes with zero errors/warnings
+* Next.js production build passes
+* active capital now reflects only active accounts
+* trailing drawdown / high-water-mark logic was added
+* mock-data fallback was removed from production execution
+* zero-quantity positions are filtered correctly
+* conditional and partially-filled orders are included
+* realtime sync timestamps are now real
+* all sidebar routes were created
+* monorepo workspaces were connected
+* `SEED_PURCHASES` was centralized
+* Vercel deployment remains the target environment
 
-* Propr evaluation accounts
-* passed evaluations
-* failed/breached evaluations
-* funded accounts
-* account lifecycle
-* current balances/equity
-* realized/unrealized PnL
-* trading fees
-* drawdown
-* daily loss
-* profit-target progress
-* open positions
-* open orders
-* account health
-* payouts
-* prop-firm expenses
-* actual cash PnL
-* realtime account state
+The objective of this audit is **NOT to repeat the original audit**.
 
-Do NOT assume the implementation is correct merely because the UI appears correct.
+The objective is to independently determine:
 
-The goal is to find **all real defects, incorrect assumptions, stale-data problems, security problems, API-integration mistakes, financial calculation errors, lifecycle bugs, race conditions, deployment issues, and missing tests**.
+> **Did the remediation actually fix the underlying production defects, or were the tests/build merely made green?**
 
-Do not stop after finding the first issue.
+Do not trust `AUDIT.md`, `walkthrough.md`, comments, test names, commit messages, or claimed results without independently verifying implementation and behavior.
 
 ---
 
-# 1. INITIAL REPOSITORY RECONNAISSANCE
+# 1. Repository Integrity & Current-State Verification
 
-First inspect the entire repository.
-
-Produce a structured inventory of:
-
-```text
-package manager
-framework
-runtime
-language
-build system
-frontend architecture
-backend/API architecture
-database
-cache
-realtime layer
-authentication
-environment variables
-test framework
-CI/CD
-deployment platform
-```
-
-Identify:
-
-```text
-package.json
-lockfile
-tsconfig
-next.config
-middleware
-API routes
-server actions
-database schema
-ORM
-migrations
-WebSocket code
-Propr API client
-state management
-calculation engine
-components
-pages/routes
-hooks
-utilities
-tests
-fixtures
-mocks
-GitHub workflows
-Vercel configuration
-Docker files
-README
-environment examples
-```
-
-Construct an architecture diagram based on the actual code.
-
-Do not guess.
-
----
-
-# 2. BUILD BASELINE
-
-Before changing anything, execute all appropriate repository commands.
-
-At minimum identify and run, where available:
-
-```bash
-npm ci
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
-
-If the project uses pnpm/yarn/bun instead, use the repository's actual package manager.
-
-Also inspect all package scripts.
+First establish the exact repository state being audited.
 
 Record:
 
+* current branch
+* commit SHA
+* latest commit date
+* working tree status
+* presence of uncommitted changes
+* repository version/tag if applicable
+* Node version
+* npm version
+* package-manager version
+* lockfile type and consistency
+* Next.js version
+* React version
+* TypeScript version
+* Vitest version
+
+Verify that the repository currently contains:
+
+* `AUDIT.md`
+* remediation-related source changes
+* test suite
+* fixtures
+* all claimed application routes
+* workspace packages
+* sync service
+
+Do not rely on previous local audit artifacts.
+
+The audit must clearly state:
+
 ```text
-PASS
-FAIL
-WARN
-NOT AVAILABLE
+AUDITED COMMIT:
+AUDITED BRANCH:
+AUDIT DATE:
+WORKTREE CLEAN:
 ```
 
-for every available quality gate.
-
-If a command fails, determine whether it is:
-
-* code failure
-* environment failure
-* missing dependency
-* incorrect configuration
-* deployment-only issue
-* test infrastructure issue
-
-Do not simply label all failures as application bugs.
+If GitHub cannot be accessed, explicitly state that limitation instead of pretending the current remote state was verified.
 
 ---
 
-# 3. DEPENDENCY AUDIT
+# 2. Remediation Diff Audit
 
-Audit every dependency.
+Reconstruct the actual remediation diff.
 
-Look for:
+Identify every source file modified after the original audit.
 
-* abandoned packages
-* vulnerable packages
-* unnecessary packages
-* duplicate packages
-* direct dependencies that should be dev dependencies
-* dev dependencies accidentally required at runtime
-* mismatched React/Next versions
-* incompatible libraries
-* dependency bloat
-* package-lock inconsistencies
-* transitive security issues
+For every modified production file determine:
 
-Run appropriate security scans:
+1. What original defect it was intended to fix.
+2. What code changed.
+3. Whether the change fixes the root cause.
+4. Whether it introduces a new defect.
+5. Whether the corresponding regression test is meaningful.
+6. Whether the implementation works outside the exact fixture values used by the test.
 
-```bash
-npm audit
-```
+Create a table:
 
-or the appropriate equivalent.
-
-For each relevant issue classify:
-
-```text
-CRITICAL
-HIGH
-MEDIUM
-LOW
-INFO
-```
-
-Do not inflate severity.
+| Finding | Claimed Fix | Actual Implementation | Root Cause Fixed? | Regression Protected? | Status |
+| ------- | ----------- | --------------------- | ----------------- | --------------------- | ------ |
 
 ---
 
-# 4. PROPR API CONTRACT AUDIT
+# 3. Do Not Trust Green Tests
 
-Compare the implementation against the supplied Propr API documentation.
+Run the complete existing suite.
 
-The following behavior is mandatory to validate.
+Then perform **mutation/adversarial testing**.
 
-## Evaluation accounts
+For every critical financial calculation:
 
-Evaluation/challenge accounts come from:
-
-`GET /challenge-attempts`
-
-The API can return challenge progress including:
-
-* status
-* total PnL
-* win rate
-* max drawdown
-* trading days
-* failure reason
-* linked accountId
-* current phase
-
-Validate:
-
-* pagination
-* status filtering
-* retries
-* error handling
-* empty responses
-* duplicate responses
-* accountId extraction
-* passed state
-* failed state
-* active state
-* historical state
-
-The implementation must NOT assume only active evaluations exist.
-
----
-
-# 5. FUNDED ACCOUNT CONTRACT
-
-Funded accounts are separate from evaluation attempts.
-
-Validate that the implementation retrieves them through:
-
-`GET /book-account-issuances`
-
-and handles:
-
-```text
-active
-closed
-review_pending
-```
-
-Do not accept any implementation that treats:
-
-```text
-challenge status = passed
-```
-
-as automatically equivalent to:
-
-```text
-funded account exists
-```
-
-A passed challenge should only be considered funded when the funded-account issuance actually exists.
-
-This distinction is explicitly part of Propr's documented account model.
-
----
-
-# 6. ACCOUNT DISCOVERY AUDIT
-
-Test scenarios:
-
-```text
-0 evaluations
-1 evaluation
-multiple evaluations
-0 funded accounts
-1 funded account
-multiple funded accounts
-evaluation + funded simultaneously
-passed evaluation but no funded issuance yet
-failed evaluation
-closed funded account
-review_pending funded account
-duplicate account IDs
-same account returned by multiple data sources
-```
-
-Confirm the system creates one canonical account representation rather than duplicated UI entries.
-
----
-
-# 7. ACCOUNT LIFECYCLE AUDIT
-
-Determine how the implementation derives:
-
-```text
-PURCHASED
-EVALUATION
-PASSED
-FAILED
-BREACHED
-FUNDED
-REVIEW_PENDING
-CLOSED
-```
-
-Audit every transition.
-
-Construct a lifecycle state-machine test.
-
-Example:
-
-```text
-PURCHASED
-   ↓
-EVALUATION
-   ↓
-PASSED
-   ↓
-FUNDED
-   ↓
-ACTIVE
-   ↓
-CLOSED
-```
-
-and:
-
-```text
-EVALUATION
-   ↓
-FAILED/BREACHED
-   ↓
-CLOSED
-```
-
-Check for impossible transitions.
-
-Example invalid behavior:
-
-```text
-funded → evaluation
-closed → active without new issuance
-passed → funded without funded issuance
-active → failed due to frontend-derived approximation
-```
-
----
-
-# 8. READ-ONLY GUARANTEE
-
-The product is intended to be strictly read-only.
-
-Search the entire repository for:
-
-```text
-POST /orders
-PUT /margin-config
-POST /payouts/request
-POST /checkout-sessions
-POST /wallet/link
-DELETE /wallet
-order creation
-order cancellation
-leverage updates
-margin configuration
-purchase creation
-```
-
-Find every API mutation.
-
-Determine whether those mutations are:
-
-```text
-unused
-dead code
-reachable
-UI-triggerable
-server-triggerable
-accidentally exposed
-```
-
-The final production application must not permit trading or account mutations.
-
----
-
-# 9. API KEY SECURITY AUDIT
-
-Search the entire repository for:
-
-```text
-PROPR_API_KEY
-pk_live_
-X-API-Key
-Authorization
-NEXT_PUBLIC_
-localStorage
-sessionStorage
-cookies
-console.log
-```
-
-Determine whether the Propr API key can ever reach:
-
-* client bundles
-* browser devtools
-* React props
-* public API responses
-* logs
-* analytics
-* error messages
-* source maps
-* static HTML
-* Next.js client components
-
-The key must remain server-side.
-
-The Propr docs explicitly require `X-API-Key` authentication and state that the API key must be kept secret.
-
-Report any violation as at least HIGH severity.
-
----
-
-# 10. ENVIRONMENT VARIABLE AUDIT
-
-Inspect:
-
-```text
-.env
-.env.local
-.env.production
-.env.example
-Vercel environment assumptions
-```
-
-Ensure secrets are NOT prefixed with:
-
-```text
-NEXT_PUBLIC_
-```
-
-unless they are genuinely public.
-
-Ensure the repository does not contain:
-
-* API keys
-* tokens
-* wallet private keys
-* database passwords
-* connection strings
-* webhook secrets
-
-Search git history if necessary.
-
----
-
-# 11. WEBSOCKET AUDIT
-
-Inspect the realtime architecture.
-
-Propr provides:
-
-`wss://api.propr.xyz/ws`
-
-and authenticated WebSocket events including:
-
-```text
-account.updated
-order.created
-order.updated
-order.cancelled
-order.triggered
-order.filled
-order.partially_filled
-position.opened
-position.updated
-position.closed
-position.liquidated
-trade.created
-mark.updated
-```
-
-Audit:
-
-* authentication
-* connection establishment
-* heartbeat
-* reconnect
-* exponential backoff
+* alter fixture values
+* remove optional fields
+* change string decimal precision
+* introduce nulls
+* introduce unexpected API values
+* reverse event ordering
 * duplicate events
-* out-of-order events
-* missed events
-* event deduplication
-* state replacement
-* state merging
-* concurrent updates
-* stale connection detection
-* memory growth
-* subscription management
-* server/client boundary
+* introduce stale values
+* change account state
+* change purchase linkage
 
-Test:
+A test must fail when the production logic is intentionally broken.
+
+If a test still passes after deliberately reintroducing the old bug, mark:
 
 ```text
-connect
-disconnect
-reconnect
-network interruption
-server restart
-duplicate event
-out-of-order event
-event burst
-websocket unavailable
-REST available but websocket unavailable
-websocket available but REST unavailable
+TEST IS NON-DETECTING
 ```
+
+This is one of the highest-priority goals of this audit.
 
 ---
 
-# 12. REST + WEBSOCKET CONSISTENCY
-
-This is a high-priority audit.
-
-Determine whether the application has:
-
-```text
-REST authoritative snapshot
-+
-WebSocket incremental state
-```
-
-or whether it incorrectly uses only one of them.
-
-Test:
-
-```text
-REST state A
-WS event 1
-WS event 2
-WS reconnect
-REST refresh
-```
-
-Check whether state becomes:
-
-```text
-duplicated
-stale
-reverted
-double-counted
-missing
-```
-
-A reconnect should trigger a fresh authoritative reconciliation.
-
----
-
-# 13. STALE DATA AUDIT
-
-Every displayed live metric should have a known freshness timestamp.
-
-Inspect whether the application tracks:
-
-```text
-last REST sync
-last websocket event
-last account update
-last mark update
-```
-
-Test:
-
-```text
-0 sec old
-5 sec old
-30 sec old
-2 min old
-10 min old
-WebSocket disconnected
-API unavailable
-```
-
-The UI must distinguish:
-
-```text
-LIVE
-DELAYED
-STALE
-OFFLINE
-```
-
-It must never silently present stale data as current.
-
----
-
-# 14. POSITION DATA AUDIT
-
-Audit:
-
-`GET /accounts/{accountId}/positions`
-
-and all normalization logic.
-
-Propr documents that fully closed positions may remain with:
-
-```text
-quantity = "0"
-```
-
-Therefore active-position counts must not simply count returned records.
-
-Test:
-
-```text
-1 open position
-1 zero-quantity position
-mixed open/zero records
-multiple assets
-long positions
-short positions
-closed positions
-liquidated positions
-```
-
-Check:
-
-```text
-position count
-open position count
-uPnL
-notional
-margin
-ROE
-liquidation price
-```
-
----
-
-# 15. OPEN ORDER AUDIT
-
-Audit:
-
-`GET /accounts/{accountId}/orders`
-
-Validate exact status enums.
-
-Do NOT use invented filters such as:
-
-```text
-active
-triggered
-```
-
-The provided Propr documentation explicitly states these are invalid REST order filters and distinguishes websocket-triggered events from REST status filters.
-
-Test:
-
-```text
-pending
-open
-partially_filled
-filled
-cancelled
-expired
-rejected
-triggered websocket event
-```
-
-Ensure open-order counts are mathematically correct.
-
----
-
-# 16. FINANCIAL MATH AUDIT
-
-This is a critical section.
-
-Locate every financial calculation in the codebase.
-
-Audit:
-
-```text
-balance
-equity
-realized PnL
-unrealized PnL
-fees
-ROI
-drawdown
-daily loss
-profit target
-actual cash PnL
-payout totals
-expense totals
-```
-
-Do not assume UI formatting equals correct calculations.
-
----
-
-# 17. DECIMAL PRECISION AUDIT
-
-The Propr API returns monetary values as decimal strings.
-
-The repository must NOT use JavaScript floating-point arithmetic for financial calculations where precision matters.
-
-Search for:
-
-```text
-parseFloat
-Number(...)
-.toFixed()
-Math.*
-```
-
-inside financial calculation paths.
-
-Determine whether values are represented with:
-
-```text
-Decimal
-BigNumber
-fixed-point integers
-```
-
-where appropriate.
-
-The supplied Propr documentation specifically recommends Decimal/BigNumber and warns against floating-point monetary arithmetic.
-
-Create precision tests with values such as:
-
-```text
-0.1 + 0.2
-0.000001
-999999.999999
-tiny fee values
-repeated fee accumulation
-```
-
----
-
-# 18. UNREALIZED PNL AUDIT
-
-Verify implementation against:
-
-```text
-sign
-quantity
-entry price
-mark price
-position side
-```
-
-For long:
-
-```text
-uPnL = qty × (mark - entry)
-```
-
-For short:
-
-```text
-uPnL = qty × (entry - mark)
-```
-
-Verify aggregation across positions.
-
-Test:
-
-```text
-long profit
-long loss
-short profit
-short loss
-zero movement
-multiple positions
-multiple assets
-```
-
-Compare implementation against the formulas in the provided Propr integration documentation.
-
----
-
-# 19. EQUITY AUDIT
-
-Verify how the application derives:
-
-```text
-equity
-available balance
-cross margin
-isolated margin
-unrealized PnL
-```
-
-Test:
-
-```text
-no positions
-long position
-short position
-cross margin
-isolated margin
-multiple positions
-open orders with reserved margin
-```
-
-The Propr documentation provides explicit formulas for these values; use those as the reference implementation.
-
----
-
-# 20. DRAWDOWN AUDIT
-
-This is another critical correctness area.
-
-Validate:
-
-```text
-static drawdown
-trailing drawdown
-high-water mark
-initial balance
-drawdown limit
-drawdown used %
-remaining drawdown
-breach threshold
-```
-
-Test:
-
-```text
-equity exactly at limit
-equity 0.01 above limit
-equity 0.01 below limit
-new high-water mark
-drawdown recovery
-trailing DD
-static DD
-```
-
-Compare formulas against the supplied Propr implementation guidance.
-
----
-
-# 21. DAILY LOSS AUDIT
-
-Validate the documented calculation using:
-
-```text
-startingBalance
-startingIsolatedPositionMargin
-dailyLossBase
-dailyLoss limit
-current equity
-```
-
-Test edge cases around:
-
-```text
-day rollover
-timezone
-midnight UTC
-midnight local time
-new trading day
-open positions across day boundary
-negative equity
-isolated margin
-```
-
-The Propr documentation states that daily-loss calculations use the opening realized value represented by starting balance plus starting isolated-position margin.
-
----
-
-# 22. PROFIT TARGET AUDIT
+# 4. Active Capital — Full Verification
+
+Verify that active capital is derived from actual account state and not merely fixture assumptions.
+
+Required logic:
+
+* failed challenges = sunk cost
+* closed challenges = historical cost
+* active evaluations = active capital
+* funded accounts = active capital if actually active
+* pending purchases without active accounts must not automatically become active capital
+* cancelled/refunded purchases must not count as active capital
+* duplicate account records must not double count capital
 
 Verify:
 
 ```text
-phaseStartingBalance
-current equity
-target percentage
-progress
-remaining
-passed state
+activeCapitalUSD
+activeCapitalINR
+totalInvestedUSD
+historicalCapitalUSD
+failedCapitalUSD
 ```
+
+Independently calculate these values from the source API payloads.
+
+Confirm that `purchaseId` linkage cannot silently fail.
+
+Test:
+
+* missing purchaseId
+* unknown purchaseId
+* duplicate purchaseId
+* reused purchaseId
+* failed account linked to valid purchase
+* active account linked to missing purchase
+* one purchase producing multiple account records
+
+Expected behavior must be explicitly defined.
+
+---
+
+# 5. Account Discovery — REAL API Contract
+
+Verify that account discovery correctly combines:
+
+* `/challenge-attempts`
+* `/book-account-issuances`
+
+Verify the application never assumes that every tradable account exists only in challenge attempts.
+
+Test combinations:
+
+```text
+evaluation only
+funded only
+evaluation + funded
+passed evaluation awaiting funded account
+failed evaluation
+closed funded account
+review_pending funded account
+multiple funded accounts
+multiple evaluations
+```
+
+Verify deduplication by the correct account identity.
+
+Do not use display name or purchase ID as a substitute for account ID.
+
+---
+
+# 6. Account Lifecycle Verification
+
+Audit every lifecycle transition.
+
+Verify:
+
+```text
+PURCHASED
+→ EVALUATION
+→ PASSED
+→ FUNDED
+→ CLOSED
+```
+
+Also test:
+
+```text
+EVALUATION
+→ FAILED
+
+EVALUATION
+→ CANCELLED
+
+FUNDED
+→ REVIEW_PENDING
+
+FUNDED
+→ CLOSED
+
+FUNDED
+→ PAYOUT REQUESTED
+
+PAYOUT PROCESSING
+→ PAYOUT PROCESSED
+
+PAYOUT PROCESSING
+→ PAYOUT FAILED
+```
+
+Verify lifecycle state is derived from authoritative API fields rather than inferred from balance/PnL alone.
+
+---
+
+# 7. Trailing Drawdown — Mathematical Audit
+
+This is a financial-critical calculation.
+
+Do not merely verify that a variable named `highWaterMark` exists.
+
+Derive the exact intended rules from the official Propr documentation and implementation.
+
+Audit:
+
+* initial balance
+* current equity
+* current balance
+* high-water mark
+* max drawdown amount
+* max drawdown percentage
+* trailing floor
+* floor movement
+* floor clamping
+* whether the floor stops trailing after a specified threshold
+* whether realized profit changes the floor
+* whether unrealized profit changes the floor
+* whether deposits/adjustments can manipulate HWM
+* whether HWM updates before or after mark-to-market
+
+Test at minimum:
+
+### Case A
+
+Initial balance = 50,000
+
+HWM = 50,000
+
+Max DD = 5%
+
+Floor = 47,500
+
+### Case B
+
+Equity rises to 55,000
+
+Verify the correct new HWM/floor.
+
+### Case C
+
+Equity subsequently falls.
+
+Verify breach occurs exactly at the intended floor.
+
+### Case D
+
+Price spikes intrabar and reverses.
+
+Verify whether HWM is based on equity marks according to the official Propr contract.
+
+### Case E
+
+API restart.
+
+Verify HWM does not reset.
+
+### Case F
+
+WebSocket disconnect/reconnect.
+
+Verify HWM is reconciled against authoritative state.
+
+Any discrepancy must be reported as:
+
+```text
+TRAILING-DD CONTRACT RISK
+```
+
+---
+
+# 8. Drawdown Gauge — UI Semantics
+
+Verify that the UI distinguishes:
+
+```text
+drawdownUsedPercent
+```
+
+from
+
+```text
+drawdownLimitConsumedPercent
+```
+
+The UI must communicate:
+
+> percentage of allowed drawdown already consumed
+
+not:
+
+> percentage the account balance has lost
+
+Test:
+
+* 0% consumed
+* 25%
+* 50%
+* 75%
+* 90%
+* 100%
+* breached
+
+Verify ARIA:
+
+```text
+role="progressbar"
+aria-valuenow
+aria-valuemin
+aria-valuemax
+aria-label
+```
+
+Ensure `aria-valuenow` is bounded and represents the same quantity visually shown.
+
+---
+
+# 9. Daily Loss — Independent Mathematical Verification
+
+Verify daily loss against the actual Propr rule.
+
+Do not accept:
+
+```text
+currentEquity - initialBalance
+```
+
+unless the official API contract explicitly requires that.
+
+Test:
+
+* day start equity
+* realized loss
+* unrealized loss
+* fees
+* isolated margin
+* overnight positions
+* midnight rollover
+* timezone boundary
+* no trades today
+* positions open across midnight
+
+Critical test:
+
+```text
+23:59:59 IST
+→
+00:00:00 IST
+```
+
+Ensure daily loss resets according to the authoritative account timezone/rules, not the server/browser timezone.
+
+---
+
+# 10. Equity Calculation
+
+Audit every component of equity.
+
+Verify the implementation against the Propr formula.
 
 Test:
 
 ```text
-below target
-exact target
-above target
-negative PnL
-phase transition
+balance
++ unrealized PnL
++ / - isolated position treatment where applicable
+- fees where appropriate
 ```
 
-Ensure rounding does not cause premature "passed" UI.
+Do not assume the current formula is correct simply because it matches fixtures.
+
+Cross-check against API-returned values when both are available.
+
+For every account:
+
+```text
+computed equity
+API equity
+difference
+tolerance
+```
+
+Report any unexplained difference.
 
 ---
 
-# 23. ACCOUNT STATUS AUTHORITY
+# 11. Unrealized PnL
 
-Determine which system is authoritative for:
+Verify:
+
+* long positions
+* short positions
+* quantity precision
+* mark price precision
+* contract multiplier
+* fees
+* partial fills
+* multiple positions
+* zero quantity
+* negative quantities if API permits them
+
+Never use binary floating-point arithmetic where financial precision matters.
+
+Search the entire repository for:
 
 ```text
-passed
-failed
-breached
-funded
-closed
+Number(
+parseFloat(
+parseInt(
+Math.round(
+Math.floor(
+Math.ceil(
+.toFixed(
 ```
 
-The frontend must NOT independently decide that an account has passed or breached purely from approximate local calculations when an authoritative server status exists.
-
-Local calculations may provide:
+Classify every occurrence as:
 
 ```text
-NEAR BREACH
-NEAR TARGET
+SAFE
+UNSAFE FOR MONEY
+UI-ONLY
+REQUIRES REVIEW
 ```
-
-but official lifecycle state should be derived from the authoritative Propr API.
 
 ---
 
-# 24. PAYOUT AUDIT
+# 12. Decimal Integrity
 
-Audit:
+Verify that all financial calculations use:
 
-`GET /payouts/history`
+* Decimal
+* BigNumber
+* integer minor units
+* or another deterministic exact representation
 
-and all payout mapping.
+Test:
 
-Payout statuses include:
+```text
+0.1 + 0.2
+1.005
+999999.999999
+very small quantity
+very large price
+high precision quantity
+high precision PnL
+```
+
+Confirm serialization does not convert precise decimals into IEEE-754 numbers.
+
+---
+
+# 13. Position Normalization
+
+Verify all position pipelines:
+
+REST → normalized state
+
+WebSocket → normalized state
+
+Persistence/cache → normalized state
+
+UI → displayed state
+
+Test:
+
+```text
+"0"
+"0.0"
+"0.00"
+"0.000000"
+null
+undefined
+negative quantity
+tiny non-zero quantity
+```
+
+A tiny non-zero quantity must never be accidentally discarded merely because it rounds visually to zero.
+
+---
+
+# 14. WebSocket Realtime Architecture
+
+Audit the full WebSocket lifecycle.
+
+Verify:
+
+```text
+connect
+authenticate
+subscribe
+heartbeat
+receive event
+update state
+disconnect
+reconnect
+resubscribe
+reconcile REST state
+```
+
+Test:
+
+* duplicate event
+* out-of-order event
+* reconnect
+* multiple reconnects
+* event arriving during REST reconciliation
+* event arriving immediately after reconnect
+* malformed event
+* unknown event
+* stale event
+* connection silently hanging
+
+Verify heartbeat behavior against the official Propr WebSocket contract.
+
+---
+
+# 15. REST ↔ WebSocket Reconciliation
+
+Determine authoritative precedence.
+
+For every state field define:
+
+```text
+REST authoritative?
+WS authoritative?
+derived locally?
+```
+
+Then test contradictory values.
+
+Example:
+
+```text
+REST says equity = 49,950
+WS says equity = 50,020
+```
+
+Verify deterministic resolution.
+
+Do not allow whichever request happens to finish last to win.
+
+---
+
+# 16. Event Idempotency
+
+For every event with an identifier, verify deduplication.
+
+Test:
+
+```text
+same trade event twice
+same order event twice
+same position event twice
+same account update twice
+same payout event twice
+```
+
+Ensure duplication does not alter:
+
+* PnL
+* positions
+* trade counts
+* fees
+* finance totals
+* equity
+* drawdown
+* payout totals
+
+---
+
+# 17. Order Coverage
+
+Verify order retrieval includes every order state required by the application.
+
+At minimum evaluate:
+
+```text
+open
+pending
+partially_filled
+filled
+cancelled
+triggered
+```
+
+Verify stop-loss and take-profit conditional orders are not accidentally omitted.
+
+If the UI claims "open orders", define precisely what that label means.
+
+---
+
+# 18. Payout Accounting
+
+Verify payout aggregation only counts payouts that actually represent withdrawn cash.
+
+Test:
 
 ```text
 requested
@@ -929,1133 +654,1146 @@ cancelled
 failed
 ```
 
-Only:
+Only authoritative completed/processed payouts may increase:
 
 ```text
-processed
+totalPayouts
+actualCashPnL
 ```
 
-should contribute to:
+Test duplicate payout records.
 
-```text
-payouts withdrawn
-actual cash PnL
-```
-
-unless the application's explicit accounting model says otherwise.
-
-Test:
-
-```text
-requested payout
-processing payout
-processed payout
-rejected payout
-cancelled payout
-failed payout
-multiple payouts
-same payout fetched twice
-pagination
-```
-
-Check for double counting.
+Test payout reversal/failure after a prior request.
 
 ---
 
-# 25. CASH PNL AUDIT
+# 19. Cash PnL — Accounting Audit
 
-This metric must be clearly separated from trading PnL.
-
-Expected conceptual formula:
+Clearly separate:
 
 ```text
-Actual Cash PnL
-=
-Processed Payouts
--
-Confirmed Prop Expenses
-+
+Trading PnL
+Cash PnL
+Realized PnL
+Unrealized PnL
+Purchase Costs
 Refunds
-± Adjustments
+Adjustments
+Payouts
+```
+
+The expected formula must be explicitly documented and tested.
+
+At minimum verify:
+
+```text
+cash PnL
+= payouts
+- purchases
++ refunds
++/- adjustments
 ```
 
 Do NOT substitute:
 
 ```text
-realized trading PnL
+equity - starting balance
 ```
 
-for:
-
-```text
-cash PnL
-```
-
-Audit whether the repository makes this distinction.
+for cash PnL.
 
 ---
 
-# 26. EXPENSE / PURCHASE DATA AUDIT
+# 20. Finance Ledger Integrity
 
-If the project has a manual finance ledger or database:
+Verify every finance transaction has:
 
-Audit:
+* unique identity
+* date
+* transaction type
+* amount
+* currency
+* account relation where applicable
+* provenance/reference
+* verification status
 
-```text
-purchase
-payout
-refund
-adjustment
-```
+Test duplicate purchase imports.
 
-Validate:
+Test identical amounts on different dates.
 
-* duplicate transactions
-* bank verification
-* currency conversion
-* account linkage
-* historical account linkage
-* orphaned transactions
-* unlinked transactions
-* incorrect account attribution
+Test same purchase imported twice.
 
-No expense should disappear when an account becomes breached or closed.
+Test bank-verified vs unverified transactions.
 
 ---
 
-# 27. BANK-VERIFIED DATA INTEGRITY
+# 21. INR Conversion Audit
 
-Where a transaction is based on a real bank transaction, distinguish:
+Determine exactly where USD→INR conversion occurs.
 
-```text
-VERIFIED
-UNVERIFIED
-ESTIMATED
-```
+Verify:
 
-Never mix estimated INR values with bank-settled INR values without labeling them.
+* hardcoded conversion
+* environment-configured conversion
+* live FX
+* timestamped FX
+* stale FX
+* rounding
 
-Run a reconciliation test:
+Financial values must never silently change because an unrelated UI request triggered a recalculation.
 
-```text
-sum of transaction ledger
-=
-dashboard total expense
-```
+Every displayed INR total should have an explainable conversion basis.
 
 ---
 
-# 28. DUPLICATION AUDIT
+# 22. Mock / Synthetic Data Audit
 
-Search for places where the same concept is stored independently:
-
-```text
-account purchase cost
-ledger purchase cost
-dashboard total cost
-manual payout total
-computed payout total
-cached payout total
-```
-
-This is a major source of financial bugs.
-
-Prefer:
+Search the full codebase for:
 
 ```text
-single source of truth
-+
-derived calculations
+mock
+fixture
+seed
+fallback
+demo
+sample
+fake
+synthetic
+placeholder
 ```
 
-instead of manually duplicated totals.
+Classify every occurrence.
+
+Production execution must never silently substitute synthetic financial data for failed API data.
+
+Simulate:
+
+* missing API key
+* API 401
+* API 403
+* API 429
+* API 500
+* timeout
+* DNS/network failure
+* malformed JSON
+* partial response
+
+Expected result:
+
+```text
+SYNC ERROR
+STALE
+UNKNOWN
+OFFLINE
+```
+
+Never invented accounts, PnL, balances or trades.
 
 ---
 
-# 29. CACHE / PERSISTENCE AUDIT
+# 23. Failure-Safety Audit
+
+For every failed dependency verify:
+
+```text
+Is financial data clearly marked stale?
+Is the timestamp shown?
+Is the last known good state identified?
+Can stale data be mistaken for live data?
+Can the user believe a failed account is safe?
+```
+
+A trading dashboard should fail visibly, not optimistically.
+
+---
+
+# 24. Freshness / Timestamp Audit
+
+Verify timestamps originate from real system data.
+
+Do not allow:
+
+```text
+setInterval(() => timestamp++, ...)
+```
+
+or similar UI-generated freshness.
+
+Define:
+
+```text
+lastSuccessfulRESTSync
+lastWebSocketEvent
+lastAccountSync
+lastFinanceSync
+lastError
+```
+
+Show the correct timestamp for each dataset.
+
+---
+
+# 25. API Key Security
+
+Search:
+
+```text
+PROPR_API_KEY
+X-API-Key
+pk_live_
+NEXT_PUBLIC_
+process.env
+client components
+browser bundles
+source maps
+logs
+errors
+```
+
+Verify secret exposure through:
+
+* React props
+* serialized server components
+* API responses
+* browser network calls
+* static HTML
+* source maps
+* error messages
+* console logs
+
+Prove the secret is server-only.
+
+---
+
+# 26. Read-Only Guarantee
+
+The application is intended as a monitoring terminal.
+
+Audit every HTTP client call.
+
+Search for:
+
+```text
+POST
+PUT
+PATCH
+DELETE
+```
+
+Search for:
+
+```text
+/orders
+/payouts
+/checkout
+/challenge
+/account
+```
+
+Confirm no production UI can accidentally:
+
+* create orders
+* cancel orders
+* request payouts
+* purchase accounts
+* modify account settings
+
+A read-only terminal must remain read-only.
+
+---
+
+# 27. API Rate Limiting
 
 Determine:
 
+* REST request frequency
+* polling intervals
+* retries
+* exponential backoff
+* cache duration
+* multi-account request amplification
+
+Stress-test with many accounts.
+
+Verify the application does not approach the documented Propr rate limit merely because several UI components independently request the same data.
+
+---
+
+# 28. Vercel Architecture Audit
+
+This is critical.
+
+Determine exactly how the following run on Vercel:
+
 ```text
-what is persisted
-what is cache
-what is ephemeral
-what is derived
+Next.js application
+API routes
+WebSocket worker
+persistent process
+polling
+caching
+scheduled reconciliation
 ```
+
+A serverless environment must not be treated as a permanently running WebSocket server unless the deployment platform/runtime explicitly supports that architecture.
+
+Verify:
+
+* whether `services/propr-sync` actually runs in production
+* whether it is deployed
+* whether its state persists
+* whether its process survives instance recycling
+* where realtime state is stored
+* whether cold starts lose state
+* whether duplicate workers can exist
+* whether multiple Vercel instances race
+
+Produce an architecture diagram.
+
+---
+
+# 29. Persistent State Audit
+
+Identify all stateful stores.
+
+For each state:
+
+```text
+location
+lifetime
+owner
+update mechanism
+persistence guarantees
+recovery mechanism
+```
+
+Specifically verify persistence of:
+
+* high-water mark
+* positions
+* last sync state
+* event IDs
+* payout state
+* account state
+* finance ledger
+
+If memory-only, classify appropriately.
+
+---
+
+# 30. Race Conditions
 
 Test:
 
 ```text
-page refresh
-server restart
-deployment
-cold start
-database outage
-cache outage
-WS reconnect
+REST refresh + WS event
+WS reconnect + REST refresh
+two browser tabs
+two server instances
+simultaneous account updates
+simultaneous payout updates
+simultaneous finance refresh
 ```
 
-The application should recover to a correct state without accumulating duplicate records.
+The same account must never show internally contradictory state.
 
 ---
 
-# 30. RACE CONDITION AUDIT
+# 31. Multi-Account Isolation
 
-Test simultaneous events:
+For every mutable state structure verify account ID is part of the key.
 
-```text
-position.updated
-account.updated
-mark.updated
-trade.created
-order.filled
-```
-
-arriving within milliseconds.
-
-Look for:
+Example:
 
 ```text
-lost update
-last-write-wins corruption
-double aggregation
-state regression
-stale snapshot overwrite
+state[accountId]
 ```
+
+is acceptable.
+
+Global mutable variables such as:
+
+```text
+currentPosition
+currentEquity
+highWaterMark
+```
+
+must be treated as suspicious.
+
+Test two accounts changing simultaneously and verify zero cross-talk.
 
 ---
 
-# 31. EVENT ORDERING AUDIT
+# 32. Timezone Audit
 
-Test:
+Audit all date/time handling.
 
-```text
-event A
-event C
-event B
-```
+The application operates for an Indian user, but Propr timestamps may originate in UTC or account-specific contexts.
 
-where B and C arrive out of order.
+Verify:
 
-If Propr events contain timestamps or sequence indicators, determine whether the application uses them appropriately.
+* UTC storage
+* IST display
+* daily-loss boundary
+* purchase dates
+* payout dates
+* trading dates
+* relative freshness
+* daylight/timezone conversion
 
----
-
-# 32. MULTI-ACCOUNT AUDIT
-
-Test at least:
-
-```text
-1 evaluation
-3 evaluations
-1 funded
-3 funded
-2 evaluations + 2 funded
-historical + active + failed + funded
-```
-
-Ensure every account is isolated.
-
-A trade from Account A must never affect:
-
-* Account B balance
-* Account B PnL
-* Account B positions
-* Account B drawdown
-* Account B payout
-* Account B lifecycle
+Never derive a financial day boundary from browser locale.
 
 ---
 
-# 33. TIMEZONE AUDIT
+# 33. Frontend Truthfulness Audit
 
-The UI is intended for Indian usage.
+Inspect every dashboard metric and ask:
+
+> Could this number be technically correct but semantically misleading?
 
 Audit:
 
-```text
-UTC
-IST
-browser timezone
-server timezone
-API timestamp parsing
-day rollover
-purchase dates
-payout dates
-daily metrics
-```
+* active capital
+* total invested
+* equity
+* PnL
+* drawdown
+* drawdown consumed
+* daily loss
+* payout
+* cash PnL
+* account status
+* sync health
 
-Never derive daily-loss state from a browser-local date if Propr's authoritative metrics are UTC/server-based.
-
-Display:
+Each metric must have:
 
 ```text
-IST
+definition
+source
+calculation
+timestamp
+failure behavior
 ```
-
-while internally preserving UTC timestamps.
 
 ---
 
-# 34. API FAILURE TESTING
+# 34. Route & Navigation Audit
 
-Mock:
+Verify every navigation route returns a valid page.
+
+Test:
 
 ```text
-401
-403
-404
-409
-429
-500
-502
-503
-timeout
-connection reset
-malformed JSON
-empty data
-partial data
+/accounts
+/positions
+/orders
+/finance
+/history
+/live
+/system
 ```
 
 Verify:
 
-* retry policy
-* backoff
-* no duplicate writes
-* no infinite loops
-* visible error state
-* recovery
-* stale-state safety
-
----
-
-# 35. RATE LIMIT TESTING
-
-The Propr docs document API request limits.
-
-Ensure the application does NOT:
-
-```text
-poll every component separately
-refresh every account independently without coordination
-retry immediately in a tight loop
-create duplicate requests on React rerenders
-```
-
-Use:
-
-```text
-central synchronization
-caching
-request deduplication
-backoff
-```
-
----
-
-# 36. FRONTEND AUDIT
-
-Inspect every component for:
-
-* unnecessary rerenders
-* excessive websocket state propagation
-* expensive calculations
-* memory leaks
-* timers not cleared
-* event listeners not removed
-* duplicate fetches
-* hydration mismatch
-* layout shift
-* flickering metrics
+* no 404
+* no hydration errors
+* no server/client boundary violations
+* no unnecessary duplicate API calls
+* route-level error handling
+* loading state
 * stale state
-* race conditions
-
-Test:
-
-```text
-30 sec
-5 min
-30 min
-6 hours
-24 hours
-```
-
-of continuous browser runtime.
-
-Check memory growth.
 
 ---
 
-# 37. TERMINAL UI AUDIT
+# 35. Accessibility Audit
 
-Evaluate:
+Run automated and manual accessibility checks.
 
-```text
-visual hierarchy
-density
-readability
-responsive behavior
-number formatting
-negative numbers
-zero values
-loading states
-error states
-stale states
-dark mode
-keyboard navigation
-mobile layout
-long account names
-large PnL
-tiny PnL
-many accounts
-many positions
-```
+Verify:
 
-Make sure financial numbers never visually merge together.
+* semantic tables
+* headings
+* labels
+* keyboard navigation
+* progressbar ARIA
+* contrast
+* focus indicators
+* screen-reader labels
+* accessible status indicators
 
----
+Critical financial status must never depend exclusively on color.
 
-# 38. ACCESSIBILITY AUDIT
-
-Test:
+Example:
 
 ```text
-keyboard-only
-screen reader semantics
-ARIA
-focus management
-color contrast
-status chips
-tables
-tooltips
-dialogs
-```
-
-Critical statuses such as:
-
-```text
+SAFE
+WARNING
+HIGH RISK
 BREACHED
-FAILED
-FUNDED
+SYNC ERROR
 ```
 
-must not be communicated through color alone.
+must be textually distinguishable.
 
 ---
 
-# 39. API ROUTE SECURITY AUDIT
+# 36. Mobile / Responsive Audit
 
-For every custom backend route determine:
+Test:
 
-```text
-authentication
-authorization
-input validation
-output sanitization
-rate limiting
-cache control
-error leakage
-secret leakage
-CORS
-CSRF where applicable
-```
+* desktop
+* tablet
+* mobile
+* narrow terminal widths
 
-Attempt:
+Verify no important financial metric disappears or becomes ambiguous.
 
-```text
-unauthenticated request
-wrong account ID
-another account ID
-malformed account ID
-query injection
-path traversal
-header manipulation
-```
-
-Even for a personal application, prevent arbitrary account access.
+Risk bars and status indicators must remain understandable on mobile.
 
 ---
 
-# 40. SSR / CLIENT BOUNDARY AUDIT
+# 37. Performance Audit
 
-For Next.js or similar framework:
+Measure:
 
-Search for components that accidentally turn sensitive server code into client code.
+* initial load
+* server response
+* API aggregation
+* REST fetch latency
+* WS update processing
+* rerender frequency
+* memory usage
 
-Audit:
+Test with:
 
 ```text
-"use client"
-server-only imports
-API clients
-environment variables
-database clients
-secret access
-WebSocket secrets
+1 account
+5 accounts
+20 accounts
+50 accounts
+100 accounts
 ```
 
-A client component must never be able to access `PROPR_API_KEY`.
+Identify O(N²) or repeated account-wide processing.
 
 ---
 
-# 41. LOGGING AUDIT
+# 38. Dependency & Supply Chain Audit
+
+Run:
+
+```bash
+npm audit
+npm outdated
+```
+
+Inspect:
+
+* critical vulnerabilities
+* transitive vulnerabilities
+* abandoned packages
+* duplicate dependency versions
+* unnecessary packages
+
+Do not automatically upgrade packages without checking compatibility with:
+
+* Next.js
+* React
+* Turbopack
+* TypeScript
+* Vitest
+
+---
+
+# 39. Build Reproducibility
+
+Clone the repository into a clean directory.
+
+Run:
+
+```bash
+npm install
+npm test
+npm run type-check
+npm run lint
+npm run build
+```
+
+No hidden local files may be required.
+
+Verify no dependence on:
+
+```text
+/Users/dhruv/...
+local .env
+untracked fixtures
+IDE-generated files
+ignored source
+```
+
+This is especially important because the previous audit references local development artifacts.
+
+---
+
+# 40. Production Environment Audit
+
+Verify every environment variable.
+
+Classify:
+
+```text
+required
+optional
+development-only
+production-only
+public-safe
+secret
+```
+
+The app must fail clearly when required production secrets are missing.
+
+It must not silently switch to demo data.
+
+---
+
+# 41. Test Quality Audit
+
+For each of the claimed 67 tests:
+
+* determine what production code path it exercises
+* determine whether it is a true regression test
+* identify mocks
+* identify unreachable branches
+* identify assertions that only check object shape
+* identify tests that never verify numeric correctness
+
+Calculate:
+
+```text
+critical financial paths covered
+critical API paths covered
+critical failure paths covered
+```
+
+Do not equate test count with coverage quality.
+
+---
+
+# 42. Mutation Testing
+
+Intentionally introduce these defects and verify that the suite catches them:
+
+1. active capital includes failed purchases
+2. drawdown gauge uses balance loss
+3. trailing DD disabled
+4. HWM reset on restart
+5. zero quantities accepted
+6. mock data returned on API error
+7. processed payout filter removed
+8. duplicate WS events counted twice
+9. daily loss uses initial balance
+10. API key returned to client
+11. pending orders omitted
+12. INR conversion changed
+13. account IDs mixed between accounts
+14. REST overwrites newer WS state
+15. WS overwrites authoritative REST state
+
+A mutation that survives is a serious test-suite defect.
+
+---
+
+# 43. Real Propr API Verification
+
+Using the official Propr documentation and, where safely possible, a read-only API credential:
+
+Verify actual payloads for:
+
+```text
+challenge-attempts
+book-account-issuances
+positions
+orders
+payouts
+account state
+WebSocket events
+```
+
+Compare actual payload shape with:
+
+* Zod schemas
+* TypeScript interfaces
+* normalization functions
+* calculation functions
+* UI assumptions
+
+Flag undocumented fields being relied on.
+
+---
+
+# 44. Contract Drift Protection
+
+For every external API field used by production:
+
+Document:
+
+```text
+endpoint
+field
+type
+nullable?
+optional?
+meaning
+fallback
+```
+
+Add contract tests that fail when the payload shape materially changes.
+
+Do not overfit schemas to the current fixture.
+
+---
+
+# 45. Financial Invariants
+
+The following invariants must always hold unless explicitly documented otherwise:
+
+```text
+processed payouts >= 0
+
+active capital >= 0
+
+drawdown consumed >= 0
+
+drawdown consumed <= 100% before breach
+
+equity = balance + applicable unrealized components
+
+zero-quantity positions do not contribute PnL
+
+failed account cannot be classified as active
+
+closed account cannot be classified as active
+
+duplicate trade event cannot change totals
+
+duplicate payout event cannot change totals
+
+API failure cannot create financial data
+```
+
+Add any additional invariants discovered during audit.
+
+---
+
+# 46. Reconciliation Against Known Real Data
+
+Use the known real account set and verified purchase history.
+
+Reconcile:
+
+* account IDs
+* account stages
+* purchase IDs
+* purchase amounts
+* active account count
+* active capital
+* failed account capital
+* historical capital
+* realized PnL
+* fees
+* payouts
+* cash PnL
+
+Every discrepancy must have a documented reason.
+
+---
+
+# 47. UI ↔ Backend Reconciliation
+
+For every major dashboard number produce:
+
+| UI Metric | Backend Source | Raw Field(s) | Calculation | Expected | Displayed | Match |
+| --------- | -------------- | ------------ | ----------- | -------: | --------: | ----- |
+
+No UI number should exist without a traceable source.
+
+---
+
+# 48. Security Audit Beyond API Key
+
+Check:
+
+* dependency vulnerabilities
+* SSR injection
+* unsafe HTML
+* open redirects
+* exposed diagnostics
+* stack traces
+* source maps
+* debug endpoints
+* health endpoint information disclosure
+* environment leakage
+* client/server boundary mistakes
+
+---
+
+# 49. `/api/health` Security
+
+Determine exactly what `/api/health` exposes.
+
+It may expose operational status, but must not expose:
+
+* API key
+* raw Propr responses
+* sensitive account details
+* private financial data
+* internal filesystem details
+* stack traces
+* secrets
+
+---
+
+# 50. Error-State UX
+
+For every failure state ensure the user sees enough information to make a safe decision.
+
+Required distinction:
+
+```text
+LIVE
+STALE
+SYNC ERROR
+OFFLINE
+UNKNOWN
+BREACHED
+SAFE
+WARNING
+```
+
+Do not represent:
+
+```text
+API ERROR
+```
+
+as:
+
+```text
+0
+```
+
+Do not represent:
+
+```text
+UNKNOWN
+```
+
+as:
+
+```text
+SAFE
+```
+
+---
+
+# 51. Logging Audit
 
 Search for:
 
 ```text
 console.log
+console.error
 logger.*
-JSON.stringify(response)
-request headers
-environment dumps
+JSON.stringify(...)
 ```
 
-Confirm that logs cannot expose:
+Ensure production logs do not contain:
 
-```text
-API key
-authorization headers
-wallet credentials
-private tokens
-full payout credentials
-sensitive user data
-```
+* API keys
+* authorization headers
+* raw sensitive account payloads
+* payment information
+
+Log enough information for debugging without exposing secrets.
 
 ---
 
-# 42. DEPLOYMENT AUDIT
+# 52. Dead Code / Fake Completeness Audit
 
-Inspect Vercel configuration.
+Identify:
 
-Check:
+* unused routes
+* placeholder pages
+* components that display hardcoded values
+* dead calculations
+* unused APIs
+* unreachable branches
+* TODOs related to financial correctness
+* comments claiming behavior that code does not implement
 
-```text
-build command
-install command
-runtime
-regions
-environment variables
-Node version
-serverless limitations
-websocket assumptions
-cron assumptions
-database connectivity
-timeouts
-cold starts
-```
+A route existing is not sufficient.
 
-Very importantly:
-
-If the application expects a long-lived WebSocket connection inside a Vercel Serverless Function, identify this as an architectural issue.
-
-Determine whether the realtime worker needs a separate persistent service.
-
-Do not blindly claim that Vercel can maintain a persistent WebSocket worker if the deployment model does not support it.
+Verify each route actually uses real application state.
 
 ---
 
-# 43. CRON / REVALIDATION AUDIT
+# 53. Claims-vs-Code Audit
 
-If the project uses:
+Compare all statements in:
 
 ```text
-Vercel Cron
-ISR
-setInterval
-background refresh
+README.md
+AUDIT.md
+walkthrough.md
+prompt.md
+comments
+package.json
 ```
 
-determine whether the mechanism actually executes reliably in production.
+against the actual source.
 
-Test whether cache invalidation produces fresh account data.
+Every claim must be classified:
+
+```text
+TRUE
+PARTIALLY TRUE
+FALSE
+UNVERIFIABLE
+```
+
+Pay particular attention to:
+
+* "real-time"
+* "trailing drawdown"
+* "failure safe"
+* "production ready"
+* "read only"
+* "67 tests"
+* "all routes"
+* "zero lint errors"
+* "active capital corrected"
 
 ---
 
-# 44. TEST COVERAGE AUDIT
+# 54. Deployment Rehearsal
 
-Map source files to test files.
+Perform a clean production deployment simulation.
 
-Produce:
+Verify:
 
-```text
-tested
-partially tested
-untested
+```bash
+npm install
+npm test
+npm run type-check
+npm run lint
+npm run build
 ```
 
-for:
-
-```text
-API client
-normalizers
-account lifecycle
-financial calculations
-drawdown
-daily loss
-PnL
-positions
-orders
-payouts
-WebSocket
-reconnect
-REST/WS reconciliation
-UI
-API routes
-database
-deployment behavior
-```
-
-Do not rely on percentage coverage alone.
-
-Identify **critical business logic with zero tests**.
-
----
-
-# 45. PROPERTY-BASED / INVARIANT TESTING
-
-Add invariant tests such as:
-
-```text
-equity === balance + applicable margin/uPnL components
-open position count never includes quantity 0
-processed payout count cannot decrease without source deletion
-cash PnL changes only when cash transaction changes
-account A updates cannot mutate account B
-negative quantity is never treated as an active position
-duplicate events must be idempotent
-reconciliation cannot create duplicate accounts
-```
-
----
-
-# 46. END-TO-END SCENARIOS
-
-Create full integration/E2E tests for:
-
-## Scenario A — New evaluation
-
-```text
-purchase exists
-↓
-evaluation appears
-↓
-account details load
-↓
-positions load
-↓
-live metrics update
-```
-
-## Scenario B — Evaluation trading
-
-```text
-open position
-↓
-mark moves
-↓
-uPnL changes
-↓
-equity changes
-↓
-drawdown updates
-```
-
-## Scenario C — Evaluation passes
-
-```text
-challenge status = passed
-↓
-evaluation becomes PASSED
-↓
-funded issuance appears
-↓
-new funded account appears
-```
-
-## Scenario D — Evaluation fails
-
-```text
-drawdown/daily limit reached
-↓
-API status = failed
-↓
-UI shows FAILED/BREACHED
-↓
-account remains historically visible
-```
-
-## Scenario E — Funded account
-
-```text
-funded account active
-↓
-trade
-↓
-PnL
-↓
-payout
-↓
-processed payout
-↓
-finance total updates
-↓
-cash PnL updates
-```
-
-## Scenario F — Reconnect
-
-```text
-WS connected
-↓
-trade
-↓
-connection lost
-↓
-events missed
-↓
-reconnect
-↓
-REST reconciliation
-↓
-correct final state
-```
-
----
-
-# 47. ADVERSARIAL TESTING
-
-Actively try to break the system.
-
-Inject:
-
-```text
-duplicate account
-duplicate payout
-duplicate websocket event
-negative PnL
-huge PnL
-zero quantity
-null mark
-missing entry price
-missing accountId
-missing challenge
-missing funded issuance
-malformed payout
-stale event
-future timestamp
-very old timestamp
-API timeout
-WS timeout
-429 storm
-500 storm
-```
-
-Verify the system fails safely.
-
----
-
-# 48. DATA CONTRACT TESTS
-
-Build Zod/JSON-schema validators around Propr responses.
-
-If Propr changes:
-
-```text
-field removed
-field null
-field renamed
-new enum
-new status
-new account type
-```
-
-the application should fail loudly and diagnostically rather than silently displaying incorrect values.
-
----
-
-# 49. NO MOCK DATA IN PRODUCTION
-
-Search for:
-
-```text
-mock
-demo
-dummy
-fake
-sample
-hardcoded account
-hardcoded balance
-hardcoded pnl
-```
-
-Ensure production code cannot accidentally fall back to fake financial data.
-
-If mocks are needed, they must exist only in:
-
-```text
-test/
-fixtures/
-mocks/
-```
-
----
-
-# 50. UI NUMBER FORMAT AUDIT
-
-Verify formatting for:
-
-```text
-$0
-$1
-$1,000
-$1,234.56
--$123.45
-₹0
-₹25,394.83
-very small decimal
-large decimal
-```
-
-Never display:
-
-```text
-NaN
-Infinity
-undefined
-null
-$NaN
-₹undefined
-```
-
----
-
-# 51. ACCOUNT DETAIL CONSISTENCY
-
-When opening an account detail page, verify that:
-
-```text
-header balance
-account card balance
-positions
-orders
-PnL
-drawdown
-daily loss
-```
-
-all originate from the same normalized snapshot.
-
-The page must never show:
-
-```text
-header = current
-positions = old
-PnL = different snapshot
-```
-
----
-
-# 52. DATABASE CONSISTENCY
-
-If a database exists:
-
-Audit:
-
-```text
-schema
-indexes
-unique constraints
-foreign keys
-transactions
-upserts
-idempotency
-retention
-cleanup
-```
-
-Ensure account IDs are appropriately unique.
-
-Ensure transaction IDs are unique.
-
-Ensure payout IDs are unique.
-
-Ensure websocket event ingestion is idempotent.
-
----
-
-# 53. RECONCILIATION JOB
-
-Determine whether the project has a periodic full reconciliation process.
-
-If not, identify whether it should.
-
-A strong architecture should have:
-
-```text
-Realtime updates
-+
-periodic REST reconciliation
-```
-
-rather than trusting WebSocket state forever.
-
----
-
-# 54. PERFORMANCE TESTING
+Then run the production server.
 
 Test:
 
-```text
-1 account
-10 accounts
-50 accounts
-100 accounts
-500 positions
-1000 orders
-```
+* initial load
+* all routes
+* API failures
+* missing env
+* multiple accounts
+* reconnect
+* stale state
 
-Measure:
-
-```text
-initial render
-API latency
-normalization time
-calculation time
-WS event processing time
-memory
-CPU
-database operations
-```
-
-Identify bottlenecks.
+Do not declare production readiness based only on build success.
 
 ---
 
-# 55. FAILURE-SAFETY REQUIREMENT
+# 55. Vercel-Specific Failure Simulation
 
-If uncertain, stale, or inconsistent data exists, the product must prefer:
+Simulate:
 
 ```text
-UNKNOWN
-STALE
-SYNC ERROR
+cold start
+instance restart
+multiple instances
+request timeout
+API timeout
+API rate limit
+function termination
+concurrent requests
+cache miss
+cache revalidation
 ```
 
-over confidently displaying an incorrect financial number.
+Determine whether any in-memory state can disappear without recovery.
 
-This is a financial monitoring application.
-
-Incorrect certainty is worse than temporary unavailability.
+This section is mandatory.
 
 ---
 
-# 56. REQUIRED OUTPUT
+# 56. Final Finding Classification
 
-After auditing, create:
+Create findings using:
 
 ```text
-AUDIT.md
+CRITICAL
+HIGH
+MEDIUM
+LOW
+INFO
 ```
 
-with this exact structure:
-
-# Executive Summary
-
-# Repository Architecture
-
-# Build/Test Baseline
-
-# Critical Findings
-
-# High Severity Findings
-
-# Medium Severity Findings
-
-# Low Severity Findings
-
-# Security Findings
-
-# Propr API Contract Findings
-
-# Data Integrity Findings
-
-# Financial Calculation Findings
-
-# Realtime/WebSocket Findings
-
-# Account Lifecycle Findings
-
-# Payout Findings
-
-# Frontend Findings
-
-# Backend Findings
-
-# Database Findings
-
-# Deployment/Vercel Findings
-
-# Performance Findings
-
-# Accessibility Findings
-
-# Test Coverage Gaps
-
-# Missing Tests
-
-# Recommended Fixes
-
-# Prioritized Remediation Plan
-
-# Residual Risks
-
-# Final Production Readiness Verdict
-
-For every finding include:
+Each finding must contain:
 
 ```text
-ID:
-Severity:
-Category:
-File:
-Line:
-Observed behavior:
-Expected behavior:
-Why it matters:
-Reproduction:
-Evidence:
-Recommended fix:
-Test that prevents regression:
-```
-
-Do NOT report vague findings.
-
-Bad:
-
-"WebSocket may have issues."
-
-Good:
-
-"`src/lib/ws.ts:142` does not remove the previous message listener during reconnect, resulting in duplicate event handling after each reconnect. Reproduction: force three reconnects and observe `account.updated` being processed four times. Impact: account state and PnL can be double-applied."
-
----
-
-# 57. REQUIRED TEST ARTIFACTS
-
-Create or update:
-
-```text
-tests/
-unit/
-integration/
-e2e/
-fixtures/
-mocks/
-```
-
-where appropriate.
-
-At minimum implement tests for:
-
-```text
-account discovery
-account lifecycle
-evaluation status
-funded issuance mapping
-position normalization
-zero-quantity filtering
-uPnL
-equity
-drawdown
-daily loss
-profit target
-payout aggregation
-cash PnL
-REST/WS reconciliation
-websocket reconnect
-duplicate event handling
-multi-account isolation
-API failure handling
-secret exposure
+ID
+Severity
+File
+Line
+Observed behavior
+Expected behavior
+Business impact
+Reproduction
+Evidence
+Root cause
+Recommended fix
+Regression test
 ```
 
 ---
 
-# 58. DO NOT CHANGE CODE IMMEDIATELY
+# 57. Final Production Scorecard
 
-First perform the audit.
+Produce:
 
-Do not silently modify production code while auditing.
-
-First produce:
-
-```text
-findings
-test failures
-reproduction steps
-risk assessment
-```
-
-Then, if instructed to remediate, apply fixes one category at a time and rerun the relevant tests.
-
----
-
-# 59. FINAL SCORECARD
-
-Produce a final matrix:
-
-| Area                 | Status | Severity | Confidence |
-| -------------------- | ------ | -------- | ---------- |
-| Build                |        |          |            |
-| Type safety          |        |          |            |
-| API integration      |        |          |            |
-| Data correctness     |        |          |            |
-| Financial math       |        |          |            |
-| Account lifecycle    |        |          |            |
-| Realtime             |        |          |            |
-| Security             |        |          |            |
-| Persistence          |        |          |            |
-| Frontend             |        |          |            |
-| Performance          |        |          |            |
-| Testing              |        |          |            |
-| Vercel deployment    |        |          |            |
-| Production readiness |        |          |            |
-
-Use:
-
-```text
-PASS
-PASS WITH WARNINGS
-FAIL
-BLOCKED
-```
+| Area                 | PASS / CONDITIONAL / FAIL | Severity | Evidence |
+| -------------------- | ------------------------- | -------- | -------- |
+| Repository integrity |                           |          |          |
+| Build                |                           |          |          |
+| Type safety          |                           |          |          |
+| API contract         |                           |          |          |
+| Account discovery    |                           |          |          |
+| Lifecycle            |                           |          |          |
+| Financial math       |                           |          |          |
+| Drawdown             |                           |          |          |
+| Daily loss           |                           |          |          |
+| PnL                  |                           |          |          |
+| Finance ledger       |                           |          |          |
+| Payouts              |                           |          |          |
+| Realtime             |                           |          |          |
+| WS reconciliation    |                           |          |          |
+| Failure safety       |                           |          |          |
+| Security             |                           |          |          |
+| Read-only guarantee  |                           |          |          |
+| Frontend             |                           |          |          |
+| Accessibility        |                           |          |          |
+| Performance          |                           |          |          |
+| Testing              |                           |          |          |
+| Vercel architecture  |                           |          |          |
+| Deployment           |                           |          |          |
 
 ---
 
-# 60. FINAL PRODUCTION VERDICT
+# 58. Production Readiness Gate
 
-Give exactly one:
+Do NOT declare production ready unless all of the following are true:
 
-```text
-PRODUCTION READY
-```
+* no CRITICAL findings
+* no unresolved HIGH financial correctness findings
+* active capital is correct against real account data
+* drawdown math matches the authoritative Propr contract
+* trailing drawdown is correct if applicable
+* daily loss is correct
+* payout accounting is correct
+* API failure cannot generate synthetic financial data
+* API key cannot reach the client
+* read-only guarantee is proven
+* WS reconnect is safe
+* REST/WS reconciliation is deterministic
+* multi-account isolation is proven
+* production build works from a clean checkout
+* deployment architecture is actually viable on Vercel
+* mutation tests prove the critical regression suite is meaningful
 
-or
-
-```text
-PRODUCTION READY WITH CONDITIONS
-```
-
-or
+If any condition fails:
 
 ```text
 NOT PRODUCTION READY
 ```
 
-Then summarize the **five most important things that must be fixed before trusting this terminal with financial monitoring**.
+---
 
-Most importantly:
+# 59. Required Final Deliverables
 
-Do not judge the application merely by whether it “looks correct”.
+Create:
 
-Audit whether it is **mathematically correct, source-correct, lifecycle-correct, realtime-correct, secure, recoverable, and testable**.
+```text
+POST_REMEDIATION_AUDIT.md
+POST_REMEDIATION_TEST_REPORT.md
+POST_REMEDIATION_FINDINGS.md
+```
+
+Also create, where useful:
+
+```text
+tests/adversarial/
+tests/mutation/
+tests/contracts/
+fixtures/real-api/
+```
+
+Do not modify production code unless explicitly instructed.
+
+This audit is a **verification phase first**.
+
+---
+
+# 60. Final Answer Format
+
+End the audit with exactly:
+
+```text
+POST-REMEDIATION VERDICT
+========================
+
+Repository:
+Commit:
+Audit date:
+
+Original audit verdict:
+Current verified verdict:
+
+Critical findings:
+High findings:
+Medium findings:
+Low findings:
+
+Tests:
+Typecheck:
+Lint:
+Build:
+Mutation testing:
+API contract verification:
+Vercel architecture verification:
+
+PRODUCTION STATUS:
+[PRODUCTION READY]
+[PRODUCTION READY WITH CONDITIONS]
+[NOT PRODUCTION READY]
+```
+
+Then provide:
+
+## Top 5 Remaining Risks
+
+## Top 5 Required Actions
+
+## Evidence That Previous Fixes Actually Work
+
+## Evidence That Could Not Be Verified
+
+## Recommended Next Audit Trigger
+
+Do not inflate confidence because the repository reports "67 tests passing".
+
+The central question is:
+
+> **Can this terminal now be trusted with real trading-finance monitoring when the external API, realtime stream, deployment environment, and account state behave unpredictably?**
