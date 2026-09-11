@@ -296,7 +296,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                           </button>
                         </div>
                         <span className="text-[10px] text-zinc-400 block font-normal">
-                          {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD • {acc.tradingDays || 1}/{acc.requiredTradingDays || 5} days)
+                          {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD • {acc.tradingDays || 1} active {acc.tradingDays === 1 ? "day" : "days"})
                         </span>
                       </td>
 
@@ -435,7 +435,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-zinc-500">Trading days</span>
-                                  <span className="text-zinc-200">{acc.tradingDays || 1} / {acc.requiredTradingDays || 5}</span>
+                                  <span className="text-zinc-200">{acc.tradingDays || 1} active (Unlimited / No min)</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-zinc-500">Trade count</span>

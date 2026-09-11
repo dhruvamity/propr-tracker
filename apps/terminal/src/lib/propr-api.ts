@@ -734,7 +734,7 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
             : (attempt?.tradingDays as number) || 1;
 
         const requiredTradingDays =
-          ((phase?.minTradingDays || challenge?.requiredTradingDays) as number) || 5;
+          Number(phase?.minTradingDays ?? challenge?.requiredTradingDays ?? 0);
 
         const rawName = challenge?.name;
         const challengeName = typeof rawName === "object" && rawName !== null

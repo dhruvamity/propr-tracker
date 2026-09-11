@@ -21,18 +21,26 @@ export default async function LiveMonitorPage() {
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
   );
 
-  // Risk Ranking: Sort by breach proximity (lowest remaining buffer first)
+  // Risk Ranking: Sort by active breach proximity (lowest effective buffer first)
   const rankedAccounts = [...liveAccounts].sort((a, b) => {
-    const bufA = Number(a.drawdownRemaining || 0);
-    const bufB = Number(b.drawdownRemaining || 0);
-    return bufA - bufB;
-  });
+    const dailyRoomA = Number(a.dailyLossRemaining || 0);
+    const ddBufferA = Number(a.drawdownRemaining || 0);
+    const dailyLimitA = Number(a.dailyLossLimitAmount || 0);
+    const dailyUsedA = Number(a.dailyLossUsedAmount || 0);
+    const dailyBurnA = dailyLimitA > 0 ? (dailyUsedA / dailyLimitA) * 100 : 0;
+    const isDailyA = dailyBurnA >= 70 || (dailyRoomA > 0 && dailyRoomA < ddBufferA);
+    const effA = isDailyA ? dailyRoomA : ddBufferA;
 
-  // Compute max buffer for proportional bars
-  const maxBuffer = Math.max(
-    ...rankedAccounts.map((a) => Number(a.drawdownRemaining || 0)),
-    1
-  );
+    const dailyRoomB = Number(b.dailyLossRemaining || 0);
+    const ddBufferB = Number(b.drawdownRemaining || 0);
+    const dailyLimitB = Number(b.dailyLossLimitAmount || 0);
+    const dailyUsedB = Number(b.dailyLossUsedAmount || 0);
+    const dailyBurnB = dailyLimitB > 0 ? (dailyUsedB / dailyLimitB) * 100 : 0;
+    const isDailyB = dailyBurnB >= 70 || (dailyRoomB > 0 && dailyRoomB < ddBufferB);
+    const effB = isDailyB ? dailyRoomB : ddBufferB;
+
+    return effA - effB;
+  });
 
   return (
     <div className="space-y-6">
@@ -43,7 +51,7 @@ export default async function LiveMonitorPage() {
             Breach Proximity Radar
           </h2>
           <p className="text-[11px] text-zinc-500 mt-0.5">
-            Ranked by remaining buffer to breach floor
+            Ranked by closest breach threshold (drawdown or daily loss)
           </p>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs">
@@ -53,29 +61,54 @@ export default async function LiveMonitorPage() {
         </div>
       </div>
 
-      {/* Breach Distance Ranking Bars (§14) */}
+      {/* Breach Distance Ranking Bars */}
       {rankedAccounts.length > 0 && (
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 space-y-3">
           <h2 className="text-[10px] font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Breach Distance
+            Active Breach Distance
           </h2>
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {rankedAccounts.map((acc) => {
-              const buffer = Number(acc.drawdownRemaining || 0);
-              const pct = Math.max(4, (buffer / maxBuffer) * 100);
+              const ddBuffer = Number(acc.drawdownRemaining || 0);
+              const dailyRoom = Number(acc.dailyLossRemaining || 0);
+              const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
+              const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
+              const dailyBurn = dailyLimit > 0 ? Math.min(100, Math.max(0, (dailyUsed / dailyLimit) * 100)) : 0;
+              const isDailyConstrained = dailyBurn >= 70 || (dailyRoom > 0 && dailyRoom < ddBuffer);
+              const effectiveBuffer = isDailyConstrained ? dailyRoom : ddBuffer;
+
+              // Proportional width: if daily-constrained, show burned % in red (danger state); else buffer headroom
+              const barWidthPct = isDailyConstrained ? dailyBurn : Math.max(10, Math.min(100, (ddBuffer / 600) * 100));
+
               return (
-                <div key={acc.accountId}>
-                  <div className="flex items-baseline justify-between text-xs font-mono mb-1">
-                    <span className="text-zinc-300 font-medium">
+                <div key={acc.accountId} className="space-y-1">
+                  <div className="flex items-baseline justify-between text-xs font-mono">
+                    <span className="text-zinc-300 font-medium flex items-center gap-2">
                       {acc.challengeName || "Starter Turbo"}{" "}
                       <span className="text-zinc-500 text-[10px]">{formatAccountTag(acc.accountId)}</span>
+                      {isDailyConstrained && (
+                        <span className="text-[9px] font-bold text-red-400 bg-red-950/70 border border-red-800/60 px-1.5 py-0.2 rounded animate-pulse">
+                          DAILY RISK
+                        </span>
+                      )}
                     </span>
-                    <span className="text-white font-bold">{formatUSD(buffer)} <span className="text-[10px] font-normal text-zinc-500">USD</span></span>
+                    <span className="text-white font-bold">
+                      {formatUSD(effectiveBuffer)}{" "}
+                      <span className="text-[10px] font-normal text-zinc-400 font-mono">
+                        {isDailyConstrained
+                          ? `USD room (${dailyBurn.toFixed(0)}% daily loss burned)`
+                          : `USD buffer`}
+                      </span>
+                    </span>
                   </div>
                   <div className="h-2 w-full bg-zinc-900 rounded-full border border-zinc-800 overflow-hidden">
                     <div
-                      className="h-full bg-zinc-600 rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%` }}
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isDailyConstrained
+                          ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+                          : "bg-emerald-500/80"
+                      }`}
+                      style={{ width: `${barWidthPct}%` }}
                     />
                   </div>
                 </div>

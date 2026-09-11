@@ -105,22 +105,17 @@ export function TrendSparkline({
   const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
 
   const isNetNegative = cumulative < 0;
-  const strokeColor = isNetNegative ? "#f43f5e" : "#10b981"; // rose-500 : emerald-500
-  const fillColor = isNetNegative ? "rgba(244, 63, 94, 0.12)" : "rgba(16, 185, 129, 0.12)";
+  const strokeColor = isNetNegative ? "#ef4444" : "#10b981"; // alert red : muted emerald
+  const fillColor = isNetNegative ? "rgba(239, 68, 68, 0.12)" : "rgba(16, 185, 129, 0.12)";
 
-  // Determine if loss was 1 single blow or gradual
+  // Standardized clean trade insight without conversational filler
   let insightText = "";
   if (lossCount > 0) {
-    const singleBlowRatio = totalLoss > 0 ? maxSingleLoss / totalLoss : 0;
-    if (lossCount === 1 || singleBlowRatio >= 0.75) {
-      insightText = `1 trade drop (-${formatUSD(maxSingleLoss)})`;
-    } else {
-      insightText = `Gradual across ${lossCount} trades (worst -${formatUSD(maxSingleLoss)})`;
-    }
+    insightText = `${lossCount} trades · Max loss: -${formatUSD(maxSingleLoss)}`;
   } else if (winCount > 0) {
-    insightText = `+${formatUSD(cumulative)} across ${winCount} wins`;
+    insightText = `${winCount} wins · +${formatUSD(cumulative)}`;
   } else {
-    insightText = "Flat PnL";
+    insightText = "0 trades";
   }
 
   const tooltipSummary = activeTrades
@@ -182,7 +177,7 @@ export function TrendSparkline({
         {showInsight && (
           <span
             className={`text-[10px] font-mono leading-none ${
-              isNetNegative ? "text-amber-400/90" : "text-emerald-400"
+              isNetNegative ? "text-red-400 font-medium" : "text-emerald-400"
             }`}
             title={`Trajectory: ${tooltipSummary}`}
           >

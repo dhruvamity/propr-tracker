@@ -1,36 +1,215 @@
-### Redesign check
+Your terminal's financial engine matches Propr's backend data on equity, cash ledger balances, trade counts, and daily loss baselines. However, there are three critical logic bugs in risk presentation and trading rules, along with minor UI density issues.
 
-Good progress on most of the last list: CRITICAL/SAFE now tracks actual daily-loss risk instead of a flat badge, daily loss has its own slider next to drawdown, Overview and Live Risk agree on ordering now (Starter first on both), every figure has a currency label, the Expense Ledger has an account-ID column, and "Active Face" became "Entry Fees." Failed accounts are collapsed by default instead of crowding the main table.
+| Metric | Propr Website (Truth) | Your Terminal | Status | Root Cause |
+| --- | --- | --- | --- | --- |
+| **Explorer Equity** | $10,173.67 | $10,173.67 | **Match** | Exact sync |
+| **Explorer Trade Count** | 21 (11W / 10L) | 21 (11W / 10L) | **Match** | Trade journal sync verified |
+| **Explorer Worst Loss** | -$68.00 | -$68.00 | **Match** | Trade parsing verified |
+| **Explorer Daily Loss Used** | 0.72% ($74.13) | $74.13 / $307.43 | **Match** | Correct snapshot baseline ($10,247.80) |
+| **Explorer Profit Target** | 2.00% / 9% | 1.74% / 9% ($726.33 left) | **Discrepancy** | Propr frontend rounds 1.736% to nearest integer percent |
+| **Starter Risk State** | Imminent breach ($22.40 left) | Tagged CRITICAL, but shows $228.47 buffer | **Risk Bug** | Hero metric displays Max DD buffer instead of Daily buffer |
+| **Min Trading Days** | Unlimited (0 days required)
 
-Two new things worth a look:
+ | 4 / 5 d & 5 / 5 d | **Rule Bug** | Hardcoded legacy 5-day rule not present in Propr Turbo
 
-- Overview's Capital Ledger card says "0 Failed," and the "Archived / Breached Accounts" header also says "(0)" — but the toggle right next to it says "Show 6 archived accounts (2 daily loss, 4 drawdown breaches)." Three places, two different counts for what should be one number.
-- "static DD" dropped its old "7/5 days" format for a bare number ("5 days" for Starter, "4 days" for Explorer). The old format told you current day vs. the 5-day minimum; the new one doesn't say which this is anymore.
+ |
 
-### Terminal vs PROPR: Explorer 1-Step Turbo
+---
 
-I can only check Explorer directly, since that's the only account you shared PROPR data for.
+**Critical Calculation & Logic Discrepancies**
 
-| Metric | Terminal | PROPR (source of truth) | Status |
-|---|---|---|---|
-| Equity | $10,173.67 | $10,173.67 | Match |
-| Drawdown floor | $9,700.00 | $9,700.00 | Match |
-| Drawdown used | 0.00% / 3% | 0.00% / 3% | Match |
-| Daily loss used | $74.13 | 0.72% (of $10,247.80 snapshot) | Match |
-| Daily loss budget | $307.43 | 3% (of $10,247.80 snapshot) | Match |
-| Daily floor | $9,940.37 | $10,247.80 - $307.43 | Match |
-| Daily room left | $233.31 | $307.43 - $74.13 = $233.30 | Rounding ($0.01) |
-| Profit target | 1.74% / 9% | 2.00% / 9% | Mismatch |
-| Account ID | J9wNi8oj (#i8oj) | #3XGK | Mismatch |
-| Trades recorded | 82 (trajectory: 60) | 21, all-time (11W/10L) | Mismatch |
-| Worst trade | -$59.71 | -$68 | Mismatch |
+**1. False Sense of Security: Hero Buffer Displays Max DD Instead of Daily Floor**
+On Starter 1-Step Turbo (`#fju6`), the account is marked `CRITICAL`, but the primary hero number reads **`$228.47 USD buffer to breach floor`**.
 
-**Trades, the one to chase first.** PROPR's Performance tab, set to All Time, shows 21 trades for this account. The terminal shows 82 "trades recorded" and describes the trajectory as "60 trades," and its worst-trade figure doesn't match PROPR's either. Since the terminal's count is higher than PROPR's all-time total rather than a subset of it, it's probably counting something more granular, like ticks or partial fills, and labeling it as trades. Whatever it is, the trajectory sparkline and trade counts on both account cards are built on it.
+* The max drawdown floor is $4,850.00 (headroom: $228.47).
+* The daily loss floor is $5,056.07 (headroom: **$22.40**), with 86% of the daily loss budget already burned ($133.97 / $156.37).
+* If the account loses $22.50 today, it breaches and terminates immediately. The true breach distance is $22.40, not $228.47.
 
-**Account ID.** The terminal calls this account J9wNi8oj (#i8oj). PROPR calls the same account #3XGK, confirmed by equity matching to the cent. Probably just an internal reference rather than a lookup error, but worth checking that Starter's terminal ID (4D8XWuQ3 / #WuQ3) also maps cleanly to whatever PROPR calls it, since that's the account where getting the mapping right matters more.
 
-**Profit target.** Terminal says 1.74%, PROPR's gauge says 2.00%. The terminal's number is exactly what you get from PROPR's own Lifetime P&L (+$173.67) over the $10,000 starting balance, so it lines up with PROPR's other figures. I can't find a clean way to get to 2.00% from anything else on the PROPR page — closest is the $10,247.80 intraday snapshot, which gives 2.48%. The equity chart shows a peak above $10,240 a couple of days back, so my guess is PROPR's gauge hasn't refreshed since then. Flagging it since it's a real mismatch either way, but this reads more like a stale widget on PROPR's side than a terminal bug.
+* **The Fix:** The card's hero metric must dynamically evaluate the closest failure threshold:
 
-Everything else, equity, drawdown, and the daily-loss chain, reconciles exactly once you know the daily budget is 3% of the day's opening snapshot, not 3% of the $10,000 starting balance. Worth a tooltip somewhere, since $307.43 looks arbitrary until you know where it comes from.
+$$\text{effectiveBuffer} = \min(\text{drawdownBuffer}, \text{dailyLossRoom})$$
 
-If you can pull Starter's PROPR page, run the same check there before trusting the CRITICAL numbers — that's the account closest to breaching, so it's the one where a trade-count or ID bug would matter most.
+
+$$\text{activeBreachFloor} = \max(\text{drawdownFloor}, \text{dailyLossFloor})$$
+
+
+
+When an account has burned more than 70% of its daily loss budget, the card must anchor its hero metric and progress slider to the daily room ($22.40), not the overall drawdown buffer.
+
+**2. Profit Target: Mathematical Precision vs. Propr Display Rounding**
+For Explorer (`#3XGK`), Propr displays **`2.00% / 9%`**, while your terminal displays **`1.74% / 9% ($726.33 left)`**.
+
+* Total net profit is +$173.67 on a $10,000 initial account.
+* $\frac{\$173.67}{\$10,000} = 1.7367\%$ (rounds mathematically to **1.74%**).
+* Your terminal is calculating the actual math correctly ($173.67 / 900 = 19.30\%$ progress towards the $900 target). Propr's frontend rounds the displayed progress to the nearest whole integer (`Math.round(1.74) = 2%`) and appends `.00%`. Keep your calculation, as it reflects true dollar progress ($726.33 left), but add a tooltip showing `Propr UI: 2.00%`.
+
+**3. Phantom Minimum Trading Days (`4 / 5 d` and `5 / 5 d`)**
+Both active cards display a `Trading Days: 4 / 5 d` or `5 / 5 d` metric.
+
+* Under Propr's Turbo evaluation rules, there are **no minimum trading days**, no time limits, and no consistency rules.
+
+
+* Propr's official dashboard displays `Days remaining: Unlimited` without a target day count.
+* **The Fix:** Remove the `/ 5 d` denominator. Display `Active Trading Days: 4` as an informational stat, or replace it with Propr's daily reset countdown (`Resets in 3h 31m`).
+
+---
+
+**UI & UX Design Review**
+
+**Tighten the Daily Loss Danger State**
+The red progress bar on Starter (`$133.97 / $156.37 · 86% BURNED`) is clear, but the slider directly above it still displays the wider $228.47 buffer. Switch the slider track to reflect the 86% burned state so both the bar and the slider tell the same story.
+
+**Reorganize the Breach Proximity Radar**
+In the Live Risk tab, the top radar ranking sorts by the $228.47 vs $473.67 drawdown buffer. Because Starter is only $22.40 away from a daily breach, it needs to show a bar indicating 86% daily burn rather than a grey bar sitting comfortably at $228.47.
+
+**Clean Up the Directory Table Sparklines**
+In the Accounts Directory overview, the `TRADE TRAJECTORY` column squeezes a micro sparkline together with text (`Gradual across 16 trades (worst -$86.06)`). On standard 1080p displays, this causes horizontal crowding. Drop the words "Gradual across" and show just the sparkline alongside `16 trades · Max loss: -$86.06`.
+
+**Standardize P&L Color Hierarchy**
+In the Explorer card, `+$173.67 (+1.74%)` is displayed in light cyan/green, while Starter uses the same green despite being in an active critical daily drawdown. Reserve bright alert colors (red `#ef4444` and amber `#f59e0b`) strictly for breach warnings, and keep equity gains in muted emerald (`#10b981`).
+
+skill:
+eval.md:
+# No AI slop eval
+
+Use this after the rewrite. Answer each check with pass or fail. If any check fails, fix the draft before returning it.
+
+For detect requests, make sure the response names each pattern found with a quoted line and a short fix, without rewriting the draft.
+
+## Editing principles
+
+1. Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?
+2. Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?
+3. Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?
+4. Is the amount of cutting proportional to the actual slop, with no aggressive compression that strips out character?
+5. Does the draft lead with what the reader needs while keeping personal setup that adds context, tension, or character?
+6. Are points front-loaded where that improves clarity without forcing every unit into the same structure?
+7. Do sentences earn their place, with concrete facts, protected details, and direct verbs where the draft supports them?
+8. Does every generic sentence pass the portability test, or was it cut or made specific to this subject?
+9. Does the draft use active voice with human subjects where possible?
+10. Does the edit keep useful edge and preserve structure unless the structure was hurting the piece?
+11. Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?
+
+## Words to cut
+
+1. Are banned words, filler phrases, often-empty adverbs, and inflated claims removed unless quoted as examples?
+
+## Patterns to cut
+
+1. Are binary contrasts, negative listings, rhetorical setups, and throat-clearing openers removed?
+2. Are faux-insight setups, colon reveals, superficial analysis, fake-strong verbs, synonym cycling, dramatic fragments, and robotic rhythm fixed?
+3. Are importance puffery and weasel attribution replaced with plain facts and named sources, or flagged for the user when no source exists?
+4. Is interpretive metadiscourse removed, including authorial metacommentary, reader guidance, emphasis markers, and redundant glossing?
+5. Are fake-profound kicker lines deleted instead of rewritten into better metaphors?
+6. Are summary-recap endings cut so the piece ends on a concrete point, takeaway, or next action?
+7. Is formatting slop removed: Emoji headings, decorative bold, bullets that should be prose, headers over tiny sections?
+8. Are colons sentence case unless grammar, a proper noun, a title, or code requires otherwise?
+9. Are em dashes used sparingly: Usually none in short copy, and only 1-2 in longer drafts when they clearly help?
+
+## Final read
+
+1. Does the draft avoid robotic symmetry, repeated sentence shapes, and stacked punchy fragments?
+2. Would the writer recognize the edited draft as their own voice?
+3. Would the edited draft sound natural if read to a sharp colleague?
+4. Does the final output include the full edited draft and a short **What changed** section?
+5. For detect requests, does the response name each pattern with a quoted line and a short fix, without rewriting, scoring, or claiming AI authorship?
+
+skill.md:
+---
+name: no-ai-slop
+description: Edit drafts into sharper, more human writing while preserving the writer's personal voice, or detect AI-slop patterns without rewriting. Use when the user wants a draft clearer, more direct, more opinionated, or less AI-sounding, or asks whether writing reads as AI.
+---
+
+# No AI slop
+
+You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.
+
+## Two jobs
+
+**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below and return the edited draft plus a What changed section.
+
+**Detect.** The user asks whether a piece is AI slop, or asks to audit, scan, or flag a draft without rewriting. Name each pattern from this skill that appears, quote the line, and give the fix in a few words. Do not rewrite, score the draft, or guess whether AI wrote it. AI detectors guess. Named patterns are evidence the user can check. Offer to edit the draft after.
+
+## What to ask for
+
+If the user has not provided a draft, ask them to paste it.
+
+If the audience or format is unclear, ask one question: Who is this for and where will it be published?
+
+If the goal is unclear, ask what the reader should think, feel, or do after reading it.
+
+## Editing principles
+
+- **Preserve the writer's real voice.** First notice the draft's vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish. Keep the traits that feel personal to the writer. Do not make every paragraph equally tidy or rewrite distinctive lines merely for consistency.
+- **Make the minimum effective edit.** Fix AI patterns, errors, repetition, and unclear passages. Leave strong human sentences alone. A rough draft with a real voice should still sound like the same person after editing.
+- **Lead with the point when the setup adds nothing.** Cut generic throat-clearing. Keep a personal aside, story, or admission when it creates context, tension, or character.
+- **Front-load only when it improves clarity.** Put conclusions early when that helps the reader. Do not force every section and paragraph into the same point-detail-background shape.
+- **Keep the user's meaning.** Don't invent claims, examples, stats, or opinions. If something is unclear, ask.
+- **Open it up, don't dumb it down.** Keep the substance, nuance, and precision. Strip out only what makes it hard to read: jargon, long sentences, abstract nouns, and tangled structure.
+- **Use active voice.** "The team shipped it Tuesday" beats "the decision emerged." Never let inanimate things do human verbs.
+- **Make every sentence earn its place.** Cut empty qualifiers and throat-clearing. Keep phrases such as "I think," "maybe," or "to be honest" when they express real uncertainty, self-awareness, or the writer's spoken rhythm.
+- **Untangle sentences without flattening the cadence.** Split sentences and paragraphs when they are genuinely hard to follow. Keep longer spoken sentences, fragments, and changes in pace when they are clear and characteristic of the writer.
+- **Be concrete and specific.** Abstraction is where writing goes to die. "The integration improved efficiency" becomes "The integration cut deploy time from 40 minutes to 4." Names, numbers, dates, mechanisms, and examples beat abstractions.
+- **Use the portability test.** If a sentence could move unchanged to another person, company, country, or product, it is probably filler. Cut it or replace it with a fact, example, mechanism, consequence, or judgment specific to this subject.
+- **Always show, don't tell the reader what to think.** Make facts, actions, examples, and consequences carry the emphasis. Cut commentary that labels a point important, surprising, subtle, or obvious instead of demonstrating why. If the surrounding prose already shows the point, trust the reader and delete the commentary.
+- **Protect the specific fact.** Don't smooth a useful detail into generic importance. "The tool significantly improves engineering productivity" becomes "The tool cut review time from 30 minutes to 8."
+- **Make verbs do the work.** Replace weak verb phrases with direct verbs. "Made a decision" becomes "decided." "Has the ability to" becomes "can."
+- **Know the job.** Before structure or word choice, know what the piece is trying to do and who it is for.
+- **Preserve useful edge and character.** Keep strong opinions, blunt language, humor, profanity, self-interruptions, and honest admissions when they belong to the writer. Don't replace them with safer or more professional wording.
+- **Keep structure unless it's hurting the piece.** Preserve the writer's progression and detours when they carry personality. If you reorganize, say why in the What changed section.
+
+## Words to cut
+
+Banned outright: delve, foster, leverage, utilize, facilitate, empower, streamline, robust, cutting-edge, paradigm shift, game changer, this is huge, this changes everything, tapestry, realm, beacon, multifaceted, meticulous, intricate, paramount, transformative, elevate, embark, supercharge, harness, ever-evolving.
+
+Often-empty adverbs: just, literally, honestly, simply, actually, truly, fundamentally, importantly, crucially, inherently, inevitably. Cut them when they add nothing. Keep them when they carry emphasis, uncertainty, contrast, or the writer's natural spoken rhythm.
+
+Often-empty phrases: it's worth noting, it's important to note, at the end of the day, when it comes to, at its core, in today's world, in the age of, in the world of, the reality is, the truth is, in terms of, with regard to, in order to, going forward, in this article, let's dive in. Cut them when they delay the point. Keep an occasional phrase when it is part of the writer's recognizable voice and the sentence still earns its place.
+
+## Patterns to cut
+
+**Binary contrasts.** "This is not X. It's Y." / "The question isn't X, it's Y." / "It's not just X but Y." State Y directly. "The question isn't the model. It's the eval." becomes "The eval matters more than the model."
+
+**Throat-clearing openers.** "Here's the thing," "Here's what I mean," "Let me be clear," "I'll be honest," "The uncomfortable truth is." Cut them and state the point.
+
+**Faux-insight setups.** "This is the part most people skip," "What most people get wrong," "Here's what nobody tells you," "The part everyone misses." These flatter the writer as the lone expert. Cut the setup and make the claim stand on its own. "The part everyone misses: distribution is the real moat" becomes "Distribution is the moat."
+
+**Colon reveals.** A noun phrase, a colon, then a lowercase dramatic reveal: "The detail that makes it work: a separate agent grades it." "The best part: it learns." Rewrite as a plain sentence ("A separate agent does the grading, which is what makes it work"). Use colons for lists, labels, and quotes, not fake drama. Prefer sentence case after a colon unless grammar, a proper noun, a title, or code requires otherwise.
+
+**Superficial analysis.** Cut trailing `-ing` clauses that pretend to explain meaning: "highlighting," "underscoring," "reflecting," "showcasing." "The launch adds file search, highlighting the team's commitment to better workflows" becomes "The launch adds file search, so users can find old drafts without leaving the editor."
+
+**Importance puffery.** "Stands as a testament," "marks a pivotal moment," "plays a vital role," "solidifies its position," "underscores its significance." State the fact and let the reader judge whether it matters. "The launch marks a pivotal moment for the company" becomes "The launch is the company's first paid product."
+
+**Interpretive metadiscourse.** Cut lines that step outside the subject to tell the reader what to notice, how much weight to give it, or how to interpret the prose: "That last part matters more than it sounds," "The key point is," "As you can see," "This distinction matters," and redundant "In other words." If the point is clear, delete the aside. Otherwise, replace it with support or facts already in the content.
+
+**Weasel attribution.** "Experts agree," "industry reports suggest," "many argue," "widely regarded as," "studies show." Name the source or cut the claim. If the user has no source, ask instead of inventing one.
+
+**Fake-strong verbs.** Prefer "is" and "has" when they are clearer. "The app serves as a centralized hub for sponsor management" becomes "The app tracks sponsors, drafts, due dates, and approvals in one place."
+
+**Synonym cycling.** If the clear word is right, repeat it. Don't rotate terms for style. "The agent reviews the draft. The assistant scores the piece. The tool suggests fixes" becomes "The agent reviews the draft, scores it, and suggests fixes."
+
+**Negative listing.** "Not a X. Not a Y. A Z." Just say Z.
+
+**Dramatic fragmentation.** "X. And Y. And Z." or "That's it. That's the whole thing." Use complete sentences.
+
+**Robotic rhythm.** Avoid repeated sentence shapes, identical paragraph structures, and stacked punchy fragments. Vary the shape only when it helps the point.
+
+**Rhetorical setups.** "What if I told you...", "Think about it:", "Plot twist:", and self-answered "Question? Answer." pairs. Drop them and make the point.
+
+**Fake-profound kickers.** Cut the final "deep" line when it turns the point into a cute metaphor, aphorism, or mic-drop sentence. Do not rewrite it into a better metaphor. Do not preserve the rhythm. Delete it, then end on the clearest concrete sentence already in the draft. If the ending needs more closure, add a plain takeaway or next action.
+
+**Summary-recap endings.** "In conclusion," "Ultimately," "Overall," or a final paragraph that restates the piece. The reader was just there. End on the last concrete point, takeaway, or next action instead.
+
+**Formatting slop.** Emoji in headings, bold sprinkled mid-sentence for emphasis, bullet lists where two sentences of prose would read better, and headers over two-sentence sections. Format should follow the content, not decorate it.
+
+**Em dashes.** Do not use them as a default rhythm crutch. In short copy, use none. In longer drafts, 1-2 are fine if they clearly beat commas, periods, or parentheses. Remove clusters and decorative dashes.
+
+## Workflow
+
+1. Read the full draft before editing.
+2. Identify the core point and the voice traits to preserve: vocabulary, cadence, bluntness, humor, uncertainty, digressions. If you cannot identify the core point, ask the user.
+3. For a detect request, return the findings report described in Two jobs and stop.
+4. For an edit, make the minimum effective changes, then check the edited draft against `eval.md` yourself.
+5. If any check fails, fix the draft and run the checks again.
+6. Output the full edited draft and a short **What changed** section.

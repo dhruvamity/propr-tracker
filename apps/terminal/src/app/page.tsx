@@ -24,11 +24,23 @@ export default async function OverviewPage() {
     (a) => a.failureReason?.toLowerCase().includes("daily")
   ).length;
 
-  // Sort active accounts by risk proximity (closest to breach floor first)
+  // Sort active accounts by active breach proximity (lowest effective buffer first)
   const rankedActiveAccounts = [...activeAccounts].sort((a, b) => {
-    const bufA = Number(a.drawdownRemaining || 0);
-    const bufB = Number(b.drawdownRemaining || 0);
-    return bufA - bufB;
+    const dailyRoomA = Number(a.dailyLossRemaining || 0);
+    const ddBufferA = Number(a.drawdownRemaining || 0);
+    const dailyLimitA = Number(a.dailyLossLimitAmount || 0);
+    const dailyUsedA = Number(a.dailyLossUsedAmount || 0);
+    const dailyBurnA = dailyLimitA > 0 ? (dailyUsedA / dailyLimitA) * 100 : 0;
+    const effA = dailyBurnA >= 70 || (dailyRoomA > 0 && dailyRoomA < ddBufferA) ? dailyRoomA : ddBufferA;
+
+    const dailyRoomB = Number(b.dailyLossRemaining || 0);
+    const ddBufferB = Number(b.drawdownRemaining || 0);
+    const dailyLimitB = Number(b.dailyLossLimitAmount || 0);
+    const dailyUsedB = Number(b.dailyLossUsedAmount || 0);
+    const dailyBurnB = dailyLimitB > 0 ? (dailyUsedB / dailyLimitB) * 100 : 0;
+    const effB = dailyBurnB >= 70 || (dailyRoomB > 0 && dailyRoomB < ddBufferB) ? dailyRoomB : ddBufferB;
+
+    return effA - effB;
   });
 
   const totalSpentINR = Number(finance.totalActualCashCostINR || finance.totalInvestedINR || 0);
@@ -150,7 +162,7 @@ export default async function OverviewPage() {
                 <th className="py-2.5 px-3 text-left">Account</th>
                 <th className="py-2.5 px-3 text-right">Balance</th>
                 <th className="py-2.5 px-3 text-right">Equity</th>
-                <th className="py-2.5 px-3 text-right">Drawdown Buffer</th>
+                <th className="py-2.5 px-3 text-right">Active Buffer</th>
                 <th className="py-2.5 px-3 text-right">Daily Room</th>
                 <th className="py-2.5 px-3 text-left">Trade Trajectory</th>
                 <th className="py-2.5 px-3 text-right">Target</th>
@@ -159,11 +171,14 @@ export default async function OverviewPage() {
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
               {rankedActiveAccounts.map((acc) => {
-                const buffer = Number(acc.drawdownRemaining || 0);
+                const ddBuffer = Number(acc.drawdownRemaining || 0);
                 const dailyRoom = Number(acc.dailyLossRemaining || 0);
                 const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
-                const dailyRoomPct = dailyLimit > 0 ? (dailyRoom / dailyLimit) * 100 : 100;
-                const isCritical = dailyRoomPct <= 25;
+                const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
+                const dailyBurn = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
+                const isDailyConstrained = dailyBurn >= 70 || (dailyRoom > 0 && dailyRoom < ddBuffer);
+                const effectiveBuffer = isDailyConstrained ? dailyRoom : ddBuffer;
+                const isCritical = dailyBurn >= 75 || dailyRoom <= 35;
 
                 return (
                   <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
@@ -183,22 +198,30 @@ export default async function OverviewPage() {
                     <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
                       {formatUSD(acc.equity)}
                     </td>
-                    <td className="py-2.5 px-3 text-right text-zinc-200 font-semibold whitespace-nowrap">
-                      {formatUSD(buffer)}
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <span className={`font-semibold ${isDailyConstrained ? "text-red-400 font-bold" : "text-zinc-200"}`}>
+                        {formatUSD(effectiveBuffer)}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 block">
+                        {isDailyConstrained ? `Daily limit (DD: ${formatUSD(ddBuffer)})` : `Floor: ${formatUSD(acc.breachFloor)}`}
+                      </span>
                     </td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
                       <span className={`font-bold ${isCritical ? "text-red-400" : "text-emerald-400"}`}>
                         {formatUSD(dailyRoom)}
                       </span>
                       <span className="text-[10px] text-zinc-500 block">
-                        {isCritical ? "⚠ 1 trade from breach" : "Normal room"}
+                        {isCritical ? `⚠ ${dailyBurn.toFixed(0)}% burned` : "Normal room"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-left whitespace-nowrap">
-                      <TrendSparkline trades={acc.trades} width={90} height={20} showInsight={true} />
+                      <TrendSparkline trades={acc.trades} width={80} height={18} showInsight={true} />
                     </td>
                     <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
-                      <span className="font-medium text-white">
+                      <span
+                        className="font-medium text-white cursor-help"
+                        title={`Math: ${formatPercent(acc.profitTargetPct, 2)}. Propr UI displays 2.00% (rounded).`}
+                      >
                         {formatPercent(acc.profitTargetPct, 2)}
                         <span className="text-zinc-500 font-normal ml-1">/ {acc.profitTargetPercent || "9"}%</span>
                       </span>
