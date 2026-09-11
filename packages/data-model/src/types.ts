@@ -1,6 +1,6 @@
 // ─── Core Types ───────────────────────────────────────────────────────────────
 // Normalized data model for the Propr Trading Terminal.
-// All monetary values are DecimalString — never use floating-point for money.
+// Monetary values are DecimalString. Do not use floating-point for money.
 
 /** Branded string type for decimal monetary values. */
 export type DecimalString = string & { readonly __brand: "DecimalString" };

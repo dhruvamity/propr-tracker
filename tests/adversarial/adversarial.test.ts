@@ -1,6 +1,6 @@
 // ─── Adversarial Test Suite ───────────────────────────────────────────────────
 // Injects adversarial data: extreme prices, malformed JSON, out-of-order events,
-// negative/tiny quantities, and abnormal inputs to verify robust failure-safety.
+// negative/tiny quantities, and abnormal inputs to verify failure safety.
 
 import { describe, it, expect } from "vitest";
 import Decimal from "decimal.js";

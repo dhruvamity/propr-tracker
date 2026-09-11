@@ -29,7 +29,7 @@ export default async function HistoryPage() {
           Historical & Breached Account Archive
         </h1>
         <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-          Complete audit trail of past challenge attempts, breach triggers, and closed accounts.
+          Past challenge attempts, breach triggers, and closed accounts.
         </p>
       </div>
 

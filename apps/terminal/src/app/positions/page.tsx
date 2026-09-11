@@ -26,7 +26,7 @@ export default async function PositionsPage() {
             Active Trading Positions
           </h1>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Real-time positions across all active evaluation and funded accounts.
+            Open positions across active evaluation and funded accounts.
           </p>
         </div>
         <span className="text-xs font-mono px-2 py-1 rounded bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--cyan)]">
@@ -53,7 +53,7 @@ export default async function PositionsPage() {
             {allPositions.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-12 text-center text-xs font-mono text-[var(--text-muted)]">
-                  No open trading positions currently detected across active accounts.
+                  No open positions.
                 </td>
               </tr>
             ) : (

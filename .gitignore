@@ -10,3 +10,4 @@ dist/
 *.log
 .vercel
 apps/terminal/apps/
+AGENTS.md

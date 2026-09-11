@@ -27,10 +27,10 @@ export default async function LiveMonitorPage() {
         <div>
           <h1 className="text-sm font-mono font-bold tracking-wider text-[var(--text-primary)] uppercase flex items-center gap-2">
             <Radio size={15} className="text-[var(--cyan)] animate-pulse" />
-            Live Risk Radar & Active Account Watch
+            Live Risk & Active Accounts
           </h1>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Real-time breach proximity and profit target progress for active accounts.
+            Breach limits and profit target progress for active accounts.
           </p>
         </div>
         <span className="text-xs font-mono px-2 py-1 rounded bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--cyan)]">

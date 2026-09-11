@@ -50,14 +50,12 @@ export async function buildAccountUniverse(
 ): Promise<AccountSnapshot[]> {
   const now = new Date().toISOString();
 
-  // 1 & 2. Fetch all challenge attempts and funded issuances
   const [allAttempts, allIssuances] = await Promise.all([
     client.getAllChallengeAttempts(),
     client.getAllFundedIssuances(),
   ]);
 
-  // 3. Build account universe, deduplicating by accountId
-  // Map: accountId → { attempt?, issuance? }
+  // Map: accountId -> { attempt?, issuance? }
   const accountMap = new Map<
     string,
     {
@@ -97,7 +95,6 @@ export async function buildAccountUniverse(
     }
   }
 
-  // 4–7. Process each account
   const snapshots: AccountSnapshot[] = [];
 
   for (const [accountId, { attempt, issuance }] of accountMap) {
@@ -133,10 +130,8 @@ async function normalizeAccount(
   now: string,
   options: NormalizeOptions
 ): Promise<AccountSnapshot> {
-  // Derive lifecycle stage
   const { stage, source } = deriveAccountStage(attempt, issuance);
 
-  // Fetch trading data in parallel
   const [positions, orders, trades, dailyMetrics] = await Promise.all([
     client.getOpenPositions(accountId).catch(() => [] as PositionSnapshot[]),
     client.getOpenOrders(accountId).catch(() => [] as OrderSnapshot[]),
@@ -144,11 +139,9 @@ async function normalizeAccount(
     client.getDailyMetrics(accountId).catch(() => null),
   ]);
 
-  // Get challenge configuration
   const challengeConfig = attempt?.challenge;
   const fundedConfig = issuance;
 
-  // Initial/starting balance
   const initialBalance = ds(
     issuance?.initialBalance ||
       challengeConfig?.initialBalance ||
@@ -161,7 +154,6 @@ async function normalizeAccount(
     challengeConfig?.initialBalance || initialBalance
   );
 
-  // Calculate total PnL from positions
   const totalUpnl = sumUnrealizedPnl(positions);
   let totalRealizedPnl = new Decimal(0);
   let totalFees = new Decimal(0);
@@ -170,7 +162,6 @@ async function normalizeAccount(
     totalFees = totalFees.plus(toDecimal(pos.cumulativeTradingFees));
   }
 
-  // Drawdown config
   const maxDrawdownPercent = ds(
     issuance?.maxDrawdownPercent ||
       challengeConfig?.maxDrawdownPercent ||
@@ -203,7 +194,6 @@ async function normalizeAccount(
     toDecimal(estimatedBalance).plus(toDecimal(totalUpnl))
   );
 
-  // Drawdown calculations
   const ddConfig = {
     drawdownType,
     maxDrawdownPercent,
@@ -221,7 +211,6 @@ async function normalizeAccount(
       ? calculateDrawdownRemaining(equity, ddConfig)
       : ZERO;
 
-  // Daily loss calculations
   const dailyLossBase = dailyMetrics
     ? fromDecimal(
         toDecimal(dailyMetrics.startingBalance).plus(
@@ -240,7 +229,6 @@ async function normalizeAccount(
       ? calculateDailyLossRemaining(equity, dlConfig)
       : ZERO;
 
-  // Profit target progress
   const profitTargetProgressPercent =
     profitTargetPercent !== ZERO
       ? calculateProfitTargetProgress(
@@ -250,7 +238,6 @@ async function normalizeAccount(
         )
       : ZERO;
 
-  // Finance data
   let purchaseCostUSD = ZERO;
   for (const tx of accountLedger) {
     if (tx.type === "purchase") {

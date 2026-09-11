@@ -27,7 +27,7 @@ export default async function AccountsPage() {
             Accounts Universe Directory
           </h1>
           <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-            Comprehensive oversight across evaluation challenges, passed benchmarks, and funded accounts.
+            Evaluation challenges, passed benchmarks, and funded accounts.
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono">

@@ -1,6 +1,6 @@
 // ─── Propr REST API Client ────────────────────────────────────────────────────
 // Read-only, typed client for all Propr API endpoints.
-// API key is handled server-side only — never exposed to the browser.
+// API key is handled server-side only; never exposed to the browser.
 
 import type {
   ProprChallengeAttempt,
@@ -100,7 +100,7 @@ export class ProprClient {
 
   /**
    * Fetch all pages for a paginated endpoint.
-   * Rate limit: 1200 req/min — this fetches sequentially.
+   * Rate limit: 1200 req/min; fetches sequentially.
    */
   private async fetchAllPages<T>(
     path: string,
@@ -161,7 +161,7 @@ export class ProprClient {
   }
 
   async getAllChallengeAttempts(): Promise<ProprChallengeAttempt[]> {
-    // Fetch all statuses — don't only get active
+    // Fetch all statuses, not only active
     const [active, passed, failed] = await Promise.all([
       this.getChallengeAttempts("active"),
       this.getChallengeAttempts("passed"),
@@ -226,7 +226,7 @@ export class ProprClient {
   }
 
   async getOpenOrders(accountId: string): Promise<OrderSnapshot[]> {
-    // Use exact status enums — not "active" (which returns 400)
+    // Use exact status enums (not "active", which returns 400)
     const [pending, open, partiallyFilled] = await Promise.all([
       this.getOrders(accountId, "pending"),
       this.getOrders(accountId, "open"),

@@ -11,7 +11,7 @@ import type {
 
 /**
  * Derive the account stage from a challenge attempt.
- * Does NOT infer FUNDED — use funded issuance data for that.
+ * Does NOT infer FUNDED; use funded issuance data for that.
  */
 export function deriveChallengeStage(
   attempt: Pick<ProprChallengeAttempt, "status">

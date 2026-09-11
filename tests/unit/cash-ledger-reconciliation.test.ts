@@ -12,8 +12,8 @@ import type { FinanceTransaction } from "@propr/data-model";
 import { ds } from "@propr/data-model";
 
 describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => {
-  // ─── §18: Controlled Scenario Deterministic Test ─────────────────────────────
-  it("§18: Evaluates controlled scenario matching expected values exactly", () => {
+  // ─── Controlled Scenario Deterministic Test ─────────────────────────────
+  it("reconciles controlled scenario with expected three-layer values", () => {
     // Purchase A: Face $50, Actual cash ₹4,890.24 (Active Account A)
     // Purchase B: Face $25, Actual cash ₹2,445.95 (Active Account B)
     // Historical Propr: Face $143.75, Actual cash ₹14,223.39 (Sunk)
@@ -127,7 +127,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
 
   // ─── §19: Regression Tests A through H ───────────────────────────────────────
 
-  it("Test A — FX mismatch: Uses actual bank debit (₹4,890.24) rather than USD × FX (₹4,225.00)", () => {
+  it("Test A: uses actual bank debit rather than USD × FX estimate", () => {
     const tx: FinanceTransaction = {
       id: "tx-fx-mismatch",
       date: "2026-09-08T13:38:00.000Z",
@@ -151,7 +151,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(outflow).toBe("4890.24");
   });
 
-  it("Test B — Breakout inclusion: Breakout cash cost contributes to total prop-firm cash outflow", () => {
+  it("Test B: includes Breakout cash cost in total prop firm outflow", () => {
     const proprTx: FinanceTransaction = {
       id: "tx-propr",
       date: "2026-09-08",
@@ -178,7 +178,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(combinedOutflow).not.toBe(proprOnlyOutflow);
   });
 
-  it("Test C — Active vs historical: Historical failed account costs must not appear as active capital", () => {
+  it("Test C: excludes historical failed account costs from active capital", () => {
     const activeAccountIds = ["urn:prp-account:J9wNi8oj3XGK", "urn:prp-account:4D8XWuQ3fju6"];
 
     const activeFace = calculateActiveCapital(SEED_PURCHASES, activeAccountIds);
@@ -193,7 +193,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(activeCash).not.toBe(totalOutflow);
   });
 
-  it("Test D — Face vs cash: Changing FX rate does not alter historical actual bank cash cost", () => {
+  it("Test D: preserves historical bank cash cost regardless of FX rate changes", () => {
     const tx: FinanceTransaction = {
       id: "tx-rate-independence",
       date: "2026-09-08",
@@ -224,7 +224,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(new Decimal(tx.amountUSD).times(fxRate3).toFixed(2)).toBe("3750.00");
   });
 
-  it("Test E — Duplicate bank transaction: Same bank reference imported twice remains one transaction", () => {
+  it("Test E: deduplicates imported bank transactions by reference", () => {
     const rawBankImports: FinanceTransaction[] = [
       {
         id: "tx-1",
@@ -263,7 +263,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(outflow).toBe("4890.24");
   });
 
-  it("Test F — Refund: Refund improves actual cash PnL", () => {
+  it("Test F: credits refund against actual cash outflow", () => {
     const purchases: FinanceTransaction[] = [
       {
         id: "p1",
@@ -297,7 +297,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(improvement.toString()).toBe("1000");
   });
 
-  it("Test G — Processed payout: Processed payout improves actual cash PnL", () => {
+  it("Test G: credits processed payout toward cash PnL", () => {
     const purchases: FinanceTransaction[] = [
       {
         id: "p1",
@@ -317,7 +317,7 @@ describe("Three-Layer Cash Ledger Reconciliation & Controlled Scenarios", () => 
     expect(pnlWithPayout).toBe("5109.76");
   });
 
-  it("Test H — Pending payout: Pending or failed payout does not improve cash PnL", () => {
+  it("Test H: ignores pending or failed payouts in cash PnL", () => {
     const rawPayoutEvents = [
       { id: "p-pending", status: "pending", amountINR: "5000.00" },
       { id: "p-rejected", status: "rejected", amountINR: "2500.00" },

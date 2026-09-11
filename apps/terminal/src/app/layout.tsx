@@ -5,7 +5,7 @@ import { TopBar } from "@/components/top-bar";
 
 export const metadata: Metadata = {
   title: "PROPR // ACCOUNT TERMINAL",
-  description: "Personal Propr trading terminal — read-only account dashboard",
+  description: "Personal Propr trading terminal, read-only account dashboard",
 };
 
 export default function RootLayout({

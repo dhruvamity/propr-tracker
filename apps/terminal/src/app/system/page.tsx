@@ -11,10 +11,10 @@ export default async function SystemPage() {
       <div>
         <h1 className="text-sm font-mono font-bold tracking-wider text-[var(--text-primary)] uppercase flex items-center gap-2">
           <Server size={15} className="text-[var(--cyan)]" />
-          System Diagnostics & Architecture Status
+          System Diagnostics
         </h1>
         <p className="text-xs font-mono text-[var(--text-muted)] mt-1">
-          Runtime infrastructure, security guarantees, and connection telemetry.
+          Sync status, runtime environment, and connection telemetry.
         </p>
       </div>
 

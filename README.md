@@ -1,47 +1,72 @@
 # Propr Trading Terminal
 
-A production-grade, read-only personal trading terminal for **Propr** prop firm accounts, built with Next.js 16, Tailwind CSS, TypeScript, and Decimal.js.
+Read-only personal dashboard for tracking Propr prop firm accounts, breach limits, open positions, and bank cash reconciliation.
 
-## Features
-- **Overview Dashboard**: Executive financial metrics (Total Invested, Active Capital, Payouts Withdrawn, Net Cash PnL), account status distribution, active evaluation risk meters.
-- **Real-Time Integration**: REST synchronizer and persistent WebSocket worker handling 15 event types (`mark.updated`, `account.updated`, `position.*`, `order.*`, `trade.*`).
-- **Precision Financial Math**: Strictly uses Decimal.js (no floating point errors) for uPnL, ROE, drawdown, and daily loss tracking.
-- **Clean Lifecycle Tracking**: Distinguishes between evaluation, passed, funded (A-Book/B-Book), breached, and closed states.
-- **Read-Only & Secure**: Zero mutation endpoints, with credentials strictly maintained on the server.
+## Who is it for?
+Traders running evaluation challenges or funded accounts on Propr who need an independent monitor for trailing drawdown limits, daily loss proximity, open positions, and actual cash spent across prop firms (Propr and Breakout).
+
+## What does it do?
+- **Account Discovery**: Discovers both challenge attempts (`/challenge-attempts`) and book issuances (`/book-account-issuances`).
+- **Risk Monitoring**: Calculates trailing drawdown against high-water marks and daily loss against day-start balance plus isolated margin.
+- **Three-Layer Accounting**:
+  - Layer 1 (Face Value): USD challenge purchase prices ($218.75 total; $75.00 active).
+  - Layer 2 (Actual Cash): Grounded in INR bank debits across Propr (₹21,559.58) and Breakout (₹3,835.25), totaling ₹25,394.83 with ₹0.00 unexplained difference.
+  - Layer 3 (Trading Metrics): Realized and unrealized PnL, equity, and fees calculated with Decimal.js.
+- **Live Trading View**: Displays open positions and resting orders, filtering out closed zero-quantity entries.
+- **Truthful Failure State**: Fails closed with explicit error indicators if upstream APIs are unreachable.
 
 ## Architecture
-- `apps/terminal`: Next.js 16 App Router personal terminal UI.
-- `services/propr-sync`: Standalone persistent WebSocket & REST reconciliation worker.
-- `packages/data-model`: Core types, Zod schemas, and DecimalString wrappers.
-- `packages/calculations`: Pure calculation functions for PnL, risk, equity, and finance.
-- `packages/propr-client`: Typed Propr API client.
-- `packages/finance`: Finance ledger models and CSV ingestion.
 
-## Getting Started
+The repository is structured as a monorepo:
 
-### 1. Environment Setup
-Copy `.env.example` to `.env.local` inside `apps/terminal`:
+- `apps/terminal`: Next.js 16 App Router interface.
+- `services/propr-sync`: Standalone worker for WebSocket events and periodic REST resync.
+- `packages/calculations`: Mathematical functions for PnL, drawdown, daily loss, and cash aggregation using Decimal.js.
+- `packages/data-model`: Zod schemas and TypeScript definitions.
+- `packages/finance`: Cash ledger models, baseline transaction data, and reconciliation logic.
+- `packages/propr-client`: Server-side HTTP client for the Propr REST API.
+
+## Environment Variables
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `PROPR_API_KEY` | Propr API authentication key (server-side only) | *(required)* |
+| `PROPR_API_URL` | Base URL for Propr REST API | `https://api.propr.xyz/v1` |
+| `PROPR_WS_URL` | WebSocket URL for live updates | `wss://api.propr.xyz/ws` |
+| `USD_TO_INR` | Reference FX rate for USD face value estimates | `84.5` |
+| `REDIS_URL` | Optional Redis URL for persistent cache in `propr-sync` | *(in-memory fallback)* |
+
+## Running Locally
+
+### 1. Install dependencies
 ```bash
-cp .env.example apps/terminal/.env.local
-```
-Configure your credentials:
-```env
-PROPR_API_KEY=pk_live_your_api_key
-PROPR_API_URL=https://api.propr.xyz/v1
-USD_TO_INR=84.5
-```
-
-### 2. Development
-Run the terminal app locally:
-```bash
-cd apps/terminal
 npm install
+```
+
+### 2. Configure environment
+```bash
+cp .env.example .env
+# Edit .env with your PROPR_API_KEY
+```
+
+### 3. Run automated tests
+```bash
+npm test
+```
+
+### 4. Start local development server
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the terminal.
+Open [http://localhost:3000](http://localhost:3000).
 
-### 3. Vercel Deployment
-- **Root Directory**: Select or configure `apps/terminal` (or keep root with build script `cd apps/terminal && npm run build`).
-- **Build Command**: `next build` (inside `apps/terminal`) or `cd apps/terminal && npm run build`.
-- **Environment Variables**: Add `PROPR_API_KEY`, `PROPR_API_URL`, and `USD_TO_INR` in the Vercel project settings.
+### 5. Production build
+```bash
+npm run build
+```
+
+## Intentionally Unsupported
+- **Order Placement & Modification**: The terminal does not place orders, cancel orders, or modify stops. It contains zero mutation endpoints.
+- **Payout Requests**: Payout withdrawals cannot be initiated from this application.
+- **Trading Bots / Automation**: The system is an observational terminal, not an automated execution engine.

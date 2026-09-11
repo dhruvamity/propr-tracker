@@ -145,7 +145,7 @@ export default async function FinancePage() {
                     {formatINR(tx.actualCashCostINR || tx.amountINR)}
                   </td>
                   <td className="py-2.5 px-3 text-[var(--text-muted)]">
-                    {tx.bankReference || tx.invoiceNumber || "—"}
+                    {tx.bankReference || tx.invoiceNumber || "-"}
                   </td>
                   <td className="py-2.5 px-3">
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-950/60 text-[var(--green)] border border-green-800/40">

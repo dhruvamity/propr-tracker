@@ -24,14 +24,12 @@ async function main() {
   console.log("│  REST Synchronizer + WebSocket Listener  │");
   console.log("└─────────────────────────────────────────┘");
 
-  // Initialize store
   const store: DataStore = REDIS_URL
     ? new RedisStore(REDIS_URL)
     : new MemoryStore();
 
   console.log(`[STORE] Using ${REDIS_URL ? "Redis" : "in-memory"} store`);
 
-  // Initialize Propr client
   const client = new ProprClient({ apiKey: API_KEY! });
 
   // Seed finance ledger if empty
@@ -41,10 +39,8 @@ async function main() {
     await store.setLedger(SEED_PURCHASES);
   }
 
-  // Initial REST sync
   await performSync(client, store);
 
-  // Start WebSocket worker
   const wsWorker = new WsSyncWorker({
     apiKey: API_KEY!,
     wsUrl: WS_URL,
@@ -54,14 +50,12 @@ async function main() {
 
   await wsWorker.start();
 
-  // Periodic REST resync
   setInterval(() => {
     performSync(client, store).catch((err) => {
       console.error("[SYNC] Periodic sync failed:", err);
     });
   }, REST_SYNC_INTERVAL);
 
-  // Graceful shutdown
   process.on("SIGINT", () => {
     console.log("[SYNC] Shutting down...");
     wsWorker.stop();
@@ -83,34 +77,26 @@ async function performSync(
   const startTime = Date.now();
 
   try {
-    // Check API health first
     const health = await client.getServiceHealth();
     if (health.core !== "OK") {
       console.warn("[SYNC] Propr API core is not OK:", health.core);
     }
 
-    // Get user profile
     const user = await client.getUser();
     console.log(`[SYNC] User: ${user.email}`);
 
-    // Get ledger and payouts
     const ledger = await store.getLedger();
     const payouts = await client.getAllPayouts();
 
-    // Store payouts
     await store.setPayouts(payouts);
 
-    // Build normalized account universe
     const accounts = await buildAccountUniverse(
       client,
       ledger,
       payouts
     );
 
-    // Store snapshot
     await store.setSnapshot(accounts);
-
-    // Update health
     await store.setHealth({
       restStatus: "HEALTHY",
       wsStatus:

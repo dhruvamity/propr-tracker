@@ -1,4 +1,4 @@
-# Propr Trading Terminal — Final Release Certification & Production Acceptance Audit
+# Propr Trading Terminal: Final Release Certification & Production Acceptance Audit
 
 ```text
 ================================================================================
@@ -20,9 +20,7 @@ FINAL STATUS:                 PRODUCTION READY WITH CONDITIONS
 
 ## 1. Executive Summary & Audit Closure
 
-This document constitutes the definitive **Final Production Release Certification and Acceptance Audit** of the Propr Trading Terminal.
-
-With this final pass, the last identified certification gap—the complete actual cash ledger reconciliation across **Propr + Breakout + real INR bank costs**—is mathematically and operationally closed.
+This document records the production acceptance audit for the Propr Trading Terminal. The cash ledger reconciliation across Propr, Breakout, and INR bank statements is verified and closed.
 
 ### Key Certification Verdicts:
 1. **Three-Layer Accounting & Cash Reconciliation (PASS)**:

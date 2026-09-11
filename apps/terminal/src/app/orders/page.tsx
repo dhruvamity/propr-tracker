@@ -40,7 +40,7 @@ export default async function OrdersPage() {
             {allOrders.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-xs font-mono text-[var(--text-muted)]">
-                  No pending limit orders or triggered stops currently waiting execution.
+                  No pending orders.
                 </td>
               </tr>
             ) : (

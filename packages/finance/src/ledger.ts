@@ -68,9 +68,9 @@ export function payoutsToTransactions(
       accountId: p.accountId,
       type: "payout" as const,
       amountUSD: (p.userAmount || p.amount) as DecimalString,
-      bankVerified: true, // On-chain payouts are inherently verified
+      bankVerified: true, // On-chain payouts are verified
       payoutId: p.payoutId,
-      notes: `Payout ${p.reason} — tx: ${p.txHash || "N/A"}`,
+      notes: `Payout ${p.reason} (tx: ${p.txHash || "N/A"})`,
     }));
 }
 
@@ -113,8 +113,8 @@ function normalizeDate(dateStr: string): string {
 }
 
 /**
- * The initial seed data from the user's purchase history CSV.
- * This is hardcoded as the baseline — the user can add more via the UI.
+ * Initial seed data from purchase history CSV.
+ * Baseline purchases; the user can add more via the UI.
  */
 export const SEED_PURCHASES: FinanceTransaction[] = [
   {

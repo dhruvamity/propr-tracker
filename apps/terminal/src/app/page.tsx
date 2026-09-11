@@ -369,7 +369,7 @@ export default async function OverviewPage() {
           </div>
           {allPositions.length === 0 ? (
             <div className="py-8 text-center text-xs font-mono text-[var(--text-muted)]">
-              No open trading positions currently detected across active accounts.
+              No open positions.
             </div>
           ) : (
             <div className="space-y-2">
@@ -396,7 +396,7 @@ export default async function OverviewPage() {
           </div>
           {allOrders.length === 0 ? (
             <div className="py-8 text-center text-xs font-mono text-[var(--text-muted)]">
-              No pending orders waiting for fill or trigger.
+              No pending orders.
             </div>
           ) : (
             <div className="space-y-2">

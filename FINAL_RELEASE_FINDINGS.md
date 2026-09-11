@@ -1,4 +1,4 @@
-# Propr Trading Terminal — Final Release Findings & Risk Register
+# Propr Trading Terminal: Final Release Findings & Risk Register
 
 ```text
 ================================================================================
@@ -28,7 +28,7 @@ ACCEPTED:         1 LOW OPERATIONAL CONDITION (Vercel Serverless Polling Envelop
 
 ---
 
-## 2. Critical Findings (CRITICAL) — All 4 Resolved
+## 2. Critical Findings (All 4 Resolved)
 
 ### CRIT-01: Synthetic Mock Data Injected on Upstream API Failure
 - **Severity**: CRITICAL
@@ -60,7 +60,7 @@ ACCEPTED:         1 LOW OPERATIONAL CONDITION (Vercel Serverless Polling Envelop
 
 ---
 
-## 3. High Findings (HIGH) — All 5 Resolved
+## 3. High Findings (All 5 Resolved)
 
 ### HIGH-01: Native Floating-Point Math in Currency Conversion
 - **Severity**: HIGH
@@ -99,7 +99,7 @@ ACCEPTED:         1 LOW OPERATIONAL CONDITION (Vercel Serverless Polling Envelop
 
 ---
 
-## 4. Medium Findings (MEDIUM) — All 5 Resolved
+## 4. Medium Findings (All 5 Resolved)
 
 ### MED-01: Turbopack Build Failure Due to Nested Vercel DistDir
 - **Severity**: MEDIUM

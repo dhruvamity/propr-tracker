@@ -286,7 +286,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   }
 
   try {
-    // Fetch everything in parallel
     const [
       activeAttempts,
       passedAttempts,
@@ -308,7 +307,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     const allAttempts = [...activeAttempts, ...passedAttempts, ...failedAttempts];
     const allIssuances = [...activeIssuances, ...closedIssuances, ...reviewIssuances];
 
-    // Build account universe
     const accountMap = new Map<string, { attempt?: Record<string, unknown>; issuance?: Record<string, unknown> }>();
     for (const a of allAttempts) {
       const id = a.accountId as string;
@@ -319,7 +317,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       accountMap.set(id, { ...accountMap.get(id), issuance: i });
     }
 
-    // Process each account
     const accounts: AccountSnapshot[] = [];
     const allPositions: PositionData[] = [];
     const allOrders: OrderData[] = [];
@@ -386,7 +383,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         allPositions.push(...positions);
         allOrders.push(...orders);
 
-        // Challenge config & account details
         const challenge = attempt?.challenge as Record<string, unknown> | undefined;
         const rawAcc = (attempt?.account || issuance?.account) as Record<string, unknown> | undefined;
         const purchaseId = (attempt?.purchaseId || issuance?.purchaseId) as string | undefined;
@@ -399,7 +395,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         const highWaterMark = (rawAcc?.highWaterMark || issuance?.highWaterMark || initialBalance) as string;
         const isolatedMargin = d(rawAcc?.isolatedPositionMargin as string || "0");
 
-        // Calculate PnL
         let totalUpnl = new Decimal(0);
         let totalRpnl = new Decimal(0);
         let totalFees = new Decimal(0);
@@ -452,7 +447,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           ? dlUsedAmount.div(maxDlAmount).times(100)
           : new Decimal(0);
 
-        // Profit target progress
         const ptProgress = d(profitTargetPercent).gt(0)
           ? equity.minus(d(initialBalance)).div(d(initialBalance)).times(100).div(d(profitTargetPercent)).times(100)
           : new Decimal(0);
@@ -521,7 +515,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     };
     accounts.sort((a, b) => (sortPriority[a.stage] ?? 99) - (sortPriority[b.stage] ?? 99));
 
-    // Payouts
     const payouts: PayoutData[] = payoutsRaw.map((p) => ({
       payoutId: p.payoutId as string,
       reason: p.reason as string,
@@ -538,7 +531,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     const ledger = SEED_PURCHASES;
     const rate = d(USD_TO_INR);
 
-    // Active accounts tracking
     const activePurchaseIds = new Set<string>();
     const activeAccountIds = new Set<string>();
     for (const acc of accounts) {
@@ -607,7 +599,6 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     const actualCashPnLINR = totalPayoutsINR.minus(totalActualCashOutflowINR);
     const actualCashPnLUSD = rate.isZero() ? new Decimal(0) : actualCashPnLINR.dividedBy(rate);
 
-    // Summary
     const summary = {
       activeEvals: accounts.filter((a) => a.stage === "EVALUATION").length,
       funded: accounts.filter((a) => a.stage === "FUNDED").length,

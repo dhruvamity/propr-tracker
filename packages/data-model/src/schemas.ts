@@ -6,7 +6,7 @@ import { z } from "zod";
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
 
-/** Decimal string — any string that looks like a number. */
+/** Decimal string matching numeric format. */
 export const DecimalStringSchema = z.string();
 
 /** ISO 8601 datetime string. */

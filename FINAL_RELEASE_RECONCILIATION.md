@@ -1,4 +1,4 @@
-# Propr Trading Terminal — Final Release Production Data Reconciliation
+# Propr Trading Terminal: Final Release Production Data Reconciliation
 
 ```text
 ================================================================================
@@ -8,7 +8,7 @@ AUDIT DATE:                   2026-09-11
 AUDITED COMMIT:               2772b78 (and release certification HEAD)
 BRANCH:                       main
 UNEXPLAINED CASH DIFFERENCE:  ₹0.00 (ZERO)
-RECONCILIATION STATUS:        PASS — 100% MATHEMATICALLY RECONCILED
+RECONCILIATION STATUS:        PASS (100% MATHEMATICALLY RECONCILED)
 ================================================================================
 ```
 
@@ -56,7 +56,7 @@ All transactions are cross-reconciled against `purchase-history-2026-09-11.csv`,
 | 7 | **Propr** | `urn:prp-account:4D8XWuQ3fju6` | `urn:prp-purchase:PPWG9RNxz4eF` | `ACTIVE` | $25.00 | ₹2,445.95 | ₹0.00 | ₹0.00 | **Active Capital** | `PRCR/Paysagi_propr.xyz/Bucharest/06-09-2026` | **MATCHED** |
 | 8 | **Breakout**| `HISTORICAL / UNIDENTIFIED` | `urn:brk-purchase:20260907` | `HISTORICAL` | N/A ($0.00) | ₹3,835.25 | ₹0.00 | ₹0.00 | Historical / Sunk | `PRCR/BREAKOUTPROP.COM/Wilmington/07-09-2026` | **MATCHED** |
 | 9 | **Propr** | `urn:prp-account:J9wNi8oj3XGK` | `urn:prp-purchase:72VSRitse27t` | `ACTIVE` | $50.00 | ₹4,890.24 | ₹0.00 | ₹0.00 | **Active Capital** | `PRCR/Paysagi_propr.xyz/Bucharest/08-09-2026` | **MATCHED** |
-| **TOTAL** | **9 Tx** | **2 Active / 7 Hist** | **8 Propr + 1 Breakout** | — | **$218.75** | **₹25,394.83** | **₹0.00** | **₹0.00** | **₹7,336.19 Active / ₹18,058.64 Sunk** | **9 of 9 Matched** | **PASS** |
+| **TOTAL** | **9 Tx** | **2 Active / 7 Hist** | **8 Propr + 1 Breakout** | - | **$218.75** | **₹25,394.83** | **₹0.00** | **₹0.00** | **₹7,336.19 Active / ₹18,058.64 Sunk** | **9 of 9 Matched** | **PASS** |
 
 ---
 

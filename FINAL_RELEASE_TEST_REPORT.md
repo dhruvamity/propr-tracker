@@ -1,4 +1,4 @@
-# Propr Trading Terminal — Final Release Test Report
+# Propr Trading Terminal: Final Release Test Report
 
 ```text
 ================================================================================
@@ -14,7 +14,7 @@ MUTATION KILL RATE:   100% (16 of 16 certification mutations detected & killed)
 TYPECHECK STATUS:     PASS (0 errors across 5 monorepo workspaces)
 LINT STATUS:          PASS (0 errors, 0 warnings)
 PRODUCTION BUILD:     PASS (Next.js 16.3.4 App Router Turbopack, 11 routes in 3.2s)
-OVERALL VERDICT:      PASS — FULL TEST SUITE CERTIFIED
+OVERALL VERDICT:      PASS (FULL TEST SUITE CERTIFIED)
 ================================================================================
 ```
 
@@ -61,7 +61,7 @@ The test suite exercises all layers of the monorepo:
 
 ## 3. Detailed Verification of Three-Layer Cash Tests (§18, §19, §20)
 
-### 3.1 Controlled Scenario Verification (`tests/unit/cash-ledger-reconciliation.test.ts` — §18)
+### 3.1 Controlled Scenario Verification (`tests/unit/cash-ledger-reconciliation.test.ts`)
 - Configured known scenario:
   - Purchase A (Active): Face $50, Actual Bank Debit ₹4,890.24
   - Purchase B (Active): Face $25, Actual Bank Debit ₹2,445.95
@@ -82,7 +82,7 @@ The test suite exercises all layers of the monorepo:
   - Total Actual Cash Outflow: **₹24,894.83 INR** (PASS)
   - Total Actual Cash PnL: **-₹22,894.83 INR** (PASS)
 
-### 3.2 Regression Suite A through H (`tests/unit/cash-ledger-reconciliation.test.ts` — §19)
+### 3.2 Regression Suite A through H (`tests/unit/cash-ledger-reconciliation.test.ts`)
 - **Test A (FX Mismatch)**: Confirmed that when face is $50.00 and actual bank debit is ₹4,890.24, the cash ledger uses ₹4,890.24 and strictly rejects the naive $50 × 84.50 = ₹4,225 estimate.
 - **Test B (Breakout Inclusion)**: Confirmed that Breakout cash cost contributes to total prop-firm cash outflow (₹25,394.83 vs Propr-only ₹21,559.58).
 - **Test C (Active vs Historical)**: Confirmed that historical sunk evaluation costs (₹18,058.64) are strictly excluded from active capital (₹7,336.19).
@@ -92,7 +92,7 @@ The test suite exercises all layers of the monorepo:
 - **Test G (Processed Payout)**: Confirmed processed payouts improve actual cash PnL.
 - **Test H (Pending Payout Guard)**: Confirmed pending/failed payouts are excluded from cash returns.
 
-### 3.3 Complete Certification Mutation Suite (16 Mutations A–P — §20)
+### 3.3 Complete Certification Mutation Suite (16 Mutations A–P)
 All 16 mutations were executed and verified to cause test failures:
 - **Mutation A**: Count failed challenge attempts in active capital → **KILLED**
 - **Mutation B**: Display raw balance loss instead of limit consumed → **KILLED**

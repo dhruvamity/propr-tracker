@@ -141,7 +141,7 @@ export class WsSyncWorker {
   private resetHeartbeat(): void {
     this.clearHeartbeat();
     this.heartbeatTimer = setTimeout(() => {
-      console.warn("[WS] Heartbeat timeout — connection may be dead");
+      console.warn("[WS] Heartbeat timeout; connection may be dead");
       this.ws?.close();
     }, HEARTBEAT_TIMEOUT);
   }
