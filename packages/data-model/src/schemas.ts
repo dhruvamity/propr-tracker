@@ -249,14 +249,14 @@ export function PaginatedResponseSchema<T extends z.ZodTypeAny>(
 export const WsEventSchema = z.object({
   type: z.string(),
   userId: z.string().optional(),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   timestamp: z.number(),
 });
 
 export const WsMarkUpdateSchema = z.object({
   type: z.literal("mark.updated"),
   data: z.object({
-    marks: z.record(z.record(z.string())),
+    marks: z.record(z.string(), z.record(z.string(), z.string())),
     timestamp: z.number(),
   }),
   timestamp: z.number(),

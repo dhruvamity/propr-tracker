@@ -16,7 +16,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@propr/data-model": "workspace:*",
+    "@propr/data-model": "*",
     "decimal.js": "^10.4.3"
   },
   "devDependencies": {

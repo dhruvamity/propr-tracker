@@ -1,83 +1,196 @@
-scan entire repo to understand where we stand, and what propr provides, then proceed with following
-Build a production-grade, read-only personal **Propr Trading Terminal** that runs on **Vercel** and continuously displays my latest Propr account data accurately, cleanly, and with a premium terminal-style UI.
+You are performing a **production-grade end-to-end audit, security review, correctness review, data-integrity review, realtime-system review, and comprehensive testing pass** on this repository.
 
-## 1. Core objective
+Repository:
 
-Create a private dashboard that acts as my single live command center for all Propr accounts.
+`https://github.com/dhruvamity/propr-tracker.git`
 
-The application must automatically discover and track:
+You have access to the repository source code locally. Treat the actual repository code as the primary source of truth.
 
-* all active evaluation/challenge accounts
+The application is intended to be a **read-only Propr trading/account terminal** that tracks:
+
+* Propr evaluation accounts
 * passed evaluations
 * failed/breached evaluations
 * funded accounts
-* closed funded accounts
-* accounts currently under review
-* newly purchased accounts
-* current open trades / positions
-* open orders
-* live equity and balance
-* realized PnL
-* unrealized PnL
-* fees
+* account lifecycle
+* current balances/equity
+* realized/unrealized PnL
+* trading fees
 * drawdown
-* daily-loss usage
+* daily loss
 * profit-target progress
-* remaining drawdown buffer
-* account lifecycle/status
-* payout status/history
-* total money spent on prop accounts
-* total payouts withdrawn
-* actual net cash PnL
-* account-by-account financial performance
+* open positions
+* open orders
+* account health
+* payouts
+* prop-firm expenses
+* actual cash PnL
+* realtime account state
 
-The application is **READ ONLY**.
+Do NOT assume the implementation is correct merely because the UI appears correct.
 
-Do not implement order creation, cancellation, leverage changes, margin changes, challenge purchases, payout requests, wallet changes, or any other mutation against Propr.
+The goal is to find **all real defects, incorrect assumptions, stale-data problems, security problems, API-integration mistakes, financial calculation errors, lifecycle bugs, race conditions, deployment issues, and missing tests**.
 
-The interface should make it extremely difficult to confuse:
-
-**evaluation account → passed → funded → breached/closed → payout**
-
-with clean lifecycle visualization.
+Do not stop after finding the first issue.
 
 ---
 
-# 2. Propr API integration
+# 1. INITIAL REPOSITORY RECONNAISSANCE
 
-Use the provided Propr API documentation as the source of truth.
+First inspect the entire repository.
 
-Base REST API:
+Produce a structured inventory of:
 
-`https://api.propr.xyz/v1`
+```text
+package manager
+framework
+runtime
+language
+build system
+frontend architecture
+backend/API architecture
+database
+cache
+realtime layer
+authentication
+environment variables
+test framework
+CI/CD
+deployment platform
+```
 
-Authenticated requests use:
+Identify:
 
-`X-API-Key: <PROPR_API_KEY>`
+```text
+package.json
+lockfile
+tsconfig
+next.config
+middleware
+API routes
+server actions
+database schema
+ORM
+migrations
+WebSocket code
+Propr API client
+state management
+calculation engine
+components
+pages/routes
+hooks
+utilities
+tests
+fixtures
+mocks
+GitHub workflows
+Vercel configuration
+Docker files
+README
+environment examples
+```
 
-Never expose the API key in client-side JavaScript, browser localStorage, public environment variables, source code, or the repository.
+Construct an architecture diagram based on the actual code.
 
-Use server-side environment variables only.
+Do not guess.
 
-Relevant Propr endpoints documented in the provided material include:
+---
 
-### User
+# 2. BUILD BASELINE
 
-`GET /users/me`
+Before changing anything, execute all appropriate repository commands.
 
-### Evaluation / challenge accounts
+At minimum identify and run, where available:
+
+```bash
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+If the project uses pnpm/yarn/bun instead, use the repository's actual package manager.
+
+Also inspect all package scripts.
+
+Record:
+
+```text
+PASS
+FAIL
+WARN
+NOT AVAILABLE
+```
+
+for every available quality gate.
+
+If a command fails, determine whether it is:
+
+* code failure
+* environment failure
+* missing dependency
+* incorrect configuration
+* deployment-only issue
+* test infrastructure issue
+
+Do not simply label all failures as application bugs.
+
+---
+
+# 3. DEPENDENCY AUDIT
+
+Audit every dependency.
+
+Look for:
+
+* abandoned packages
+* vulnerable packages
+* unnecessary packages
+* duplicate packages
+* direct dependencies that should be dev dependencies
+* dev dependencies accidentally required at runtime
+* mismatched React/Next versions
+* incompatible libraries
+* dependency bloat
+* package-lock inconsistencies
+* transitive security issues
+
+Run appropriate security scans:
+
+```bash
+npm audit
+```
+
+or the appropriate equivalent.
+
+For each relevant issue classify:
+
+```text
+CRITICAL
+HIGH
+MEDIUM
+LOW
+INFO
+```
+
+Do not inflate severity.
+
+---
+
+# 4. PROPR API CONTRACT AUDIT
+
+Compare the implementation against the supplied Propr API documentation.
+
+The following behavior is mandatory to validate.
+
+## Evaluation accounts
+
+Evaluation/challenge accounts come from:
 
 `GET /challenge-attempts`
 
-`GET /challenge-attempts/{attemptId}`
-
-Supported status filtering includes:
-
-* active
-* passed
-* failed
-
-Challenge attempt responses provide:
+The API can return challenge progress including:
 
 * status
 * total PnL
@@ -88,1617 +201,1861 @@ Challenge attempt responses provide:
 * linked accountId
 * current phase
 
-Use this endpoint to determine evaluation lifecycle/status.
+Validate:
 
-### Funded accounts
+* pagination
+* status filtering
+* retries
+* error handling
+* empty responses
+* duplicate responses
+* accountId extraction
+* passed state
+* failed state
+* active state
+* historical state
+
+The implementation must NOT assume only active evaluations exist.
+
+---
+
+# 5. FUNDED ACCOUNT CONTRACT
+
+Funded accounts are separate from evaluation attempts.
+
+Validate that the implementation retrieves them through:
 
 `GET /book-account-issuances`
 
-`GET /book-account-issuances/{issuanceId}`
-
-Supported statuses include:
-
-* active
-* closed
-* review_pending
-
-Funded accounts are separate from challenge attempts and must not be inferred merely from challenge status.
-
-A challenge that passes can result in a separately provisioned funded account.
-
-### Trading data
-
-For every known account:
-
-`GET /accounts/{accountId}/orders`
-
-`GET /accounts/{accountId}/positions`
-
-Use appropriate trade/account endpoints available in the supplied OpenAPI/documentation as well.
-
-Never assume that one account endpoint contains the entire account lifecycle.
-
-### Daily/risk metrics
-
-Retrieve the account's daily metrics and challenge/funded configuration required to calculate:
-
-* current equity
-* drawdown used
-* daily loss used
-* remaining drawdown
-* remaining daily loss
-* profit target progress
-* breach proximity
-
-The supplied Propr integration documentation explicitly provides formulas for deriving these values from account state, positions, marks, daily metrics, and challenge/funded configuration.
-
-### Payout history
-
-Use:
-
-`GET /payouts/history`
-
-Display historical processed payouts and payout statuses where available.
-
-Payout objects can contain:
-
-* payoutId
-* reason
-* status
-* amount
-* txHash
-* processedAt
-* createdAt
-
-The API documents payout lifecycle statuses including:
-
-`requested → processing → processed`
-
-as well as:
-
-`rejected / cancelled / failed`.
-
----
-
-# 3. VERY IMPORTANT DATA ARCHITECTURE
-
-Do NOT simply fetch everything directly from the browser.
-
-Create this architecture:
+and handles:
 
 ```text
-                    ┌──────────────────────────┐
-                    │       Propr API          │
-                    │ REST + WebSocket         │
-                    └────────────┬─────────────┘
-                                 │
-                    ┌────────────▼─────────────┐
-                    │ Secure Server/API Layer  │
-                    │ API key never exposed    │
-                    └────────────┬─────────────┘
-                                 │
-              ┌──────────────────┴──────────────────┐
-              │                                     │
-       REST synchronization                 Realtime worker
-              │                              / WebSocket
-              ▼                                     │
-       normalized account               normalized realtime state
-             state                                     │
-              └──────────────────┬──────────────────┘
-                                 ▼
-                         cache / database
-                                 │
-                                 ▼
-                         Vercel frontend
-                                 │
-                                 ▼
-                         Trading Terminal
+active
+closed
+review_pending
 ```
 
-The frontend must consume normalized application data rather than repeatedly knowing Propr API response formats.
+Do not accept any implementation that treats:
 
-Create an internal normalized data model such as:
-
-```ts
-type AccountStage =
-  | "EVALUATION"
-  | "PASSED"
-  | "FUNDED"
-  | "BREACHED"
-  | "FAILED"
-  | "CLOSED"
-  | "REVIEW_PENDING"
-  | "UNKNOWN";
-
-type AccountSnapshot = {
-  accountId: string;
-  firm: "Propr";
-
-  stage: AccountStage;
-  source:
-    | "challenge_attempt"
-    | "funded_issuance";
-
-  challengeName?: string;
-  challengeId?: string;
-  attemptId?: string;
-  issuanceId?: string;
-
-  initialBalance?: DecimalString;
-  startingBalance?: DecimalString;
-  phaseStartingBalance?: DecimalString;
-
-  balance?: DecimalString;
-  equity?: DecimalString;
-
-  realizedPnl?: DecimalString;
-  unrealizedPnl?: DecimalString;
-  fees?: DecimalString;
-
-  totalPnl?: DecimalString;
-
-  profitTargetPercent?: DecimalString;
-  profitTargetProgressPercent?: DecimalString;
-
-  maxDrawdownPercent?: DecimalString;
-  drawdownUsedPercent?: DecimalString;
-  drawdownRemaining?: DecimalString;
-
-  maxDailyLossPercent?: DecimalString;
-  dailyLossUsedPercent?: DecimalString;
-  dailyLossRemaining?: DecimalString;
-
-  highWaterMark?: DecimalString;
-
-  openPositionCount: number;
-  openOrderCount: number;
-
-  positions: PositionSnapshot[];
-  orders: OrderSnapshot[];
-
-  purchaseCostINR?: DecimalString;
-  payoutsWithdrawnINR?: DecimalString;
-  actualCashPnLINR?: DecimalString;
-
-  lastUpdatedAt: string;
-};
+```text
+challenge status = passed
 ```
 
-Do not use floating-point arithmetic for money.
+as automatically equivalent to:
 
-Use `Decimal`, `decimal.js`, or `BigInt`/fixed-point arithmetic appropriately.
+```text
+funded account exists
+```
 
-The Propr documentation explicitly says monetary API values are decimal strings and should not be processed using floating point.
+A passed challenge should only be considered funded when the funded-account issuance actually exists.
+
+This distinction is explicitly part of Propr's documented account model.
 
 ---
 
-# 4. REST synchronization strategy
+# 6. ACCOUNT DISCOVERY AUDIT
 
-On startup:
+Test scenarios:
 
-1. authenticate against Propr
-2. retrieve user profile
-3. retrieve all challenge attempts
-4. retrieve all funded-account issuances
-5. build the complete account universe
-6. deduplicate account IDs
-7. determine lifecycle stage for every account
-8. retrieve account configuration
-9. retrieve account positions
-10. retrieve open orders
-11. retrieve daily metrics
-12. retrieve relevant trade/account statistics
-13. retrieve payout history
-14. normalize everything into the internal data model
-15. store/cache the normalized snapshot
+```text
+0 evaluations
+1 evaluation
+multiple evaluations
+0 funded accounts
+1 funded account
+multiple funded accounts
+evaluation + funded simultaneously
+passed evaluation but no funded issuance yet
+failed evaluation
+closed funded account
+review_pending funded account
+duplicate account IDs
+same account returned by multiple data sources
+```
 
-Do NOT only retrieve active accounts.
-
-The terminal must retain historical breached, passed, failed, and closed accounts so the financial history does not disappear.
+Confirm the system creates one canonical account representation rather than duplicated UI entries.
 
 ---
 
-# 5. Account lifecycle engine
+# 7. ACCOUNT LIFECYCLE AUDIT
 
-Build an explicit lifecycle engine.
+Determine how the implementation derives:
+
+```text
+PURCHASED
+EVALUATION
+PASSED
+FAILED
+BREACHED
+FUNDED
+REVIEW_PENDING
+CLOSED
+```
+
+Audit every transition.
+
+Construct a lifecycle state-machine test.
 
 Example:
 
 ```text
 PURCHASED
    ↓
-EVALUATION ACTIVE
+EVALUATION
    ↓
-   ├── FAILED / BREACHED
-   │       ↓
-   │    CLOSED
-   │
-   └── PASSED
-          ↓
-       FUNDED
-          ↓
-       ACTIVE
-          ↓
-    ┌─────┴─────┐
-    ↓           ↓
-  PAYOUT      CLOSED
-```
-
-Do not infer "funded" merely because an evaluation has `passed`.
-
-Use `/book-account-issuances` to determine funded-account existence.
-
-The documentation explicitly states funded accounts are separate from challenge attempts and are returned by `/book-account-issuances`.
-
----
-
-# 6. Evaluation account calculations
-
-For every evaluation display:
-
-### Progress
-
-```text
-PROFIT TARGET
-Current PnL
-Target
-Progress %
-Remaining
-```
-
-### Drawdown
-
-```text
-MAX DD
-Used
-Remaining
-Distance to breach
-```
-
-### Daily loss
-
-```text
-DAILY LOSS
-Used
-Remaining
-Today's reference
-```
-
-### Trading days
-
-```text
-TRADING DAYS
-X / Required
-```
-
-### Status
-
-Possible prominent statuses:
-
-```text
-ACTIVE
-NEAR TARGET
-NEAR BREACH
 PASSED
-FAILED
-BREACHED
+   ↓
+FUNDED
+   ↓
+ACTIVE
+   ↓
+CLOSED
 ```
 
-Do not invent thresholds for "near breach".
+and:
 
-Make the threshold configurable in the application.
+```text
+EVALUATION
+   ↓
+FAILED/BREACHED
+   ↓
+CLOSED
+```
 
-The Propr-side enforcement is authoritative. Local calculations are for display and monitoring.
+Check for impossible transitions.
+
+Example invalid behavior:
+
+```text
+funded → evaluation
+closed → active without new issuance
+passed → funded without funded issuance
+active → failed due to frontend-derived approximation
+```
 
 ---
 
-# 7. Real-time WebSocket architecture
+# 8. READ-ONLY GUARANTEE
+
+The product is intended to be strictly read-only.
+
+Search the entire repository for:
+
+```text
+POST /orders
+PUT /margin-config
+POST /payouts/request
+POST /checkout-sessions
+POST /wallet/link
+DELETE /wallet
+order creation
+order cancellation
+leverage updates
+margin configuration
+purchase creation
+```
+
+Find every API mutation.
+
+Determine whether those mutations are:
+
+```text
+unused
+dead code
+reachable
+UI-triggerable
+server-triggerable
+accidentally exposed
+```
+
+The final production application must not permit trading or account mutations.
+
+---
+
+# 9. API KEY SECURITY AUDIT
+
+Search the entire repository for:
+
+```text
+PROPR_API_KEY
+pk_live_
+X-API-Key
+Authorization
+NEXT_PUBLIC_
+localStorage
+sessionStorage
+cookies
+console.log
+```
+
+Determine whether the Propr API key can ever reach:
+
+* client bundles
+* browser devtools
+* React props
+* public API responses
+* logs
+* analytics
+* error messages
+* source maps
+* static HTML
+* Next.js client components
+
+The key must remain server-side.
+
+The Propr docs explicitly require `X-API-Key` authentication and state that the API key must be kept secret.
+
+Report any violation as at least HIGH severity.
+
+---
+
+# 10. ENVIRONMENT VARIABLE AUDIT
+
+Inspect:
+
+```text
+.env
+.env.local
+.env.production
+.env.example
+Vercel environment assumptions
+```
+
+Ensure secrets are NOT prefixed with:
+
+```text
+NEXT_PUBLIC_
+```
+
+unless they are genuinely public.
+
+Ensure the repository does not contain:
+
+* API keys
+* tokens
+* wallet private keys
+* database passwords
+* connection strings
+* webhook secrets
+
+Search git history if necessary.
+
+---
+
+# 11. WEBSOCKET AUDIT
+
+Inspect the realtime architecture.
 
 Propr provides:
 
 `wss://api.propr.xyz/ws`
 
-with an API-key authentication header.
-
-Relevant realtime events include:
-
-* `account.updated`
-* `order.created`
-* `order.updated`
-* `order.cancelled`
-* `order.triggered`
-* `order.filled`
-* `order.partially_filled`
-* `position.opened`
-* `position.updated`
-* `position.closed`
-* `position.liquidated`
-* `trade.created`
-* `mark.updated`
-
-Because the Propr websocket requires a custom `X-API-Key` header, do not put the key in the browser.
-
-Implement a server-side persistent realtime listener.
-
-The listener should:
-
-* connect to Propr WS
-* authenticate
-* automatically reconnect
-* maintain connection health
-* process all relevant events
-* update normalized account state
-* write the latest state to the cache/database
-* expose sanitized state to the Vercel frontend
-
-Include heartbeat/reconnect logic.
-
-The Propr documentation states the server pings every 20 seconds and dead connections are terminated automatically.
-
-If Vercel is not appropriate for a persistent websocket process, keep the **frontend on Vercel** and deploy the persistent realtime worker separately on an appropriate backend/worker platform.
-
-Do not sacrifice realtime reliability just to force the worker onto Vercel.
-
----
-
-# 8. Live calculations
-
-The frontend should show realtime:
-
-* balance
-* equity
-* unrealized PnL
-* open positions
-* margin
-* available balance
-* drawdown
-* daily loss
-* liquidation proximity
-* account health
-
-Use the Propr `mark.updated` feed to derive price-dependent values.
-
-The Propr documentation specifically states that unrealized PnL, equity, liquidation price and drawdown are derived locally using live marks plus account/position data.
-
-Important:
+and authenticated WebSocket events including:
 
 ```text
+account.updated
+order.created
+order.updated
+order.cancelled
+order.triggered
+order.filled
+order.partially_filled
+position.opened
+position.updated
+position.closed
+position.liquidated
+trade.created
 mark.updated
-      ↓
-update mark prices
-      ↓
-recalculate every open position
-      ↓
-sum account uPnL
-      ↓
-calculate equity
-      ↓
-calculate drawdown
-      ↓
-calculate daily loss usage
-      ↓
-update UI
 ```
 
-Ignore position records with zero quantity when determining active positions.
+Audit:
 
-The supplied Propr docs explicitly warn that closed positions can remain with quantity `0`.
+* authentication
+* connection establishment
+* heartbeat
+* reconnect
+* exponential backoff
+* duplicate events
+* out-of-order events
+* missed events
+* event deduplication
+* state replacement
+* state merging
+* concurrent updates
+* stale connection detection
+* memory growth
+* subscription management
+* server/client boundary
 
----
-
-# 9. Terminal UI
-
-Make the interface look like a premium institutional trading terminal.
-
-Design language:
-
-* dark near-black background
-* subtle grid
-* thin borders
-* muted typography
-* highly readable monospace numbers
-* restrained green/red/amber status colors
-* no excessive gradients
-* no cartoon-style dashboard cards
-* no giant rounded SaaS cards everywhere
-* dense but very readable information
-* desktop-first
-* responsive for tablet/mobile
-* subtle terminal glow
-* excellent spacing
-* animations only when useful
-
-Think:
+Test:
 
 ```text
-Bloomberg Terminal
-+
-TradingView
-+
-modern developer terminal
-+
-high-end quant dashboard
-```
-
-but cleaner and more modern.
-
----
-
-# 10. Main terminal layout
-
-## TOP BAR
-
-```text
-PROPR // ACCOUNT TERMINAL
-
-LIVE ●
-Last Sync: 20:04:31 IST
-WebSocket: CONNECTED
-REST: HEALTHY
-
-[ Refresh ]
-```
-
-Show a small data-health indicator.
-
-Example:
-
-```text
-● LIVE
-● REST OK
-● WS CONNECTED
-```
-
-If data becomes stale:
-
-```text
-⚠ DATA STALE — LAST UPDATE 18s AGO
-```
-
-Never silently display stale data as current.
-
----
-
-# 11. Executive financial header
-
-At the top:
-
-```text
-TOTAL INVESTED        ₹25,394.83
-ACTIVE CAPITAL        ₹7,336.19
-PAYOUTS WITHDRAWN     ₹0
-ACTUAL CASH PNL       -₹25,394.83
-
-ACTIVE EVALS          2
-FUNDED                0
-PASSED                0
-FAILED/BREACHED       1
-```
-
-These values should be generated dynamically from the underlying account/finance data.
-
-Do not hardcode them.
-
----
-
-# 12. Account overview table
-
-Create the main account table:
-
-| Account | Firm | Stage | Challenge | Balance | Equity | uPnL | Realized | DD Used | Daily Loss | Target | Open Pos | Orders | Cost | Payouts | Cash PnL |
-| ------- | ---- | ----- | --------- | ------: | -----: | ---: | -------: | ------: | ---------: | -----: | -------: | -----: | ---: | ------: | -------: |
-
-Use compact formatting.
-
-Status chips:
-
-```text
-EVAL
-PASSED
-FUNDED
-BREACHED
-FAILED
-CLOSED
-REVIEW
-```
-
-Sorting:
-
-1. active/funded first
-2. active evaluations
-3. passed
-4. review
-5. failed/breached
-6. closed
-
----
-
-# 13. Active evaluation cards
-
-For every active evaluation display a compact risk panel:
-
-```text
-PROPR / $25K TURBO
-
-ACTIVE
-Account: urn:...
-
-EQUITY       $25,842
-PnL          +$842
-TARGET       $1,250
-
-TARGET PROGRESS
-████████████████░░░░ 67.4%
-
-MAX DD
-$1,250
-Used       41.2%
-Remaining  $735
-
-DAILY LOSS
-Used       18.4%
-Remaining  $1,020
-
-TRADING DAYS
-4 / 5
-
-OPEN POSITIONS
-2
-
-OPEN ORDERS
-3
-```
-
-The progress bars must be mathematically accurate.
-
----
-
-# 14. Funded account panel
-
-For funded accounts show:
-
-```text
-FUNDED // A-BOOK
-or
-FUNDED // B-BOOK
-
-Account
-Status
-Balance
-Equity
-Realized PnL
-Unrealized PnL
-Current DD
-Max DD
-Available balance
-Open positions
-Open orders
-
-PAYOUT
-
-Withdrawable / payout information where supported
-Last payout
-Total payouts
-Payout count
-```
-
-The distinction between:
-
-* trading balance
-* withdrawable payout
-* previously paid out
-
-must be visually explicit.
-
-The documentation states that funded trading balance is not the same thing as withdrawable cash.
-
----
-
-# 15. Open positions terminal
-
-Create a dense positions table:
-
-```text
-ACCOUNT
-ASSET
-SIDE
-QTY
-ENTRY
-MARK
-NOTIONAL
-MARGIN
-LEV
-uPNL
-ROE
-LIQ PRICE
-```
-
-Example:
-
-```text
-Turbo A
-BTC
-LONG
-0.012
-94,210
-94,825
-$1,137
-$284
-4x
-+$7.38
-+2.60%
-89,421
-```
-
-Use live marks.
-
-Update visually without causing the page to jump.
-
----
-
-# 16. Open orders terminal
-
-Separate table:
-
-```text
-ACCOUNT
-ASSET
-TYPE
-SIDE
-PRICE
-TRIGGER
-QTY
-FILLED
-STATUS
-CREATED
-```
-
-Only use valid Propr order statuses.
-
-Do not create an invented "active" backend filter.
-
-The provided docs specifically note that exact order statuses/enums must be used.
-
----
-
-# 17. Account detail drawer
-
-Clicking an account opens a full-screen or large side drawer containing:
-
-### Overview
-
-Balance
-Equity
-PnL
-Fees
-DD
-Daily loss
-
-### Challenge
-
-Target
-Current phase
-Trading days
-Rules
-
-### Positions
-
-All open positions
-
-### Orders
-
-All current/open orders
-
-### Trade history
-
-Recent executions
-
-### Lifecycle
-
-Purchased
-Started
-Passed
-Funded
-Breached
-Closed
-
-### Financial
-
-Purchase cost
-Payouts
-Net cash PnL
-
-### Data integrity
-
-Last REST sync
-Last websocket update
-Source
-Status
-
----
-
-# 18. PnL distinction — VERY IMPORTANT
-
-Never merge these concepts.
-
-Create three separate financial concepts:
-
-### Trading PnL
-
-```text
-Realized PnL
-+ Unrealized PnL
-- Fees
-```
-
-### Account performance
-
-Trading-level performance of that account.
-
-### Actual cash PnL
-
-This is the personal finance metric:
-
-```text
-ACTUAL CASH PNL
-=
-TOTAL PAYOUTS WITHDRAWN
--
-TOTAL PROP EXPENSES
-```
-
-For example:
-
-```text
-Total purchases       ₹25,394.83
-Total payouts         ₹10,000
---------------------------------
-Actual cash PnL       -₹15,394.83
-```
-
-This is different from trading PnL.
-
-Do not call unrealized trading PnL "profit withdrawn".
-
----
-
-# 19. Expense integration
-
-The existing finance tracker should remain the source of truth for purchase expenses.
-
-Support:
-
-```text
-Purchase
-Payout
-Refund
-Adjustment
-```
-
-Every transaction should have:
-
-```text
-date
-firm
-account
-type
-amount INR
-amount USD where available
-bank verified
-bank reference
-notes
-```
-
-The frontend should read these values.
-
-Do not invent bank transactions.
-
-If a purchase has not been bank verified, visibly mark it:
-
-```text
-UNVERIFIED
-```
-
-rather than presenting it as confirmed.
-
----
-
-# 20. Payout integration
-
-Where Propr payout API data exists, automatically ingest payout history.
-
-Store:
-
-```text
-payoutId
-accountId
-amount
-status
-createdAt
-processedAt
-txHash
-```
-
-Convert processed account payouts into the cashflow ledger.
-
-Never count a requested/failed/cancelled payout as withdrawn cash.
-
-Only count a successfully processed payout toward:
-
-```text
-Total Payouts Withdrawn
-Actual Cash PnL
-```
-
-The payout status lifecycle documented by Propr must be respected.
-
----
-
-# 21. Finance analytics
-
-Create a dedicated Finance screen.
-
-### Headline metrics
-
-```text
-TOTAL PROP SPEND
-₹25,394.83
-
-TOTAL PAYOUTS
-₹0
-
-NET CASH PNL
--₹25,394.83
-
-ACTIVE CAPITAL AT RISK
-₹7,336.19
-```
-
-### Breakdown
-
-```text
-Propr Spend
-Breakout Spend
-Active Account Spend
-Failed Account Spend
-Funded Account Spend
-Payouts
-Refunds
-```
-
-### Account ROI
-
-For each account:
-
-```text
-Account Cost
-Payouts
-Net Cash Result
-ROI
-```
-
-Formula:
-
-```text
-ROI =
-(Payouts - Purchase Cost) / Purchase Cost
-```
-
-If there are no payouts yet, show negative ROI rather than hiding it.
-
----
-
-# 22. Historical account lifecycle
-
-Never delete an account from the system.
-
-Instead preserve its lifecycle:
-
-```text
-Purchased
-↓
-Evaluation
-↓
-Passed / Failed
-↓
-Funded
-↓
-Payouts
-↓
-Closed
-```
-
-This allows historical analytics such as:
-
-```text
-Total accounts purchased
-Pass rate
-Failure rate
-Funding rate
-Average cost per passed account
-Average cost per funded account
-Average payout per funded account
-Total lifetime payout
-Total lifetime spend
-Net lifetime cash PnL
-```
-
----
-
-# 23. Data accuracy rules
-
-This is critical.
-
-The UI must never silently fabricate or guess:
-
-* account status
-* challenge phase
-* drawdown
-* payout
-* balance
-* equity
-* purchase cost
-* account linkage
-
-If a value cannot be obtained:
-
-display:
-
-```text
-N/A
-```
-
-or:
-
-```text
-DATA UNAVAILABLE
-```
-
-Do not estimate.
-
-Always show data-source provenance internally.
-
-For calculated values show:
-
-```text
-LIVE CALCULATED
-```
-
-For REST-provided values:
-
-```text
-PROPR API
-```
-
-For finance records:
-
-```text
-FINANCE LEDGER
-```
-
----
-
-# 24. Reconciliation / integrity system
-
-Create an internal integrity monitor.
-
-Every synchronization should validate:
-
-### Account consistency
-
-```text
-Every challenge attempt has accountId
-Every funded issuance has accountId
-No duplicate active account IDs
-```
-
-### Position consistency
-
-```text
-Only quantity > 0 counted as active
-```
-
-### Payout consistency
-
-```text
-Only processed payouts count as withdrawn
-```
-
-### Financial consistency
-
-```text
-total expenses = ledger purchases
-total payouts = processed payout records
-actual cash pnl = payouts - expenses
-```
-
-### Realtime consistency
-
-Compare:
-
-```text
-REST snapshot
-vs
-current websocket state
-```
-
-If inconsistent:
-
-```text
-SYNC REQUIRED
-```
-
-and automatically refresh REST state.
-
----
-
-# 25. Stale-data handling
-
-Each account must have:
-
-```text
-lastRestSyncAt
-lastRealtimeUpdateAt
-lastKnownState
-```
-
-Define configurable stale thresholds.
-
-For example:
-
-```text
-< 5 sec       LIVE
-5–30 sec      DELAYED
-30–120 sec    STALE
-> 120 sec     OFFLINE
-```
-
-Do not silently show stale balances as current.
-
-Display the actual last-update time.
-
----
-
-# 26. Connection recovery
-
-Implement:
-
-```text
-WebSocket connected
-        ↓
-heartbeat
-        ↓
+connect
 disconnect
-        ↓
-exponential backoff
-        ↓
 reconnect
-        ↓
-REST full resync
-        ↓
-resume realtime stream
-```
-
-A reconnect must trigger a REST reconciliation so missed websocket events do not leave the dashboard in an inconsistent state.
-
----
-
-# 27. API rate handling
-
-Respect the documented API limits.
-
-Cache data aggressively.
-
-Do not refresh every component independently.
-
-Create one centralized data-sync service.
-
-Avoid:
-
-```text
-AccountCard → API call
-PositionTable → API call
-OrderTable → API call
-Header → API call
-```
-
-Instead:
-
-```text
-Sync Engine
-     ↓
-Normalized Store
-     ↓
-All UI components
+network interruption
+server restart
+duplicate event
+out-of-order event
+event burst
+websocket unavailable
+REST available but websocket unavailable
+websocket available but REST unavailable
 ```
 
 ---
 
-# 28. Security
+# 12. REST + WEBSOCKET CONSISTENCY
 
-Absolutely no write operations.
+This is a high-priority audit.
 
-No:
-
-```text
-POST /accounts/.../orders
-POST /checkout-sessions
-POST /payouts/request
-PUT /margin-config
-POST /wallet/link
-```
-
-The dashboard must be read-only.
-
-API key:
+Determine whether the application has:
 
 ```text
-PROPR_API_KEY
-```
-
-must remain server-side.
-
-Never render it into HTML.
-
-Never return it from an API route.
-
-Never log it.
-
-Never put it in NEXT_PUBLIC_* variables.
-
----
-
-# 29. Vercel architecture
-
-Preferred structure:
-
-```text
-apps/
-  terminal/
-    Next.js frontend
-
-services/
-  propr-sync/
-    REST synchronizer
-    WebSocket listener
-    normalization
-    reconciliation
-
-packages/
-  propr-client/
-  data-model/
-  calculations/
-  finance/
-  ui/
-```
-
-Frontend:
-
-```text
-Next.js
-TypeScript
-Tailwind
-shadcn/ui
-Lucide
-Recharts or lightweight charting
-```
-
-Backend:
-
-Use server-side Next.js API routes/server actions where suitable for REST.
-
-For persistent realtime WebSocket synchronization, use a dedicated worker/service if necessary.
-
-State:
-
-Use a proper persistent store/cache so the dashboard survives browser refreshes.
-
-Suggested approach:
-
-```text
-Postgres
+REST authoritative snapshot
 +
-Redis / equivalent cache
+WebSocket incremental state
 ```
 
-Keep architecture simple enough for a personal terminal.
+or whether it incorrectly uses only one of them.
+
+Test:
+
+```text
+REST state A
+WS event 1
+WS event 2
+WS reconnect
+REST refresh
+```
+
+Check whether state becomes:
+
+```text
+duplicated
+stale
+reverted
+double-counted
+missing
+```
+
+A reconnect should trigger a fresh authoritative reconciliation.
 
 ---
 
-# 30. Dashboard pages
+# 13. STALE DATA AUDIT
 
-Create:
+Every displayed live metric should have a known freshness timestamp.
+
+Inspect whether the application tracks:
 
 ```text
-/
-        OVERVIEW
+last REST sync
+last websocket event
+last account update
+last mark update
+```
 
-/accounts
-        ALL ACCOUNTS
+Test:
 
-/accounts/[id]
-        ACCOUNT DETAIL
+```text
+0 sec old
+5 sec old
+30 sec old
+2 min old
+10 min old
+WebSocket disconnected
+API unavailable
+```
 
-/live
-        LIVE TRADING TERMINAL
+The UI must distinguish:
 
-/finance
-        PROP FINANCE
+```text
+LIVE
+DELAYED
+STALE
+OFFLINE
+```
 
-/history
-        ACCOUNT LIFECYCLE
+It must never silently present stale data as current.
 
-/system
-        DATA HEALTH / API STATUS
+---
+
+# 14. POSITION DATA AUDIT
+
+Audit:
+
+`GET /accounts/{accountId}/positions`
+
+and all normalization logic.
+
+Propr documents that fully closed positions may remain with:
+
+```text
+quantity = "0"
+```
+
+Therefore active-position counts must not simply count returned records.
+
+Test:
+
+```text
+1 open position
+1 zero-quantity position
+mixed open/zero records
+multiple assets
+long positions
+short positions
+closed positions
+liquidated positions
+```
+
+Check:
+
+```text
+position count
+open position count
+uPnL
+notional
+margin
+ROE
+liquidation price
 ```
 
 ---
 
-# 31. Navigation
+# 15. OPEN ORDER AUDIT
 
-Left sidebar:
+Audit:
+
+`GET /accounts/{accountId}/orders`
+
+Validate exact status enums.
+
+Do NOT use invented filters such as:
 
 ```text
-PROPR TERMINAL
-
-⌂ OVERVIEW
-
-◉ LIVE
-◫ ACCOUNTS
-▣ POSITIONS
-≋ ORDERS
-◎ FINANCE
-◌ HISTORY
-⚙ SYSTEM
+active
+triggered
 ```
 
-Bottom:
+The provided Propr documentation explicitly states these are invalid REST order filters and distinguishes websocket-triggered events from REST status filters.
+
+Test:
 
 ```text
-PROPR API
-● CONNECTED
+pending
+open
+partially_filled
+filled
+cancelled
+expired
+rejected
+triggered websocket event
+```
+
+Ensure open-order counts are mathematically correct.
+
+---
+
+# 16. FINANCIAL MATH AUDIT
+
+This is a critical section.
+
+Locate every financial calculation in the codebase.
+
+Audit:
+
+```text
+balance
+equity
+realized PnL
+unrealized PnL
+fees
+ROI
+drawdown
+daily loss
+profit target
+actual cash PnL
+payout totals
+expense totals
+```
+
+Do not assume UI formatting equals correct calculations.
+
+---
+
+# 17. DECIMAL PRECISION AUDIT
+
+The Propr API returns monetary values as decimal strings.
+
+The repository must NOT use JavaScript floating-point arithmetic for financial calculations where precision matters.
+
+Search for:
+
+```text
+parseFloat
+Number(...)
+.toFixed()
+Math.*
+```
+
+inside financial calculation paths.
+
+Determine whether values are represented with:
+
+```text
+Decimal
+BigNumber
+fixed-point integers
+```
+
+where appropriate.
+
+The supplied Propr documentation specifically recommends Decimal/BigNumber and warns against floating-point monetary arithmetic.
+
+Create precision tests with values such as:
+
+```text
+0.1 + 0.2
+0.000001
+999999.999999
+tiny fee values
+repeated fee accumulation
 ```
 
 ---
 
-# 32. Overview dashboard
+# 18. UNREALIZED PNL AUDIT
 
-The default screen should immediately answer:
+Verify implementation against:
 
 ```text
-How many accounts do I have?
-Which ones are active?
-Which ones are at risk?
-Which ones passed?
-Which ones are funded?
-How much have I spent?
-How much have I withdrawn?
-What is my actual cash PnL?
-Do I have open trades?
-Are any accounts near breach?
+sign
+quantity
+entry price
+mark price
+position side
 ```
 
-Top-level layout:
+For long:
 
 ```text
-┌──────────────────────────────────────────────────────────┐
-│ PROPR TERMINAL                    LIVE ●   20:04:31 IST │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│ ₹25,394.83       ₹7,336.19       ₹0       -₹25,394.83  │
-│ TOTAL SPEND      ACTIVE COST     PAYOUTS   CASH PNL     │
-│                                                          │
-├──────────────────────────────────────────────────────────┤
-│ ACCOUNT STATUS                                           │
-│                                                          │
-│ EVAL 2     FUNDED 0     PASSED 0     FAILED 1           │
-├──────────────────────────────────────────────────────────┤
-│ ACTIVE ACCOUNTS                                          │
-│                                                          │
-│ [Account cards / compact table]                          │
-├──────────────────────────────────────────────────────────┤
-│ OPEN POSITIONS                                           │
-│                                                          │
-│ [Live positions table]                                   │
-└──────────────────────────────────────────────────────────┘
+uPnL = qty × (mark - entry)
+```
+
+For short:
+
+```text
+uPnL = qty × (entry - mark)
+```
+
+Verify aggregation across positions.
+
+Test:
+
+```text
+long profit
+long loss
+short profit
+short loss
+zero movement
+multiple positions
+multiple assets
+```
+
+Compare implementation against the formulas in the provided Propr integration documentation.
+
+---
+
+# 19. EQUITY AUDIT
+
+Verify how the application derives:
+
+```text
+equity
+available balance
+cross margin
+isolated margin
+unrealized PnL
+```
+
+Test:
+
+```text
+no positions
+long position
+short position
+cross margin
+isolated margin
+multiple positions
+open orders with reserved margin
+```
+
+The Propr documentation provides explicit formulas for these values; use those as the reference implementation.
+
+---
+
+# 20. DRAWDOWN AUDIT
+
+This is another critical correctness area.
+
+Validate:
+
+```text
+static drawdown
+trailing drawdown
+high-water mark
+initial balance
+drawdown limit
+drawdown used %
+remaining drawdown
+breach threshold
+```
+
+Test:
+
+```text
+equity exactly at limit
+equity 0.01 above limit
+equity 0.01 below limit
+new high-water mark
+drawdown recovery
+trailing DD
+static DD
+```
+
+Compare formulas against the supplied Propr implementation guidance.
+
+---
+
+# 21. DAILY LOSS AUDIT
+
+Validate the documented calculation using:
+
+```text
+startingBalance
+startingIsolatedPositionMargin
+dailyLossBase
+dailyLoss limit
+current equity
+```
+
+Test edge cases around:
+
+```text
+day rollover
+timezone
+midnight UTC
+midnight local time
+new trading day
+open positions across day boundary
+negative equity
+isolated margin
+```
+
+The Propr documentation states that daily-loss calculations use the opening realized value represented by starting balance plus starting isolated-position margin.
+
+---
+
+# 22. PROFIT TARGET AUDIT
+
+Verify:
+
+```text
+phaseStartingBalance
+current equity
+target percentage
+progress
+remaining
+passed state
+```
+
+Test:
+
+```text
+below target
+exact target
+above target
+negative PnL
+phase transition
+```
+
+Ensure rounding does not cause premature "passed" UI.
+
+---
+
+# 23. ACCOUNT STATUS AUTHORITY
+
+Determine which system is authoritative for:
+
+```text
+passed
+failed
+breached
+funded
+closed
+```
+
+The frontend must NOT independently decide that an account has passed or breached purely from approximate local calculations when an authoritative server status exists.
+
+Local calculations may provide:
+
+```text
+NEAR BREACH
+NEAR TARGET
+```
+
+but official lifecycle state should be derived from the authoritative Propr API.
+
+---
+
+# 24. PAYOUT AUDIT
+
+Audit:
+
+`GET /payouts/history`
+
+and all payout mapping.
+
+Payout statuses include:
+
+```text
+requested
+processing
+processed
+rejected
+cancelled
+failed
+```
+
+Only:
+
+```text
+processed
+```
+
+should contribute to:
+
+```text
+payouts withdrawn
+actual cash PnL
+```
+
+unless the application's explicit accounting model says otherwise.
+
+Test:
+
+```text
+requested payout
+processing payout
+processed payout
+rejected payout
+cancelled payout
+failed payout
+multiple payouts
+same payout fetched twice
+pagination
+```
+
+Check for double counting.
+
+---
+
+# 25. CASH PNL AUDIT
+
+This metric must be clearly separated from trading PnL.
+
+Expected conceptual formula:
+
+```text
+Actual Cash PnL
+=
+Processed Payouts
+-
+Confirmed Prop Expenses
++
+Refunds
+± Adjustments
+```
+
+Do NOT substitute:
+
+```text
+realized trading PnL
+```
+
+for:
+
+```text
+cash PnL
+```
+
+Audit whether the repository makes this distinction.
+
+---
+
+# 26. EXPENSE / PURCHASE DATA AUDIT
+
+If the project has a manual finance ledger or database:
+
+Audit:
+
+```text
+purchase
+payout
+refund
+adjustment
+```
+
+Validate:
+
+* duplicate transactions
+* bank verification
+* currency conversion
+* account linkage
+* historical account linkage
+* orphaned transactions
+* unlinked transactions
+* incorrect account attribution
+
+No expense should disappear when an account becomes breached or closed.
+
+---
+
+# 27. BANK-VERIFIED DATA INTEGRITY
+
+Where a transaction is based on a real bank transaction, distinguish:
+
+```text
+VERIFIED
+UNVERIFIED
+ESTIMATED
+```
+
+Never mix estimated INR values with bank-settled INR values without labeling them.
+
+Run a reconciliation test:
+
+```text
+sum of transaction ledger
+=
+dashboard total expense
 ```
 
 ---
 
-# 33. Visual status language
+# 28. DUPLICATION AUDIT
+
+Search for places where the same concept is stored independently:
+
+```text
+account purchase cost
+ledger purchase cost
+dashboard total cost
+manual payout total
+computed payout total
+cached payout total
+```
+
+This is a major source of financial bugs.
+
+Prefer:
+
+```text
+single source of truth
++
+derived calculations
+```
+
+instead of manually duplicated totals.
+
+---
+
+# 29. CACHE / PERSISTENCE AUDIT
+
+Determine:
+
+```text
+what is persisted
+what is cache
+what is ephemeral
+what is derived
+```
+
+Test:
+
+```text
+page refresh
+server restart
+deployment
+cold start
+database outage
+cache outage
+WS reconnect
+```
+
+The application should recover to a correct state without accumulating duplicate records.
+
+---
+
+# 30. RACE CONDITION AUDIT
+
+Test simultaneous events:
+
+```text
+position.updated
+account.updated
+mark.updated
+trade.created
+order.filled
+```
+
+arriving within milliseconds.
+
+Look for:
+
+```text
+lost update
+last-write-wins corruption
+double aggregation
+state regression
+stale snapshot overwrite
+```
+
+---
+
+# 31. EVENT ORDERING AUDIT
+
+Test:
+
+```text
+event A
+event C
+event B
+```
+
+where B and C arrive out of order.
+
+If Propr events contain timestamps or sequence indicators, determine whether the application uses them appropriately.
+
+---
+
+# 32. MULTI-ACCOUNT AUDIT
+
+Test at least:
+
+```text
+1 evaluation
+3 evaluations
+1 funded
+3 funded
+2 evaluations + 2 funded
+historical + active + failed + funded
+```
+
+Ensure every account is isolated.
+
+A trade from Account A must never affect:
+
+* Account B balance
+* Account B PnL
+* Account B positions
+* Account B drawdown
+* Account B payout
+* Account B lifecycle
+
+---
+
+# 33. TIMEZONE AUDIT
+
+The UI is intended for Indian usage.
+
+Audit:
+
+```text
+UTC
+IST
+browser timezone
+server timezone
+API timestamp parsing
+day rollover
+purchase dates
+payout dates
+daily metrics
+```
+
+Never derive daily-loss state from a browser-local date if Propr's authoritative metrics are UTC/server-based.
+
+Display:
+
+```text
+IST
+```
+
+while internally preserving UTC timestamps.
+
+---
+
+# 34. API FAILURE TESTING
+
+Mock:
+
+```text
+401
+403
+404
+409
+429
+500
+502
+503
+timeout
+connection reset
+malformed JSON
+empty data
+partial data
+```
+
+Verify:
+
+* retry policy
+* backoff
+* no duplicate writes
+* no infinite loops
+* visible error state
+* recovery
+* stale-state safety
+
+---
+
+# 35. RATE LIMIT TESTING
+
+The Propr docs document API request limits.
+
+Ensure the application does NOT:
+
+```text
+poll every component separately
+refresh every account independently without coordination
+retry immediately in a tight loop
+create duplicate requests on React rerenders
+```
 
 Use:
 
-GREEN:
-
 ```text
-FUNDED
-PASSED
-HEALTHY
-PROFITABLE
-LOW RISK
-CONNECTED
+central synchronization
+caching
+request deduplication
+backoff
 ```
 
-AMBER:
+---
+
+# 36. FRONTEND AUDIT
+
+Inspect every component for:
+
+* unnecessary rerenders
+* excessive websocket state propagation
+* expensive calculations
+* memory leaks
+* timers not cleared
+* event listeners not removed
+* duplicate fetches
+* hydration mismatch
+* layout shift
+* flickering metrics
+* stale state
+* race conditions
+
+Test:
 
 ```text
-NEAR TARGET
-ATTENTION
-HIGH DAILY LOSS
-SYNC DELAYED
-REVIEW
+30 sec
+5 min
+30 min
+6 hours
+24 hours
 ```
 
-RED:
+of continuous browser runtime.
+
+Check memory growth.
+
+---
+
+# 37. TERMINAL UI AUDIT
+
+Evaluate:
+
+```text
+visual hierarchy
+density
+readability
+responsive behavior
+number formatting
+negative numbers
+zero values
+loading states
+error states
+stale states
+dark mode
+keyboard navigation
+mobile layout
+long account names
+large PnL
+tiny PnL
+many accounts
+many positions
+```
+
+Make sure financial numbers never visually merge together.
+
+---
+
+# 38. ACCESSIBILITY AUDIT
+
+Test:
+
+```text
+keyboard-only
+screen reader semantics
+ARIA
+focus management
+color contrast
+status chips
+tables
+tooltips
+dialogs
+```
+
+Critical statuses such as:
 
 ```text
 BREACHED
 FAILED
-LIQUIDATED
-HIGH DD
-DISCONNECTED
-STALE
+FUNDED
 ```
 
-Do not use colors as the only indicator; always include text.
+must not be communicated through color alone.
 
 ---
 
-# 34. Charts
+# 39. API ROUTE SECURITY AUDIT
 
-Use charts sparingly.
-
-Useful charts:
-
-### Portfolio cash flow
+For every custom backend route determine:
 
 ```text
-expenses vs payouts over time
+authentication
+authorization
+input validation
+output sanitization
+rate limiting
+cache control
+error leakage
+secret leakage
+CORS
+CSRF where applicable
 ```
 
-### Account equity
+Attempt:
 
 ```text
-equity curve
+unauthenticated request
+wrong account ID
+another account ID
+malformed account ID
+query injection
+path traversal
+header manipulation
 ```
 
-### Drawdown
-
-```text
-drawdown curve
-```
-
-### Lifecycle
-
-```text
-purchased → passed → funded → payout
-```
-
-### Spending breakdown
-
-```text
-active accounts
-failed accounts
-funded accounts
-other
-```
+Even for a personal application, prevent arbitrary account access.
 
 ---
 
-# 35. Performance
+# 40. SSR / CLIENT BOUNDARY AUDIT
 
-The dashboard must feel instant.
+For Next.js or similar framework:
 
-Do not block the UI waiting for all accounts.
+Search for components that accidentally turn sensitive server code into client code.
 
-Initial sequence:
+Audit:
 
 ```text
-Render shell
-↓
-show cached snapshot
-↓
-connect realtime
-↓
-sync current data
-↓
-replace stale snapshot
+"use client"
+server-only imports
+API clients
+environment variables
+database clients
+secret access
+WebSocket secrets
 ```
 
-Use skeleton loaders.
-
-Use optimistic visual transitions only for data updates, never for financial values.
+A client component must never be able to access `PROPR_API_KEY`.
 
 ---
 
-# 36. Error handling
+# 41. LOGGING AUDIT
 
-Never present a blank dashboard when Propr temporarily fails.
-
-Instead:
+Search for:
 
 ```text
-PROPR API UNAVAILABLE
-
-Showing last known state
-
-Last successful sync:
-20:03:41 IST
-
-[Retry]
+console.log
+logger.*
+JSON.stringify(response)
+request headers
+environment dumps
 ```
 
-Per-account errors should not take down the entire dashboard.
-
-Example:
+Confirm that logs cannot expose:
 
 ```text
-ACCOUNT DATA UNAVAILABLE
-Account: xxxx
-Retrying...
+API key
+authorization headers
+wallet credentials
+private tokens
+full payout credentials
+sensitive user data
 ```
 
 ---
 
-# 37. Audit log
+# 42. DEPLOYMENT AUDIT
 
-Create a hidden/system audit trail containing:
+Inspect Vercel configuration.
+
+Check:
 
 ```text
-timestamp
-source
-accountId
-event
-old value
-new value
-sync status
+build command
+install command
+runtime
+regions
+environment variables
+Node version
+serverless limitations
+websocket assumptions
+cron assumptions
+database connectivity
+timeouts
+cold starts
 ```
 
-Useful for debugging discrepancies.
+Very importantly:
+
+If the application expects a long-lived WebSocket connection inside a Vercel Serverless Function, identify this as an architectural issue.
+
+Determine whether the realtime worker needs a separate persistent service.
+
+Do not blindly claim that Vercel can maintain a persistent WebSocket worker if the deployment model does not support it.
 
 ---
 
-# 38. Developer implementation requirements
+# 43. CRON / REVALIDATION AUDIT
 
-Use strict TypeScript.
+If the project uses:
 
-Use schemas for API validation with Zod.
+```text
+Vercel Cron
+ISR
+setInterval
+background refresh
+```
 
-Separate:
+determine whether the mechanism actually executes reliably in production.
+
+Test whether cache invalidation produces fresh account data.
+
+---
+
+# 44. TEST COVERAGE AUDIT
+
+Map source files to test files.
+
+Produce:
+
+```text
+tested
+partially tested
+untested
+```
+
+for:
 
 ```text
 API client
-normalization
-calculations
-state
+normalizers
+account lifecycle
+financial calculations
+drawdown
+daily loss
+PnL
+positions
+orders
+payouts
+WebSocket
+reconnect
+REST/WS reconciliation
 UI
+API routes
+database
+deployment behavior
 ```
 
-Do not put business calculations directly inside React components.
+Do not rely on percentage coverage alone.
 
-Create pure calculation functions:
-
-```ts
-calculateUnrealizedPnl()
-calculateEquity()
-calculateDrawdown()
-calculateDailyLoss()
-calculateProfitTargetProgress()
-calculateActualCashPnL()
-calculateROI()
-deriveAccountStage()
-```
-
-All functions must have tests.
+Identify **critical business logic with zero tests**.
 
 ---
 
-# 39. Calculation testing
+# 45. PROPERTY-BASED / INVARIANT TESTING
 
-Create deterministic fixtures for:
-
-1. healthy evaluation
-2. evaluation near drawdown
-3. evaluation passed
-4. evaluation failed
-5. funded account
-6. funded account with payout
-7. multiple open positions
-8. long position
-9. short position
-10. cross margin
-11. isolated margin
-12. reconnect after websocket disconnect
-13. stale REST data
-14. zero-quantity position
-15. duplicate account discovery
-
-Verify outputs numerically.
-
----
-
-# 40. Important Propr-specific rules
-
-Respect these source-specific details:
-
-* challenge/evaluation accounts come from `/challenge-attempts`
-* funded accounts come from `/book-account-issuances`
-* a trader can have both evaluation and funded accounts simultaneously
-* funded accounts have different lifecycle semantics from challenges
-* positions can contain zero-quantity historical records
-* REST marks can lag
-* live marks should come from `mark.updated`
-* account state changes should come from account/position/order/trade events
-* monetary values should use precise decimal arithmetic
-* challenge rules are enforced server-side
-* local calculations are monitoring/display calculations
-* payouts should only count as cash after successful processing
-
-## These behaviors are explicitly documented in the supplied Propr materials.
-
-# 41. Final product requirement
-
-The finished product should feel like a personal professional prop-trading operating system.
-
-It should be possible to open it and know within 5 seconds:
+Add invariant tests such as:
 
 ```text
-WHAT ACCOUNTS DO I HAVE?
-WHAT STAGE IS EACH ACCOUNT IN?
-HOW MUCH MONEY HAVE I SPENT?
-HOW MUCH MONEY HAVE I WITHDRAWN?
-WHAT IS MY ACTUAL CASH PNL?
-WHICH ACCOUNTS ARE LIVE?
-WHAT TRADES ARE OPEN?
-HOW CLOSE IS EACH ACCOUNT TO FAILURE?
-WHICH ACCOUNTS PASSED?
-WHICH ACCOUNTS ARE FUNDED?
-IS THE DATA CURRENT?
+equity === balance + applicable margin/uPnL components
+open position count never includes quantity 0
+processed payout count cannot decrease without source deletion
+cash PnL changes only when cash transaction changes
+account A updates cannot mutate account B
+negative quantity is never treated as an active position
+duplicate events must be idempotent
+reconciliation cannot create duplicate accounts
 ```
 
-Everything must be backed by actual Propr data or explicitly labelled as calculated.
+---
 
-Never fabricate missing values.
+# 46. END-TO-END SCENARIOS
 
-Never expose credentials.
+Create full integration/E2E tests for:
 
-Never issue trading actions.
+## Scenario A — New evaluation
 
-Build the complete application, including:
+```text
+purchase exists
+↓
+evaluation appears
+↓
+account details load
+↓
+positions load
+↓
+live metrics update
+```
 
-* architecture
-* backend sync layer
-* Propr REST client
-* WebSocket worker
-* normalized data model
-* calculations
-* persistence/cache
-* API routes
-* UI
-* account lifecycle engine
-* financial analytics
-* charts
-* realtime updates
-* stale-data handling
-* reconnect logic
-* tests
-* deployment configuration
-* `.env.example`
-* README
-* Vercel deployment instructions
+## Scenario B — Evaluation trading
 
-At the end, provide:
+```text
+open position
+↓
+mark moves
+↓
+uPnL changes
+↓
+equity changes
+↓
+drawdown updates
+```
 
-1. exact environment variables required
-2. exact deployment steps
-3. exact location where the Propr API key must be entered
-4. architecture diagram
-5. API endpoint inventory used
-6. data refresh/realtime strategy
-7. known limitations
-8. security checklist
-9. test results
-10. local development instructions
+## Scenario C — Evaluation passes
 
-Do not leave placeholder mock data in the production dashboard once the Propr connection is configured.
+```text
+challenge status = passed
+↓
+evaluation becomes PASSED
+↓
+funded issuance appears
+↓
+new funded account appears
+```
+
+## Scenario D — Evaluation fails
+
+```text
+drawdown/daily limit reached
+↓
+API status = failed
+↓
+UI shows FAILED/BREACHED
+↓
+account remains historically visible
+```
+
+## Scenario E — Funded account
+
+```text
+funded account active
+↓
+trade
+↓
+PnL
+↓
+payout
+↓
+processed payout
+↓
+finance total updates
+↓
+cash PnL updates
+```
+
+## Scenario F — Reconnect
+
+```text
+WS connected
+↓
+trade
+↓
+connection lost
+↓
+events missed
+↓
+reconnect
+↓
+REST reconciliation
+↓
+correct final state
+```
+
+---
+
+# 47. ADVERSARIAL TESTING
+
+Actively try to break the system.
+
+Inject:
+
+```text
+duplicate account
+duplicate payout
+duplicate websocket event
+negative PnL
+huge PnL
+zero quantity
+null mark
+missing entry price
+missing accountId
+missing challenge
+missing funded issuance
+malformed payout
+stale event
+future timestamp
+very old timestamp
+API timeout
+WS timeout
+429 storm
+500 storm
+```
+
+Verify the system fails safely.
+
+---
+
+# 48. DATA CONTRACT TESTS
+
+Build Zod/JSON-schema validators around Propr responses.
+
+If Propr changes:
+
+```text
+field removed
+field null
+field renamed
+new enum
+new status
+new account type
+```
+
+the application should fail loudly and diagnostically rather than silently displaying incorrect values.
+
+---
+
+# 49. NO MOCK DATA IN PRODUCTION
+
+Search for:
+
+```text
+mock
+demo
+dummy
+fake
+sample
+hardcoded account
+hardcoded balance
+hardcoded pnl
+```
+
+Ensure production code cannot accidentally fall back to fake financial data.
+
+If mocks are needed, they must exist only in:
+
+```text
+test/
+fixtures/
+mocks/
+```
+
+---
+
+# 50. UI NUMBER FORMAT AUDIT
+
+Verify formatting for:
+
+```text
+$0
+$1
+$1,000
+$1,234.56
+-$123.45
+₹0
+₹25,394.83
+very small decimal
+large decimal
+```
+
+Never display:
+
+```text
+NaN
+Infinity
+undefined
+null
+$NaN
+₹undefined
+```
+
+---
+
+# 51. ACCOUNT DETAIL CONSISTENCY
+
+When opening an account detail page, verify that:
+
+```text
+header balance
+account card balance
+positions
+orders
+PnL
+drawdown
+daily loss
+```
+
+all originate from the same normalized snapshot.
+
+The page must never show:
+
+```text
+header = current
+positions = old
+PnL = different snapshot
+```
+
+---
+
+# 52. DATABASE CONSISTENCY
+
+If a database exists:
+
+Audit:
+
+```text
+schema
+indexes
+unique constraints
+foreign keys
+transactions
+upserts
+idempotency
+retention
+cleanup
+```
+
+Ensure account IDs are appropriately unique.
+
+Ensure transaction IDs are unique.
+
+Ensure payout IDs are unique.
+
+Ensure websocket event ingestion is idempotent.
+
+---
+
+# 53. RECONCILIATION JOB
+
+Determine whether the project has a periodic full reconciliation process.
+
+If not, identify whether it should.
+
+A strong architecture should have:
+
+```text
+Realtime updates
++
+periodic REST reconciliation
+```
+
+rather than trusting WebSocket state forever.
+
+---
+
+# 54. PERFORMANCE TESTING
+
+Test:
+
+```text
+1 account
+10 accounts
+50 accounts
+100 accounts
+500 positions
+1000 orders
+```
+
+Measure:
+
+```text
+initial render
+API latency
+normalization time
+calculation time
+WS event processing time
+memory
+CPU
+database operations
+```
+
+Identify bottlenecks.
+
+---
+
+# 55. FAILURE-SAFETY REQUIREMENT
+
+If uncertain, stale, or inconsistent data exists, the product must prefer:
+
+```text
+UNKNOWN
+STALE
+SYNC ERROR
+```
+
+over confidently displaying an incorrect financial number.
+
+This is a financial monitoring application.
+
+Incorrect certainty is worse than temporary unavailability.
+
+---
+
+# 56. REQUIRED OUTPUT
+
+After auditing, create:
+
+```text
+AUDIT.md
+```
+
+with this exact structure:
+
+# Executive Summary
+
+# Repository Architecture
+
+# Build/Test Baseline
+
+# Critical Findings
+
+# High Severity Findings
+
+# Medium Severity Findings
+
+# Low Severity Findings
+
+# Security Findings
+
+# Propr API Contract Findings
+
+# Data Integrity Findings
+
+# Financial Calculation Findings
+
+# Realtime/WebSocket Findings
+
+# Account Lifecycle Findings
+
+# Payout Findings
+
+# Frontend Findings
+
+# Backend Findings
+
+# Database Findings
+
+# Deployment/Vercel Findings
+
+# Performance Findings
+
+# Accessibility Findings
+
+# Test Coverage Gaps
+
+# Missing Tests
+
+# Recommended Fixes
+
+# Prioritized Remediation Plan
+
+# Residual Risks
+
+# Final Production Readiness Verdict
+
+For every finding include:
+
+```text
+ID:
+Severity:
+Category:
+File:
+Line:
+Observed behavior:
+Expected behavior:
+Why it matters:
+Reproduction:
+Evidence:
+Recommended fix:
+Test that prevents regression:
+```
+
+Do NOT report vague findings.
+
+Bad:
+
+"WebSocket may have issues."
+
+Good:
+
+"`src/lib/ws.ts:142` does not remove the previous message listener during reconnect, resulting in duplicate event handling after each reconnect. Reproduction: force three reconnects and observe `account.updated` being processed four times. Impact: account state and PnL can be double-applied."
+
+---
+
+# 57. REQUIRED TEST ARTIFACTS
+
+Create or update:
+
+```text
+tests/
+unit/
+integration/
+e2e/
+fixtures/
+mocks/
+```
+
+where appropriate.
+
+At minimum implement tests for:
+
+```text
+account discovery
+account lifecycle
+evaluation status
+funded issuance mapping
+position normalization
+zero-quantity filtering
+uPnL
+equity
+drawdown
+daily loss
+profit target
+payout aggregation
+cash PnL
+REST/WS reconciliation
+websocket reconnect
+duplicate event handling
+multi-account isolation
+API failure handling
+secret exposure
+```
+
+---
+
+# 58. DO NOT CHANGE CODE IMMEDIATELY
+
+First perform the audit.
+
+Do not silently modify production code while auditing.
+
+First produce:
+
+```text
+findings
+test failures
+reproduction steps
+risk assessment
+```
+
+Then, if instructed to remediate, apply fixes one category at a time and rerun the relevant tests.
+
+---
+
+# 59. FINAL SCORECARD
+
+Produce a final matrix:
+
+| Area                 | Status | Severity | Confidence |
+| -------------------- | ------ | -------- | ---------- |
+| Build                |        |          |            |
+| Type safety          |        |          |            |
+| API integration      |        |          |            |
+| Data correctness     |        |          |            |
+| Financial math       |        |          |            |
+| Account lifecycle    |        |          |            |
+| Realtime             |        |          |            |
+| Security             |        |          |            |
+| Persistence          |        |          |            |
+| Frontend             |        |          |            |
+| Performance          |        |          |            |
+| Testing              |        |          |            |
+| Vercel deployment    |        |          |            |
+| Production readiness |        |          |            |
+
+Use:
+
+```text
+PASS
+PASS WITH WARNINGS
+FAIL
+BLOCKED
+```
+
+---
+
+# 60. FINAL PRODUCTION VERDICT
+
+Give exactly one:
+
+```text
+PRODUCTION READY
+```
+
+or
+
+```text
+PRODUCTION READY WITH CONDITIONS
+```
+
+or
+
+```text
+NOT PRODUCTION READY
+```
+
+Then summarize the **five most important things that must be fixed before trusting this terminal with financial monitoring**.
+
+Most importantly:
+
+Do not judge the application merely by whether it “looks correct”.
+
+Audit whether it is **mathematically correct, source-correct, lifecycle-correct, realtime-correct, secure, recoverable, and testable**.

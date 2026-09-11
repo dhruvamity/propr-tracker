@@ -1,2 +1,2 @@
-export { ProprClient, ProprApiError } from "./client.js";
-export type { ProprClientConfig } from "./client.js";
+export { ProprClient, ProprApiError } from "./client";
+export type { ProprClientConfig } from "./client";

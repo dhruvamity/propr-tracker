@@ -1,22 +1,17 @@
-import { fetchDashboardData, type AccountSnapshot } from "@/lib/propr-api";
+import { fetchDashboardData } from "@/lib/propr-api";
 import {
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  Clock,
-  Layers,
   Activity,
-  ArrowUpRight,
 } from "lucide-react";
 
 export const revalidate = 15; // Revalidate data every 15 seconds
 
 function formatUSD(val: string | number | undefined | null) {
-  if (val === undefined || val === null || val === "") return "$0.00";
+  if (val === undefined || val === null || val === "" || val === "NaN") return "$0.00";
   const n = Number(val);
+  if (isNaN(n) || !isFinite(n)) return "$0.00";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -26,8 +21,9 @@ function formatUSD(val: string | number | undefined | null) {
 }
 
 function formatINR(val: string | number | undefined | null) {
-  if (val === undefined || val === null || val === "") return "₹0.00";
+  if (val === undefined || val === null || val === "" || val === "NaN") return "₹0.00";
   const n = Number(val);
+  if (isNaN(n) || !isFinite(n)) return "₹0.00";
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -46,9 +42,6 @@ export default async function OverviewPage() {
 
   const activeAccounts = accounts.filter(
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  );
-  const inactiveAccounts = accounts.filter(
-    (a) => a.stage !== "EVALUATION" && a.stage !== "FUNDED"
   );
 
   return (
@@ -188,7 +181,14 @@ export default async function OverviewPage() {
                     <span className="text-[var(--text-secondary)]">Profit Target Progress</span>
                     <span className="text-[var(--cyan)] font-bold">{acc.profitTargetProgressPercent || "0"}%</span>
                   </div>
-                  <div className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+                  <div
+                    className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
+                    role="progressbar"
+                    aria-valuenow={Number(acc.profitTargetProgressPercent || 0)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Profit Target Progress"
+                  >
                     <div
                       className="h-full bg-[var(--cyan)] transition-all duration-500"
                       style={{ width: `${Math.min(100, Math.max(0, Number(acc.profitTargetProgressPercent || 0)))}%` }}
@@ -196,18 +196,34 @@ export default async function OverviewPage() {
                   </div>
                 </div>
 
-                {/* Drawdown Gauge */}
+                {/* Drawdown Gauge (Accurate limit consumed scale) */}
                 <div>
                   <div className="flex justify-between text-[11px] font-mono mb-1">
-                    <span className="text-[var(--text-secondary)]">Max Drawdown Used</span>
-                    <span className={Number(acc.drawdownUsedPercent || 0) > 70 ? "text-[var(--red)] font-bold" : "text-[var(--text-primary)]"}>
-                      {acc.drawdownUsedPercent || "0"}%
+                    <span className="text-[var(--text-secondary)]">Max Drawdown Consumed</span>
+                    <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : Number(acc.drawdownLimitConsumedPercent || 0) > 40 ? "text-[var(--amber)] font-semibold" : "text-[var(--text-primary)]"}>
+                      {acc.drawdownLimitConsumedPercent || "0"}% of limit
+                      <span className="text-[10px] text-[var(--text-muted)] ml-1 font-normal">
+                        ({acc.drawdownUsedPercent || "0"}% loss)
+                      </span>
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+                  <div
+                    className="h-2 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--border-subtle)]"
+                    role="progressbar"
+                    aria-valuenow={Number(acc.drawdownLimitConsumedPercent || 0)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Max Drawdown Consumed"
+                  >
                     <div
-                      className="h-full bg-[var(--amber)] transition-all duration-500"
-                      style={{ width: `${Math.min(100, Math.max(0, Number(acc.drawdownUsedPercent || 0)))}%` }}
+                      className={`h-full transition-all duration-500 ${
+                        Number(acc.drawdownLimitConsumedPercent || 0) > 75
+                          ? "bg-[var(--red)]"
+                          : Number(acc.drawdownLimitConsumedPercent || 0) > 40
+                          ? "bg-[var(--amber)]"
+                          : "bg-[var(--cyan)]"
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, Number(acc.drawdownLimitConsumedPercent || 0)))}%` }}
                     />
                   </div>
                 </div>
@@ -300,7 +316,12 @@ export default async function OverviewPage() {
                       {formatUSD(acc.equity)}
                     </td>
                     <td className="py-2.5 px-3 text-[var(--text-secondary)]">
-                      {acc.drawdownUsedPercent || "0"}%
+                      <span className={Number(acc.drawdownLimitConsumedPercent || 0) > 75 ? "text-[var(--red)] font-bold" : "text-[var(--text-primary)]"}>
+                        {acc.drawdownLimitConsumedPercent || "0"}%
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] block">
+                        {acc.drawdownUsedPercent || "0"}% loss
+                      </span>
                     </td>
                     <td className="py-2.5 px-3 text-[var(--text-secondary)]">
                       {acc.profitTargetProgressPercent || "0"}%

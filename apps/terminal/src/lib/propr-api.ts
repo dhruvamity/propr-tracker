@@ -47,9 +47,11 @@ export interface AccountSnapshot {
   profitTargetProgressPercent: string;
   maxDrawdownPercent: string;
   drawdownUsedPercent: string;
+  drawdownLimitConsumedPercent: string;
   drawdownRemaining: string;
   maxDailyLossPercent: string;
   dailyLossUsedPercent: string;
+  dailyLossLimitConsumedPercent: string;
   dailyLossRemaining: string;
   highWaterMark?: string;
   tradingDays?: number;
@@ -59,6 +61,7 @@ export interface AccountSnapshot {
   openOrderCount: number;
   positions: PositionData[];
   orders: OrderData[];
+  purchaseId?: string;
   purchaseCostUSD: string;
   payoutsWithdrawnUSD: string;
   actualCashPnLUSD: string;
@@ -234,7 +237,31 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   const now = new Date().toISOString();
 
   if (!API_KEY) {
-    return createMockData(now);
+    return {
+      accounts: [],
+      allPositions: [],
+      allOrders: [],
+      payouts: [],
+      health: {
+        restStatus: "UNKNOWN",
+        wsStatus: "DISCONNECTED",
+        lastSyncAt: now,
+        accountCount: 0,
+        apiHealthy: false,
+      },
+      finance: {
+        totalInvestedUSD: "0",
+        totalInvestedINR: "0",
+        totalPayoutsUSD: "0",
+        totalPayoutsINR: "0",
+        actualCashPnLUSD: "0",
+        actualCashPnLINR: "0",
+        activeCapitalUSD: "0",
+        activeCapitalINR: "0",
+        ledger: SEED_PURCHASES,
+      },
+      summary: { activeEvals: 0, funded: 0, passed: 0, failedBreached: 0, totalAccounts: 0 },
+    };
   }
 
   try {
@@ -290,11 +317,11 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         if (stage === "EVALUATION" || stage === "FUNDED") {
           const [posRaw, ordRaw] = await Promise.all([
             fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/positions`, { status: "open" }).catch(() => []),
-            fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/orders`, { status: "open" }).catch(() => []),
+            fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/orders`).catch(() => []),
           ]);
 
           positions = posRaw
-            .filter((p) => d(p.quantity as string).gt(0))
+            .filter((p) => d(p.quantity as string).abs().gt(0))
             .map((p) => ({
               positionId: p.positionId as string,
               accountId: p.accountId as string,
@@ -316,32 +343,40 @@ export async function fetchDashboardData(): Promise<DashboardData> {
               cumulativeTradingFees: p.cumulativeTradingFees as string,
             }));
 
-          orders = ordRaw.map((o) => ({
-            orderId: o.orderId as string,
-            accountId: o.accountId as string,
-            asset: o.asset as string,
-            base: o.base as string,
-            type: o.type as string,
-            side: o.side as "buy" | "sell",
-            positionSide: o.positionSide as "long" | "short",
-            status: o.status as string,
-            quantity: o.quantity as string,
-            price: o.price as string,
-            triggerPrice: o.triggerPrice as string,
-            cumulativeQuantity: o.cumulativeQuantity as string,
-            createdAt: o.createdAt as string,
-          }));
+          orders = ordRaw
+            .filter((o) => o.status === "open" || o.status === "pending" || o.status === "partially_filled")
+            .map((o) => ({
+              orderId: o.orderId as string,
+              accountId: o.accountId as string,
+              asset: o.asset as string,
+              base: o.base as string,
+              type: o.type as string,
+              side: o.side as "buy" | "sell",
+              positionSide: o.positionSide as "long" | "short",
+              status: o.status as string,
+              quantity: o.quantity as string,
+              price: o.price as string,
+              triggerPrice: o.triggerPrice as string,
+              cumulativeQuantity: o.cumulativeQuantity as string,
+              createdAt: o.createdAt as string,
+            }));
         }
 
         allPositions.push(...positions);
         allOrders.push(...orders);
 
-        // Challenge config
+        // Challenge config & account details
         const challenge = attempt?.challenge as Record<string, unknown> | undefined;
+        const rawAcc = (attempt?.account || issuance?.account) as Record<string, unknown> | undefined;
+        const purchaseId = (attempt?.purchaseId || issuance?.purchaseId) as string | undefined;
+        const drawdownType = (challenge?.drawdownType || "static") as string;
+
         const initialBalance = (issuance?.initialBalance || challenge?.initialBalance || "0") as string;
         const maxDrawdownPercent = (issuance?.maxDrawdownPercent || challenge?.maxDrawdownPercent || "0") as string;
         const maxDailyLossPercent = (issuance?.maxDailyLossPercent || challenge?.maxDailyLossPercent || "0") as string;
         const profitTargetPercent = (challenge?.profitTargetPercent || "0") as string;
+        const highWaterMark = (rawAcc?.highWaterMark || issuance?.highWaterMark || initialBalance) as string;
+        const isolatedMargin = d(rawAcc?.isolatedPositionMargin as string || "0");
 
         // Calculate PnL
         let totalUpnl = new Decimal(0);
@@ -355,21 +390,46 @@ export async function fetchDashboardData(): Promise<DashboardData> {
 
         const attemptPnl = attempt?.totalPnl ? d(attempt.totalPnl as string) : new Decimal(0);
         const balance = d(initialBalance).plus(attemptPnl);
-        const equity = balance.plus(totalUpnl);
+        const equity = balance.plus(totalUpnl).plus(isolatedMargin);
 
-        // Drawdown
-        const ddUsed = d(maxDrawdownPercent).gt(0)
-          ? Decimal.max(d(initialBalance).minus(equity), 0).div(d(initialBalance)).times(100)
-          : new Decimal(0);
-        const ddLimit = d(initialBalance).minus(d(maxDrawdownPercent).div(100).times(d(initialBalance)));
+        // Drawdown calculation (static vs trailing)
+        const maxDdPct = d(maxDrawdownPercent);
+        const maxDdAmount = maxDdPct.div(100).times(d(initialBalance));
+        let ddLimit = d(initialBalance).minus(maxDdAmount);
+        let ddUsedAmount = Decimal.max(d(initialBalance).minus(equity), 0);
+
+        if (drawdownType === "trailing") {
+          const hwm = d(highWaterMark || initialBalance);
+          ddLimit = Decimal.min(hwm.minus(maxDdAmount), d(initialBalance));
+          ddUsedAmount = Decimal.max(hwm.minus(equity), 0);
+        }
+
         const ddRemaining = equity.minus(ddLimit);
-
-        // Daily loss (simplified — no daily-metrics endpoint)
-        const dlUsed = d(maxDailyLossPercent).gt(0)
-          ? Decimal.max(d(initialBalance).minus(equity), 0).div(d(initialBalance)).times(100)
+        const ddUsedPct = d(initialBalance).gt(0)
+          ? ddUsedAmount.div(d(initialBalance)).times(100)
           : new Decimal(0);
-        const dlLimit = d(initialBalance).minus(d(maxDailyLossPercent).div(100).times(d(initialBalance)));
+        const ddLimitConsumed = maxDdAmount.gt(0)
+          ? ddUsedAmount.div(maxDdAmount).times(100)
+          : new Decimal(0);
+
+        // Daily loss calculation against day-start base
+        const maxDlPct = d(maxDailyLossPercent);
+        const dayStartBalance = d(
+          (attempt?.failureDetails as Record<string, unknown>)?.dayStartBalance as string ||
+          (attempt?.phases as Array<Record<string, unknown>>)?.[0]?.startingBalance as string ||
+          initialBalance
+        );
+        const dailyLossBase = dayStartBalance.plus(isolatedMargin);
+        const maxDlAmount = maxDlPct.div(100).times(dailyLossBase);
+        const dlLimit = dailyLossBase.minus(maxDlAmount);
+        const dlUsedAmount = Decimal.max(dailyLossBase.minus(equity), 0);
         const dlRemaining = equity.minus(dlLimit);
+        const dlUsedPct = dailyLossBase.gt(0)
+          ? dlUsedAmount.div(dailyLossBase).times(100)
+          : new Decimal(0);
+        const dlLimitConsumed = maxDlAmount.gt(0)
+          ? dlUsedAmount.div(maxDlAmount).times(100)
+          : new Decimal(0);
 
         // Profit target progress
         const ptProgress = d(profitTargetPercent).gt(0)
@@ -403,14 +463,18 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           unrealizedPnl: ds(totalUpnl),
           fees: ds(totalFees),
           totalPnl: ds(attemptPnl.gt(0) ? attemptPnl : totalRpnl.plus(totalUpnl)),
+          drawdownType,
           profitTargetPercent,
           profitTargetProgressPercent: ds(Decimal.min(Decimal.max(ptProgress, 0), 100)),
           maxDrawdownPercent,
-          drawdownUsedPercent: ds(Decimal.max(ddUsed, 0)),
+          drawdownUsedPercent: ds(Decimal.max(ddUsedPct, 0)),
+          drawdownLimitConsumedPercent: ds(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100)),
           drawdownRemaining: ds(Decimal.max(ddRemaining, 0)),
           maxDailyLossPercent,
-          dailyLossUsedPercent: ds(Decimal.max(dlUsed, 0)),
+          dailyLossUsedPercent: ds(Decimal.max(dlUsedPct, 0)),
+          dailyLossLimitConsumedPercent: ds(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100)),
           dailyLossRemaining: ds(Decimal.max(dlRemaining, 0)),
+          highWaterMark,
           tradingDays: attempt?.tradingDays as number,
           requiredTradingDays: challenge?.requiredTradingDays as number,
           winRate: attempt?.winRate as string,
@@ -418,6 +482,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           openOrderCount: orders.length,
           positions,
           orders,
+          purchaseId,
           purchaseCostUSD: "0",
           payoutsWithdrawnUSD: "0",
           actualCashPnLUSD: "0",
@@ -448,12 +513,17 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       accountId: p.accountId as string,
     }));
 
-    // Finance calculations
+    // Finance calculations (accounting for purchases, refunds, and adjustments)
     const ledger = SEED_PURCHASES;
-    let totalInvested = new Decimal(0);
+    let totalPurchases = new Decimal(0);
+    let totalRefunds = new Decimal(0);
+    let totalAdjustments = new Decimal(0);
     for (const tx of ledger) {
-      if (tx.type === "purchase") totalInvested = totalInvested.plus(d(tx.amountUSD));
+      if (tx.type === "purchase") totalPurchases = totalPurchases.plus(d(tx.amountUSD));
+      if (tx.type === "refund") totalRefunds = totalRefunds.plus(d(tx.amountUSD));
+      if (tx.type === "adjustment") totalAdjustments = totalAdjustments.plus(d(tx.amountUSD));
     }
+    const totalInvested = totalPurchases.minus(totalRefunds);
 
     let totalPayouts = new Decimal(0);
     for (const p of payouts) {
@@ -462,13 +532,22 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       }
     }
 
-    const cashPnl = totalPayouts.minus(totalInvested);
+    const cashPnl = totalPayouts.minus(totalInvested).plus(totalAdjustments);
     const rate = d(USD_TO_INR);
 
-    // Count active accounts for active capital
+    // Link active accounts to purchases to compute true active capital at risk
+    const activePurchaseIds = new Set<string>();
+    for (const acc of accounts) {
+      if ((acc.stage === "EVALUATION" || acc.stage === "FUNDED") && acc.purchaseId) {
+        activePurchaseIds.add(acc.purchaseId);
+      }
+    }
     let activeCapital = new Decimal(0);
-    // For now, sum all purchase costs as we can't link them to specific accounts yet
-    activeCapital = totalInvested;
+    for (const tx of ledger) {
+      if (tx.type === "purchase" && activePurchaseIds.has(tx.id)) {
+        activeCapital = activeCapital.plus(d(tx.amountUSD));
+      }
+    }
 
     // Summary
     const summary = {
@@ -506,41 +585,31 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     };
   } catch (err) {
     console.error("Failed to fetch dashboard data:", err);
-    return createMockData(now);
+    return {
+      accounts: [],
+      allPositions: [],
+      allOrders: [],
+      payouts: [],
+      health: {
+        restStatus: "ERROR",
+        wsStatus: "DISCONNECTED",
+        lastSyncAt: now,
+        accountCount: 0,
+        apiHealthy: false,
+      },
+      finance: {
+        totalInvestedUSD: "0",
+        totalInvestedINR: "0",
+        totalPayoutsUSD: "0",
+        totalPayoutsINR: "0",
+        actualCashPnLUSD: "0",
+        actualCashPnLINR: "0",
+        activeCapitalUSD: "0",
+        activeCapitalINR: "0",
+        ledger: SEED_PURCHASES,
+      },
+      summary: { activeEvals: 0, funded: 0, passed: 0, failedBreached: 0, totalAccounts: 0 },
+    };
   }
 }
 
-function createMockData(now: string): DashboardData {
-  const ledger = SEED_PURCHASES;
-  let totalInvested = new Decimal(0);
-  for (const tx of ledger) {
-    if (tx.type === "purchase") totalInvested = totalInvested.plus(d(tx.amountUSD));
-  }
-  const rate = d(USD_TO_INR);
-
-  return {
-    accounts: [],
-    allPositions: [],
-    allOrders: [],
-    payouts: [],
-    health: {
-      restStatus: API_KEY ? "ERROR" : "UNKNOWN",
-      wsStatus: "DISCONNECTED",
-      lastSyncAt: now,
-      accountCount: 0,
-      apiHealthy: false,
-    },
-    finance: {
-      totalInvestedUSD: ds(totalInvested),
-      totalInvestedINR: ds(totalInvested.times(rate)),
-      totalPayoutsUSD: "0",
-      totalPayoutsINR: "0",
-      actualCashPnLUSD: ds(totalInvested.neg()),
-      actualCashPnLINR: ds(totalInvested.neg().times(rate)),
-      activeCapitalUSD: ds(totalInvested),
-      activeCapitalINR: ds(totalInvested.times(rate)),
-      ledger,
-    },
-    summary: { activeEvals: 0, funded: 0, passed: 0, failedBreached: 0, totalAccounts: 0 },
-  };
-}

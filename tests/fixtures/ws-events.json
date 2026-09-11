@@ -1,0 +1,52 @@
+[
+  {
+    "type": "mark.updated",
+    "timestamp": 1726056000000,
+    "data": {
+      "marks": {
+        "hyperliquid": {
+          "BTC": "62500.00",
+          "ETH": "2420.00",
+          "SOL": "148.00"
+        }
+      },
+      "timestamp": 1726056000000
+    }
+  },
+  {
+    "type": "account.updated",
+    "userId": "urn:prp-user:gYNqoqRkLF5G",
+    "timestamp": 1726056001000,
+    "data": {
+      "accountId": "urn:prp-account:J9wNi8oj3XGK",
+      "balance": "25200.00",
+      "isolatedPositionMargin": "0",
+      "crossPositionMargin": "1800.00",
+      "availableBalance": "23400.00"
+    }
+  },
+  {
+    "type": "position.updated",
+    "userId": "urn:prp-user:gYNqoqRkLF5G",
+    "timestamp": 1726056002000,
+    "data": {
+      "positionId": "pos-btc-long-active",
+      "accountId": "urn:prp-account:J9wNi8oj3XGK",
+      "asset": "BTC",
+      "quantity": "0.1500",
+      "markPrice": "62500.00",
+      "unrealizedPnl": "375.00"
+    }
+  },
+  {
+    "type": "position.closed",
+    "userId": "urn:prp-user:gYNqoqRkLF5G",
+    "timestamp": 1726056003000,
+    "data": {
+      "positionId": "pos-btc-long-active",
+      "accountId": "urn:prp-account:J9wNi8oj3XGK",
+      "realizedPnl": "375.00",
+      "quantity": "0"
+    }
+  }
+]

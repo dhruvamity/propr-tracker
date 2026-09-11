@@ -11,10 +11,10 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@propr/data-model": "workspace:*",
-    "@propr/client": "workspace:*",
-    "@propr/calculations": "workspace:*",
-    "@propr/finance": "workspace:*",
+    "@propr/data-model": "*",
+    "@propr/client": "*",
+    "@propr/calculations": "*",
+    "@propr/finance": "*",
     "decimal.js": "^10.4.3",
     "ws": "^8.18.0",
     "ioredis": "^5.4.0",

@@ -1,0 +1,91 @@
+{
+  "total": 8,
+  "data": [
+    {
+      "attemptId": "urn:prp-challenge-attempt:J9wNi8oj3XGK",
+      "userId": "urn:prp-user:gYNqoqRkLF5G",
+      "purchaseId": "urn:prp-purchase:72VSRitse27t",
+      "challengeId": "urn:prp-challenge:vxGRxnEU19bd",
+      "accountId": "urn:prp-account:J9wNi8oj3XGK",
+      "currentPhaseId": "urn:prp-challenge-attempt-phase:phase1",
+      "status": "active",
+      "failureReason": null,
+      "startedAt": "2026-09-08T13:39:00.000Z",
+      "endedAt": null,
+      "challenge": {
+        "name": "Explorer 1-Step Turbo",
+        "initialBalance": "25000",
+        "profitTargetPercent": "9",
+        "maxDailyLossPercent": "3",
+        "maxDrawdownPercent": "3",
+        "drawdownType": "static",
+        "requiredTradingDays": 0
+      },
+      "account": {
+        "accountId": "urn:prp-account:J9wNi8oj3XGK",
+        "balance": "25000.00",
+        "highWaterMark": "25000.00",
+        "totalUnrealizedPnl": "0",
+        "isolatedPositionMargin": "0",
+        "crossPositionMargin": "0"
+      }
+    },
+    {
+      "attemptId": "urn:prp-challenge-attempt:4D8XWuQ3fju6",
+      "userId": "urn:prp-user:gYNqoqRkLF5G",
+      "purchaseId": "urn:prp-purchase:PPWG9RNxz4eF",
+      "challengeId": "urn:prp-challenge:vxGRxnEU19bd",
+      "accountId": "urn:prp-account:4D8XWuQ3fju6",
+      "currentPhaseId": "urn:prp-challenge-attempt-phase:phase1",
+      "status": "active",
+      "failureReason": null,
+      "startedAt": "2026-09-05T19:57:00.000Z",
+      "endedAt": null,
+      "challenge": {
+        "name": "Starter 1-Step Turbo",
+        "initialBalance": "5000",
+        "profitTargetPercent": "9",
+        "maxDailyLossPercent": "3",
+        "maxDrawdownPercent": "3",
+        "drawdownType": "static",
+        "requiredTradingDays": 0
+      },
+      "account": {
+        "accountId": "urn:prp-account:4D8XWuQ3fju6",
+        "balance": "5000.00",
+        "highWaterMark": "5000.00",
+        "totalUnrealizedPnl": "0",
+        "isolatedPositionMargin": "0",
+        "crossPositionMargin": "0"
+      }
+    },
+    {
+      "attemptId": "urn:prp-challenge-attempt:1nUsqwYbEQJv",
+      "userId": "urn:prp-user:gYNqoqRkLF5G",
+      "purchaseId": "urn:prp-purchase:2nwaphFeke3u",
+      "challengeId": "urn:prp-challenge:vxGRxnEU19bd",
+      "accountId": "urn:prp-account:B7KaXYv9iAqi",
+      "currentPhaseId": "urn:prp-challenge-attempt-phase:j8fnYGD8iwNj",
+      "status": "failed",
+      "failureReason": "max_drawdown_exceeded",
+      "startedAt": "2026-08-24T18:05:59.532Z",
+      "endedAt": "2026-08-28T04:06:01.895Z",
+      "challenge": {
+        "name": "Starter 1-Step Turbo",
+        "initialBalance": "5000",
+        "profitTargetPercent": "9",
+        "maxDailyLossPercent": "3",
+        "maxDrawdownPercent": "3",
+        "drawdownType": "static"
+      },
+      "account": {
+        "accountId": "urn:prp-account:B7KaXYv9iAqi",
+        "balance": "4845.47",
+        "highWaterMark": "5069.25",
+        "totalUnrealizedPnl": "0",
+        "isolatedPositionMargin": "0",
+        "crossPositionMargin": "0"
+      }
+    }
+  ]
+}

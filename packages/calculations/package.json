@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@propr/data-model": "workspace:*",
+    "@propr/data-model": "*",
     "decimal.js": "^10.4.3"
   },
   "devDependencies": {

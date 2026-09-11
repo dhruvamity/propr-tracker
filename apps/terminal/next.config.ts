@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: [
+    "@propr/data-model",
+    "@propr/calculations",
+    "@propr/finance",
+    "@propr/client",
+  ],
 };
 
 export default nextConfig;

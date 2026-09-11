@@ -32,7 +32,7 @@ async function main() {
   console.log(`[STORE] Using ${REDIS_URL ? "Redis" : "in-memory"} store`);
 
   // Initialize Propr client
-  const client = new ProprClient({ apiKey: API_KEY });
+  const client = new ProprClient({ apiKey: API_KEY! });
 
   // Seed finance ledger if empty
   const existingLedger = await store.getLedger();
@@ -46,7 +46,7 @@ async function main() {
 
   // Start WebSocket worker
   const wsWorker = new WsSyncWorker({
-    apiKey: API_KEY,
+    apiKey: API_KEY!,
     wsUrl: WS_URL,
     store,
     onResyncNeeded: () => performSync(client, store),

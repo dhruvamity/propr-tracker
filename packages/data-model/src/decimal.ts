@@ -2,7 +2,7 @@
 // Safe decimal arithmetic for monetary values. Never use floating-point.
 
 import Decimal from "decimal.js";
-import type { DecimalString } from "./types.js";
+import type { DecimalString } from "./types";
 
 // Configure Decimal.js for financial precision
 Decimal.set({

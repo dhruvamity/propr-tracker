@@ -1,0 +1,38 @@
+{
+  "total": 3,
+  "data": [
+    {
+      "payoutId": "urn:prp-payout:PAY001",
+      "accountId": "urn:prp-account:FUNDED001",
+      "amount": "1250.00",
+      "userAmount": "1000.00",
+      "reason": "biweekly_profit_split",
+      "status": "processed",
+      "txHash": "0xabc123def456789",
+      "processedAt": "2026-09-01T15:30:00.000Z",
+      "createdAt": "2026-08-30T10:00:00.000Z"
+    },
+    {
+      "payoutId": "urn:prp-payout:PAY002",
+      "accountId": "urn:prp-account:FUNDED001",
+      "amount": "800.00",
+      "userAmount": "640.00",
+      "reason": "biweekly_profit_split",
+      "status": "requested",
+      "txHash": null,
+      "processedAt": null,
+      "createdAt": "2026-09-11T09:00:00.000Z"
+    },
+    {
+      "payoutId": "urn:prp-payout:PAY003",
+      "accountId": "urn:prp-account:FUNDED001",
+      "amount": "500.00",
+      "userAmount": "400.00",
+      "reason": "withdrawal",
+      "status": "rejected",
+      "txHash": null,
+      "processedAt": null,
+      "createdAt": "2026-08-15T12:00:00.000Z"
+    }
+  ]
+}

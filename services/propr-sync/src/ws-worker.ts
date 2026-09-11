@@ -9,6 +9,7 @@ import type {
   PositionSnapshot,
   OrderSnapshot,
   AuditLogEntry,
+  DecimalString,
 } from "@propr/data-model";
 import { toDecimal, fromDecimal, ds } from "@propr/data-model";
 import {
@@ -225,7 +226,7 @@ export class WsSyncWorker {
     for (const [exchange, assets] of Object.entries(data.marks)) {
       this.marks[exchange] = {
         ...(this.marks[exchange] || {}),
-        ...assets,
+        ...(assets as Record<string, DecimalString>),
       };
     }
 
@@ -306,10 +307,7 @@ export class WsSyncWorker {
 
     // Filter out zero-quantity positions
     account.positions = account.positions.filter(
-      (p) =>
-        p.quantity !== "0" &&
-        p.quantity !== "0.0" &&
-        p.quantity !== ""
+      (p) => !toDecimal(p.quantity || "0").isZero()
     );
     account.openPositionCount = account.positions.length;
     account.lastRealtimeUpdateAt = new Date().toISOString();
@@ -419,9 +417,12 @@ export class WsSyncWorker {
       if (changed && account.balance) {
         // Recalculate account-level equity
         const totalUpnl = sumUnrealizedPnl(account.positions);
+        const isolatedMargin = toDecimal(account.isolatedPositionMargin || "0");
         account.unrealizedPnl = totalUpnl;
         account.equity = fromDecimal(
-          toDecimal(account.balance).plus(toDecimal(totalUpnl))
+          toDecimal(account.balance)
+            .plus(toDecimal(totalUpnl))
+            .plus(isolatedMargin)
         );
         account.dataSource = "LIVE_CALCULATED";
         account.lastRealtimeUpdateAt = new Date().toISOString();

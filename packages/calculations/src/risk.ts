@@ -5,7 +5,7 @@
 import type { DecimalString, DrawdownType } from "@propr/data-model";
 import { toDecimal, fromDecimal, ds, ZERO } from "@propr/data-model";
 import Decimal from "decimal.js";
-import { MMR } from "./pnl.js";
+import { MMR } from "./pnl";
 
 // ─── Drawdown ─────────────────────────────────────────────────────────────────
 

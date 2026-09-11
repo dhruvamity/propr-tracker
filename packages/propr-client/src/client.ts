@@ -84,7 +84,7 @@ export class ProprClient {
     if (!response.ok) {
       let errorBody: { code?: number; message?: string } = {};
       try {
-        errorBody = await response.json();
+        errorBody = (await response.json()) as { code?: number; message?: string };
       } catch {
         // ignore parse errors
       }
@@ -304,7 +304,7 @@ export class ProprClient {
       const raw = await this.request<unknown>(
         `/accounts/${accountId}/daily-metrics`
       );
-      return DailyMetricsSchema.parse(raw) as DailyMetrics;
+      return DailyMetricsSchema.parse(raw) as unknown as DailyMetrics;
     } catch (err) {
       if (err instanceof ProprApiError && err.status === 404) {
         return null;

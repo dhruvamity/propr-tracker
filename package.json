@@ -3,12 +3,17 @@
   "private": true,
   "packageManager": "npm@10.8.2",
   "workspaces": [
-    "apps/terminal"
+    "apps/*",
+    "packages/*",
+    "services/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=apps/terminal",
     "build": "npm run build --workspace=apps/terminal",
-    "start": "npm run start --workspace=apps/terminal"
+    "start": "npm run start --workspace=apps/terminal",
+    "lint": "npm run lint --workspace=apps/terminal",
+    "test": "vitest run",
+    "type-check": "tsc -b packages/data-model packages/calculations packages/finance packages/propr-client && npm run type-check --workspace=services/propr-sync"
   },
   "devDependencies": {
     "next": "16.3.4"

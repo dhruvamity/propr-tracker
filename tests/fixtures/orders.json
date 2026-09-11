@@ -1,0 +1,47 @@
+{
+  "total": 3,
+  "data": [
+    {
+      "orderId": "ord-open-limit",
+      "accountId": "urn:prp-account:J9wNi8oj3XGK",
+      "asset": "BTC",
+      "base": "BTC",
+      "type": "limit",
+      "side": "buy",
+      "positionSide": "long",
+      "status": "open",
+      "quantity": "0.10",
+      "price": "58000.00",
+      "cumulativeQuantity": "0",
+      "createdAt": "2026-09-11T12:00:00.000Z"
+    },
+    {
+      "orderId": "ord-pending-stop",
+      "accountId": "urn:prp-account:J9wNi8oj3XGK",
+      "asset": "BTC",
+      "base": "BTC",
+      "type": "stop_loss",
+      "side": "sell",
+      "positionSide": "long",
+      "status": "pending",
+      "quantity": "0.15",
+      "triggerPrice": "59000.00",
+      "cumulativeQuantity": "0",
+      "createdAt": "2026-09-11T12:05:00.000Z"
+    },
+    {
+      "orderId": "ord-partially-filled",
+      "accountId": "urn:prp-account:4D8XWuQ3fju6",
+      "asset": "SOL",
+      "base": "SOL",
+      "type": "limit",
+      "side": "sell",
+      "positionSide": "long",
+      "status": "partially_filled",
+      "quantity": "20.00",
+      "price": "160.00",
+      "cumulativeQuantity": "10.00",
+      "createdAt": "2026-09-11T12:10:00.000Z"
+    }
+  ]
+}

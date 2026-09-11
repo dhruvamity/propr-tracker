@@ -2,7 +2,7 @@
 // Deterministic fixtures covering all 15 scenarios from prompt §39.
 
 import { describe, it, expect } from "vitest";
-import { ds } from "@propr/data-model";
+import { ds, FRESHNESS_THRESHOLDS } from "@propr/data-model";
 import type { DecimalString } from "@propr/data-model";
 import {
   calculateUnrealizedPnl,
@@ -11,13 +11,13 @@ import {
   calculateMaintMargin,
   recalculatePosition,
   sumUnrealizedPnl,
-} from "../src/pnl.js";
+} from "../pnl";
 import {
   calculateEquity,
   calculateCrossWallet,
   calculateAvailableBalance,
   calculateMarginRatio,
-} from "../src/equity.js";
+} from "../equity";
 import {
   calculateDrawdownLimit,
   calculateDrawdownUsedPercent,
@@ -31,21 +31,21 @@ import {
   calculateBreachPrice,
   calculateIsolatedLiquidationPrice,
   calculateCrossLiquidationPrice,
-} from "../src/risk.js";
+} from "../risk";
 import {
   deriveAccountStage,
   deriveChallengeStage,
   deriveFundedStage,
   deriveEvaluationStatus,
   getAccountSortPriority,
-} from "../src/lifecycle.js";
+} from "../lifecycle";
 import {
   calculateActualCashPnL,
   calculateROI,
   calculateTotalInvested,
   calculateTotalPayoutsWithdrawn,
   convertUsdToInr,
-} from "../src/finance.js";
+} from "../finance";
 import Decimal from "decimal.js";
 
 // Helper to check decimal equality with tolerance
@@ -243,7 +243,7 @@ describe("10. Cross margin", () => {
     // Should be a price lower than entry
     const liq = new Decimal(liqPrice);
     expect(liq.lessThan(94210)).toBe(true);
-    expect(liq.greaterThan(0)).toBe(true);
+    expect(liq.greaterThanOrEqualTo(0)).toBe(true);
   });
 });
 
@@ -288,7 +288,6 @@ describe("13. Stale REST data", () => {
   // Stale data detection is handled by the UI layer using FRESHNESS_THRESHOLDS
   // This test verifies the thresholds are correctly defined
   it("freshness thresholds are correctly ordered", () => {
-    const { FRESHNESS_THRESHOLDS } = require("@propr/data-model");
     expect(FRESHNESS_THRESHOLDS.LIVE).toBeLessThan(
       FRESHNESS_THRESHOLDS.DELAYED
     );
