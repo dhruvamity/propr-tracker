@@ -151,7 +151,7 @@ export const SEED_PURCHASES: FinanceTransaction[] = [
     bankReference: "PRCR/Paysagi_propr.xyz/Bucharest/28-08-2026",
     invoiceNumber: "INV-BJGShMyjjAxc",
     purchaseId: "urn:prp-purchase:BJGShMyjjAxc",
-    accountId: "HISTORICAL / UNIDENTIFIED",
+    accountId: "urn:prp-account:dSkvRiZ3y9rs",
   },
   {
     id: "urn:prp-purchase:QHGq75m2TujF",
@@ -169,7 +169,7 @@ export const SEED_PURCHASES: FinanceTransaction[] = [
     bankReference: "PRCR/Paysagi_propr.xyz/Bucharest/29-08-2026-1",
     invoiceNumber: "INV-QHGq75m2TujF",
     purchaseId: "urn:prp-purchase:QHGq75m2TujF",
-    accountId: "HISTORICAL / UNIDENTIFIED",
+    accountId: "urn:prp-account:aqVC1mX1uN2G",
   },
   {
     id: "urn:prp-purchase:xyER4EuvX8mz",
@@ -187,7 +187,7 @@ export const SEED_PURCHASES: FinanceTransaction[] = [
     bankReference: "PRCR/Paysagi_propr.xyz/Bucharest/29-08-2026-2",
     invoiceNumber: "INV-xyER4EuvX8mz",
     purchaseId: "urn:prp-purchase:xyER4EuvX8mz",
-    accountId: "HISTORICAL / UNIDENTIFIED",
+    accountId: "urn:prp-account:f5GC6SREBdAJ",
   },
   {
     id: "urn:prp-purchase:kFEec3h7ALkd",
@@ -205,7 +205,7 @@ export const SEED_PURCHASES: FinanceTransaction[] = [
     bankReference: "PRCR/Paysagi_propr.xyz/Bucharest/30-08-2026-1",
     invoiceNumber: "INV-kFEec3h7ALkd",
     purchaseId: "urn:prp-purchase:kFEec3h7ALkd",
-    accountId: "HISTORICAL / UNIDENTIFIED",
+    accountId: "urn:prp-account:qeBHuFFg5gMw",
   },
   {
     id: "urn:prp-purchase:LnHF1xAbJvGd",
@@ -223,7 +223,7 @@ export const SEED_PURCHASES: FinanceTransaction[] = [
     bankReference: "PRCR/Paysagi_propr.xyz/Bucharest/30-08-2026-2",
     invoiceNumber: "INV-LnHF1xAbJvGd",
     purchaseId: "urn:prp-purchase:LnHF1xAbJvGd",
-    accountId: "HISTORICAL / UNIDENTIFIED",
+    accountId: "urn:prp-account:R5gEZ1R363NC",
   },
   {
     id: "urn:prp-purchase:PPWG9RNxz4eF",

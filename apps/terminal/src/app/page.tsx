@@ -14,6 +14,13 @@ export default async function OverviewPage() {
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
   );
 
+  // Sort active accounts by risk proximity (closest to breach floor first)
+  const rankedActiveAccounts = [...activeAccounts].sort((a, b) => {
+    const bufA = Number(a.drawdownRemaining || 0);
+    const bufB = Number(b.drawdownRemaining || 0);
+    return bufA - bufB;
+  });
+
   const totalSpentINR = Number(finance.totalActualCashCostINR || finance.totalInvestedINR || 0);
   const activeAtRiskINR = Number(finance.activeActualCashCostINR || finance.activeCapitalINR || 0);
   const totalPayoutsINR = Number(finance.totalPayoutsINR || 0);
@@ -21,12 +28,17 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── 1. Capital & Cash Ledger ────────────── */}
+      {/* ─── 1. Capital Ledger ────────────── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 transition-all">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3 mb-4">
-          <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Cash Ledger
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
+              Capital Ledger
+            </h2>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+              INR Base
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium">
               {summary.activeEvals + summary.funded} Active
@@ -41,26 +53,29 @@ export default async function OverviewPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-4">
           <div>
             <div className="text-2xl sm:text-3xl font-mono font-bold text-white">
-              {formatINR(totalSpentINR)}
+              {formatINR(totalSpentINR)}{" "}
+              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Total Cash Spent
+              Total Capital Outflow
             </div>
           </div>
           <div>
             <div className="text-2xl sm:text-3xl font-mono font-bold text-amber-300">
-              {formatINR(activeAtRiskINR)}
+              {formatINR(activeAtRiskINR)}{" "}
+              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Capital at Risk (2 Evals)
+              Active Capital at Risk (2 Evals)
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-red-400">
-              −{formatINR(netOutflowINR)}
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-200">
+              −{formatINR(netOutflowINR)}{" "}
+              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Net Outflow (₹0 Payouts)
+              Net Capital Outflow (₹0 Payouts)
             </div>
           </div>
         </div>
@@ -70,11 +85,11 @@ export default async function OverviewPage() {
           <div className="flex items-center gap-4">
             <span>Propr: <strong className="text-zinc-200">{formatINR(finance.proprActualCashCostINR)}</strong></span>
             <span>Breakout: <strong className="text-zinc-200">{formatINR(finance.breakoutActualCashCostINR)}</strong></span>
-          </div>
-          <div className="flex items-center gap-4">
             <span>Payouts: <strong className="text-emerald-400">{formatINR(totalPayoutsINR)}</strong></span>
-            <span>Net: <strong className="text-red-400">−{formatINR(netOutflowINR)}</strong></span>
           </div>
+          <a href="/finance" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-4">
+            View full audited ledger →
+          </a>
         </div>
       </div>
 
@@ -85,11 +100,11 @@ export default async function OverviewPage() {
             Active Accounts
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            {activeAccounts.length} monitored
+            {rankedActiveAccounts.length} monitored by breach proximity
           </span>
         </div>
 
-        {activeAccounts.length === 0 ? (
+        {rankedActiveAccounts.length === 0 ? (
           <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8">
             <EmptyState
               icon={TrendingUp}
@@ -99,21 +114,21 @@ export default async function OverviewPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {activeAccounts.map((acc, idx) => (
+            {rankedActiveAccounts.map((acc, idx) => (
               <RiskCard key={acc.accountId} account={acc} rank={idx + 1} />
             ))}
           </div>
         )}
       </div>
 
-      {/* ─── 3. All Accounts Directory ─────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      {/* ─── 3. Accounts Directory: Active First + Collapsed History ─── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            All Accounts ({accounts.length})
+            Active Accounts ({rankedActiveAccounts.length})
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            {summary.activeEvals + summary.funded} active • {summary.failedBreached} archived
+            Monitored evaluations in USD
           </span>
         </div>
 
@@ -122,47 +137,35 @@ export default async function OverviewPage() {
             <thead>
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
                 <th className="py-2.5 px-3 text-center">Stage</th>
-                <th className="py-2.5 px-3 text-left">Account ID</th>
-                <th className="py-2.5 px-3 text-right">Starting</th>
+                <th className="py-2.5 px-3 text-left">Account</th>
                 <th className="py-2.5 px-3 text-right">Balance</th>
                 <th className="py-2.5 px-3 text-right">Equity</th>
-                <th className="py-2.5 px-3 text-right">Drawdown</th>
+                <th className="py-2.5 px-3 text-right">Drawdown Buffer</th>
+                <th className="py-2.5 px-3 text-right">Daily Room</th>
                 <th className="py-2.5 px-3 text-right">Target</th>
-                <th className="py-2.5 px-3 text-center">State</th>
+                <th className="py-2.5 px-3 text-center">Risk State</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
-              {accounts.map((acc) => {
-                const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED";
-                const isActive = acc.stage === "EVALUATION" || acc.stage === "FUNDED";
-                const ddConsumed = Number(acc.drawdownLimitConsumedPercent || 0);
+              {rankedActiveAccounts.map((acc) => {
+                const buffer = Number(acc.drawdownRemaining || 0);
+                const dailyRoom = Number(acc.dailyLossRemaining || 0);
+                const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
+                const dailyRoomPct = dailyLimit > 0 ? (dailyRoom / dailyLimit) * 100 : 100;
+                const isCritical = dailyRoomPct <= 25;
 
                 return (
-                  <tr
-                    key={acc.accountId}
-                    className="hover:bg-white/[0.02] transition-colors"
-                  >
+                  <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                          isActive
-                            ? "bg-zinc-800 text-white border-zinc-700"
-                            : isFailed
-                            ? "bg-red-950/60 text-red-400 border-red-800/50"
-                            : "bg-zinc-900 text-zinc-400 border-zinc-800"
-                        }`}
-                      >
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-white border border-zinc-700">
                         {acc.stage}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-left font-medium text-white">
-                      {formatShortId(acc.accountId)}
+                      {acc.challengeName || "Starter Turbo"}
                       <span className="text-[10px] text-zinc-400 block font-normal">
-                        {acc.challengeName || "Starter Turbo"}
+                        #{formatShortId(acc.accountId).slice(-4)} • {formatShortId(acc.accountId)}
                       </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-zinc-400 whitespace-nowrap">
-                      {formatUSD(acc.initialBalance || acc.startingBalance)}
                     </td>
                     <td className="py-2.5 px-3 text-right font-medium text-zinc-200 whitespace-nowrap">
                       {formatUSD(acc.balance)}
@@ -170,20 +173,15 @@ export default async function OverviewPage() {
                     <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
                       {formatUSD(acc.equity)}
                     </td>
-                    <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
-                      <span
-                        className={
-                          ddConsumed >= 100 || isFailed
-                            ? "text-red-400 font-bold"
-                            : ddConsumed > 75
-                            ? "text-red-400 font-semibold"
-                            : ddConsumed > 40
-                            ? "text-amber-400 font-medium"
-                            : "text-zinc-300"
-                        }
-                      >
-                        {formatPercent(acc.drawdownUsedPercent, 2)}
-                        <span className="text-zinc-500 font-normal ml-1">/ {acc.maxDrawdownPercent || "3"}%</span>
+                    <td className="py-2.5 px-3 text-right text-zinc-200 font-semibold whitespace-nowrap">
+                      {formatUSD(buffer)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <span className={`font-bold ${isCritical ? "text-red-400" : "text-emerald-400"}`}>
+                        {formatUSD(dailyRoom)}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 block">
+                        {isCritical ? "⚠ 1 trade from breach" : "Normal room"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
@@ -193,17 +191,13 @@ export default async function OverviewPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      {acc.failureReason ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-950/50 text-red-400 border border-red-800/40">
-                          {acc.failureReason.replace(/_/g, " ")}
-                        </span>
-                      ) : isActive ? (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950/50 text-emerald-400 border border-emerald-800/40">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-zinc-500 text-[10px]">Archived</span>
-                      )}
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
+                        isCritical
+                          ? "bg-red-950/60 text-red-400 border-red-800/50 animate-pulse"
+                          : "bg-emerald-950/50 text-emerald-400 border-emerald-800/40"
+                      }`}>
+                        {isCritical ? "CRITICAL" : "SAFE"}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -211,6 +205,62 @@ export default async function OverviewPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Collapsible Archived / Breached Accounts */}
+        <details className="group rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-3 text-xs font-mono">
+          <summary className="cursor-pointer flex items-center justify-between text-zinc-400 select-none hover:text-zinc-200 font-semibold">
+            <span>Archived / Breached Accounts ({accounts.length - activeAccounts.length})</span>
+            <span className="text-[11px] text-zinc-500 font-normal group-open:hidden">
+              Show 6 archived accounts (2 daily loss, 4 drawdown breaches) ▼
+            </span>
+            <span className="text-[11px] text-zinc-500 font-normal hidden group-open:inline">
+              Hide archived accounts ▲
+            </span>
+          </summary>
+          <div className="mt-3 overflow-x-auto border-t border-[var(--border-subtle)] pt-3">
+            <table className="w-full text-left text-xs font-mono">
+              <thead>
+                <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
+                  <th className="py-2 px-3 text-center">Stage</th>
+                  <th className="py-2 px-3 text-left">Account</th>
+                  <th className="py-2 px-3 text-right">Initial</th>
+                  <th className="py-2 px-3 text-right">Ending Balance</th>
+                  <th className="py-2 px-3 text-center">Breach Reason</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
+                {accounts
+                  .filter((a) => a.stage !== "EVALUATION" && a.stage !== "FUNDED")
+                  .map((acc) => (
+                    <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-2 px-3 text-center">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/60 text-red-400 border border-red-800/50">
+                          {acc.stage}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-left font-medium text-white">
+                        {acc.challengeName || "Starter Turbo"}
+                        <span className="text-[10px] text-zinc-500 block font-normal">
+                          {formatShortId(acc.accountId)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-right text-zinc-400">
+                        {formatUSD(acc.initialBalance || acc.startingBalance)}
+                      </td>
+                      <td className="py-2 px-3 text-right font-medium text-zinc-200">
+                        {formatUSD(acc.balance)}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-950/50 text-red-400 border border-red-800/40">
+                          {acc.failureReason ? acc.failureReason.replace(/_/g, " ") : "Closed"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
 
       {/* ─── 5. Open Exposures Summary (Prompt §8) ────────────────────────── */}

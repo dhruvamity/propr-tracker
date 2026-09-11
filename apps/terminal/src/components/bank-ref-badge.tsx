@@ -50,8 +50,8 @@ export function BankRefBadge({ reference }: BankRefBadgeProps) {
         type="button"
         onClick={handleCopy}
         className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-900/90 text-zinc-300 border border-zinc-800 hover:border-cyan-700/60 hover:text-cyan-300 hover:bg-zinc-800/80 transition-all cursor-pointer select-none"
-        title="Click to copy bank reference"
-        aria-label={`Copy reference: ${reference}`}
+        title={reference}
+        aria-label={`Bank reference: ${reference}`}
       >
         <span>{truncated}</span>
         {copied ? (

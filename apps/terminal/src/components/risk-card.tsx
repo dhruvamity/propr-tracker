@@ -15,78 +15,91 @@ export function RiskCard({ account, rank }: RiskCardProps) {
   const breachFloorNum = Number(account.breachFloor || (equityNum - Number(account.drawdownRemaining || 0)));
   const drawdownBufferNum = Number(account.drawdownRemaining || 0);
   const dailyRoomNum = Number(account.dailyLossRemaining || 0);
+  const dailyLimitNum = Number(account.dailyLossLimitAmount || 0);
+  const dailyUsedNum = Number(account.dailyLossUsedAmount || 0);
   const ddConsumedPct = Number(account.drawdownLimitConsumedPercent || 0);
   const targetProgressPct = Number(account.profitTargetProgressPercent || 0);
   const actualProfitPct = Number(account.profitTargetPct || 0);
 
-  // Semantic Risk State Determination
-  let riskStatus: "SAFE" | "CAUTION" | "CRITICAL" | "BREACHED" = "SAFE";
+  // Daily loss budget consumption & room
+  const dailyConsumedPct = dailyLimitNum > 0 ? Math.min(100, Math.max(0, (dailyUsedNum / dailyLimitNum) * 100)) : 0;
+  const dailyRoomPct = dailyLimitNum > 0 ? (dailyRoomNum / dailyLimitNum) * 100 : 100;
+  const maxDdAmount = Number(account.maxDrawdownAmount || (startBalNum * 0.03));
+  const bufferRemainingPct = maxDdAmount > 0 ? (drawdownBufferNum / maxDdAmount) * 100 : 100;
+
+  // Semantic Risk State Determination (Graduated: CRITICAL / WATCH / SAFE)
+  let riskStatus: "SAFE" | "WATCH" | "CRITICAL" | "BREACHED" = "SAFE";
   if (account.stage === "BREACHED" || account.stage === "FAILED") {
     riskStatus = "BREACHED";
-  } else if (ddConsumedPct >= 75 || drawdownBufferNum <= startBalNum * 0.015) {
+  } else if (dailyRoomPct <= 25 || bufferRemainingPct <= 25 || ddConsumedPct >= 75 || dailyConsumedPct >= 75) {
     riskStatus = "CRITICAL";
-  } else if (ddConsumedPct >= 35 || drawdownBufferNum <= startBalNum * 0.035) {
-    riskStatus = "CAUTION";
+  } else if (dailyRoomPct <= 50 || bufferRemainingPct <= 50 || ddConsumedPct >= 40 || dailyConsumedPct >= 50) {
+    riskStatus = "WATCH";
   } else {
     riskStatus = "SAFE";
   }
 
-  // Ruler calculation: percentage of equity between breachFloor and starting balance
+  // Drawdown Ruler calculation
   const floorDelta = Math.max(0, equityNum - breachFloorNum);
   const totalSpan = Math.max(1, startBalNum * 0.08);
   const rulerPercentage = Math.min(100, Math.max(8, (floorDelta / totalSpan) * 100));
 
-  // Status rail color — only colored on the thin left rail + badge
+  // Status rail color — semantic left rail
   const railColor =
     riskStatus === "SAFE"
       ? "bg-emerald-500"
-      : riskStatus === "CAUTION"
+      : riskStatus === "WATCH"
       ? "bg-amber-500"
       : "bg-red-500";
 
-  // Dominant number color — semantic only
+  // Dominant number color
   const dominantColor =
     riskStatus === "SAFE"
       ? "text-white"
-      : riskStatus === "CAUTION"
+      : riskStatus === "WATCH"
       ? "text-amber-400"
       : "text-red-400";
+
+  // Account identifier tag
+  const shortAccCode = formatShortId(account.accountId);
+  const cleanBadgeTag = `#${shortAccCode.slice(-4)}`;
 
   return (
     <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4 relative overflow-hidden transition-all hover:border-zinc-700/80">
       {/* Left semantic status rail */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${railColor}`} />
 
-      {/* Header: Title + Risk Status */}
+      {/* Header: Title + Real Account ID + Risk Status */}
       <div className="flex items-start justify-between pb-3 pl-1 border-b border-[var(--border-subtle)]">
         <div>
           <div className="flex items-center gap-2">
-            {rank !== undefined && (
-              <span className="text-[11px] font-mono font-bold text-zinc-400">
-                #{rank}
-              </span>
-            )}
             <h3 className="font-semibold text-sm text-white tracking-wide">
               {account.challengeName || "Starter Turbo"}
             </h3>
+            <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-semibold">
+              {cleanBadgeTag}
+            </span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+              USD
+            </span>
           </div>
           <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
-            {formatShortId(account.accountId)}
+            {shortAccCode}
           </p>
         </div>
 
-        {/* Risk Status Pill — only place green appears for SAFE */}
+        {/* Risk Status Pill — graduated semantic state */}
         <span
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono font-bold border ${
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold border ${
             riskStatus === "SAFE"
               ? "bg-emerald-950/50 text-emerald-400 border-emerald-800/50"
-              : riskStatus === "CAUTION"
+              : riskStatus === "WATCH"
               ? "bg-amber-950/50 text-amber-400 border-amber-800/50"
               : "bg-red-950/50 text-red-400 border-red-800/50"
           }`}
         >
           {riskStatus === "SAFE" && <ShieldCheck size={13} />}
-          {riskStatus === "CAUTION" && <AlertTriangle size={13} />}
+          {riskStatus === "WATCH" && <AlertTriangle size={13} />}
           {(riskStatus === "CRITICAL" || riskStatus === "BREACHED") && (
             <ShieldAlert size={13} className="animate-pulse" />
           )}
@@ -98,25 +111,30 @@ export function RiskCard({ account, rank }: RiskCardProps) {
       <div className="pl-1">
         <div className="flex items-baseline justify-between">
           <div className={`text-2xl md:text-3xl font-mono font-bold ${dominantColor}`}>
-            {formatUSD(drawdownBufferNum)}
+            {formatUSD(drawdownBufferNum)}{" "}
+            <span className="text-xs font-normal text-zinc-500 font-sans">USD buffer</span>
           </div>
           <div className="text-xs font-mono text-zinc-400">
-            Equity <span className="text-white font-medium">{formatUSD(equityNum)}</span>
+            Equity <span className="text-white font-medium">{formatUSD(equityNum)} USD</span>
           </div>
         </div>
         <div className="text-xs font-mono text-zinc-400 mt-0.5">
-          Drawdown buffer to floor <span className="text-red-400/90 font-medium">{formatUSD(breachFloorNum)}</span>
+          Drawdown floor <span className="text-red-400/90 font-medium">{formatUSD(breachFloorNum)}</span>
         </div>
       </div>
 
-      {/* Breach Floor Ruler */}
-      <div className="pl-1">
+      {/* ─── 1. Breach Floor Ruler ─── */}
+      <div className="pl-1 space-y-1">
+        <div className="flex justify-between text-[10px] font-mono text-zinc-500">
+          <span>Drawdown Floor {formatUSD(breachFloorNum)}</span>
+          <span className="text-zinc-400">Buffer {formatUSD(drawdownBufferNum)}</span>
+        </div>
         <div className="relative h-1.5 w-full bg-zinc-900 rounded-full border border-zinc-800">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               riskStatus === "SAFE"
                 ? "bg-zinc-500"
-                : riskStatus === "CAUTION"
+                : riskStatus === "WATCH"
                 ? "bg-amber-500/80"
                 : "bg-red-500/80"
             }`}
@@ -129,19 +147,46 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </div>
       </div>
 
-      {/* Limits & Room Matrix — high-signal, zero duplication */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-2 pl-1 text-xs font-mono">
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Daily loss</span>
+      {/* ─── 2. Daily Loss Visual Slider (The Real Killer) ─── */}
+      <div className="pl-1 pt-1 space-y-1.5">
+        <div className="flex justify-between items-baseline text-[11px] font-mono">
+          <span className="text-zinc-400 font-medium flex items-center gap-1.5">
+            Daily loss budget
+            {dailyConsumedPct >= 75 && (
+              <span className="text-[10px] font-bold text-red-400 animate-pulse">
+                ⚠ {dailyConsumedPct.toFixed(0)}% BURNED
+              </span>
+            )}
+          </span>
           <span className="text-zinc-300 font-medium">
-            {formatUSD(account.dailyLossUsedAmount || 0)}
-            <span className="text-zinc-500 ml-1">/ {formatUSD(account.dailyLossLimitAmount || 0)}</span>
+            {formatUSD(dailyUsedNum)}{" "}
+            <span className="text-zinc-500">/ {formatUSD(dailyLimitNum)}</span>
           </span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Daily room</span>
-          <span className="text-emerald-400 font-medium">{formatUSD(dailyRoomNum)}</span>
+
+        <div className="relative h-2 w-full bg-zinc-900 rounded-full border border-zinc-800 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              dailyConsumedPct >= 75
+                ? "bg-red-500"
+                : dailyConsumedPct >= 50
+                ? "bg-amber-500"
+                : "bg-emerald-500/80"
+            }`}
+            style={{ width: `${dailyConsumedPct}%` }}
+          />
         </div>
+
+        <div className="flex justify-between text-[10px] font-mono">
+          <span className="text-zinc-500">Floor: {formatUSD(account.dailyLossFloor)}</span>
+          <span className={`font-semibold ${dailyRoomNum < 50 ? "text-red-400" : "text-emerald-400"}`}>
+            Room left: {formatUSD(dailyRoomNum)}
+          </span>
+        </div>
+      </div>
+
+      {/* Limits & Room Matrix */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 pl-1 pt-2 border-t border-[var(--border-subtle)] text-xs font-mono">
         <div className="flex justify-between">
           <span className="text-zinc-500">Drawdown</span>
           <span className="text-zinc-300 font-medium">
@@ -150,8 +195,10 @@ export function RiskCard({ account, rank }: RiskCardProps) {
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-zinc-500">Daily floor</span>
-          <span className="text-zinc-400">{formatUSD(account.dailyLossFloor)}</span>
+          <span className="text-zinc-500">Daily room</span>
+          <span className={`font-medium ${dailyRoomNum < 50 ? "text-red-400 font-bold" : "text-emerald-400"}`}>
+            {formatUSD(dailyRoomNum)}
+          </span>
         </div>
       </div>
 
@@ -173,16 +220,20 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </div>
         <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
           <div
-            className="h-full bg-[var(--cyan)] rounded-full transition-all duration-500"
-            style={{ width: `${Math.min(100, Math.max(0, targetProgressPct))}%` }}
+            className="h-full bg-cyan-500 rounded-full transition-all duration-500"
+            style={{ width: `${targetProgressPct}%` }}
           />
         </div>
       </div>
 
-      {/* Compact Footer */}
-      <div className="flex items-center gap-4 pl-1 pt-1.5 text-[10px] font-mono text-zinc-500">
+      {/* Footer Meta */}
+      <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1 border-t border-[var(--border-subtle)]">
         <span>{account.drawdownType || "static"} DD</span>
-        <span>{account.tradingDays || 1}/{account.requiredTradingDays || 5} days</span>
+        <span>
+          {account.tradingDays ?? 0}
+          {account.requiredTradingDays ? `/${account.requiredTradingDays}` : ""}{" "}
+          days
+        </span>
         <span>Bal {formatUSD(balanceNum)}</span>
       </div>
     </div>
