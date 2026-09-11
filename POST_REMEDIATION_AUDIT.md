@@ -2,7 +2,7 @@
 
 ```text
 AUDITED REPOSITORY: https://github.com/dhruvamity/propr-tracker.git
-AUDITED COMMIT:     12152d7
+AUDITED COMMIT:     1497361
 AUDITED BRANCH:     main
 AUDIT DATE:         2026-09-11
 WORKTREE CLEAN:     YES
@@ -74,6 +74,15 @@ Every production change applied during remediation was audited against its root 
 ### 3.4 Production Failure Safety
 - **Verified Fact**: The terminal previously fell back to synthetic mock data (`createMockData()`) during network or API disruptions, creating deceptive financial displays.
 - **Verified Current Implementation**: `createMockData()` was eradicated. When `fetchDashboardData()` encounters an error or missing API key, it returns a typed error payload with `restStatus: "ERROR"`, `apiHealthy: false`, and an unmistakable offline banner. `tests/integration/api-failure-safety.test.ts` validates this contract.
+
+### 3.5 Repo-Wide Floating Point & Number Casting Audit (§11)
+- **Repository Search**: Searched the entire workspace for `Number()`, `parseFloat()`, `parseInt()`, `Math.*`, and `.toFixed()`.
+- **Classification Findings**:
+  - `packages/data-model/src/decimal.ts`: Uses `Decimal.js` native `.toFixed()`. Method operates via arbitrary-precision decimal strings, avoiding IEEE-754 binary floating-point representation (**SAFE**).
+  - `apps/terminal/src/components/top-bar.tsx`: `Math.floor(diffSec / 60)` operates exclusively on timestamp intervals for UI relative time badges (**SAFE / UI-ONLY**).
+  - `apps/terminal/src/app/*/page.tsx`: Number conversions occur strictly within `Intl.NumberFormat` display formatters and CSS gauge width clamps (`Math.min(100, Math.max(0, ...))`) (**SAFE / UI-ONLY**).
+  - Ledger INR conversion in `finance/page.tsx:127`: Replaced inline binary float multiplication (`Number(amount) * 84.5`) with exact Decimal `convertUsdToInr(tx.amountUSD, "84.5")` (**RESOLVED / SAFE**).
+- **Result**: **ZERO** binary floating point operations occur on monetary calculations across the entire application. All monetary math uses `Decimal.js`.
 
 ---
 
