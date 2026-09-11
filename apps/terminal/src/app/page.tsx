@@ -21,105 +21,71 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── 1. Portfolio Cash Position Header (Prompt §3 & §10) ────────────── */}
+      {/* ─── 1. Capital & Cash Ledger ────────────── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 transition-all">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3 mb-4">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Portfolio Cash Position
+            Cash Ledger
           </h2>
-          <span className="text-[11px] font-mono text-zinc-500">
-          ALL FIRMS • AUDITED
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium">
+              {summary.activeEvals + summary.funded} Active
+            </span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-red-950/40 text-red-400 border border-red-800/40 font-medium">
+              {summary.failedBreached} Failed
+            </span>
+          </div>
         </div>
 
         {/* Primary Cash Numbers */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-4">
           <div>
             <div className="text-2xl sm:text-3xl font-mono font-bold text-white">
               {formatINR(totalSpentINR)}
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Total cash spent (Actual bank debit)
+              Total Cash Spent
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-100">
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-amber-300">
               {formatINR(activeAtRiskINR)}
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Currently at risk (Active challenge capital)
+              Capital at Risk (2 Evals)
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-red-400">
+              −{formatINR(netOutflowINR)}
+            </div>
+            <div className="text-xs text-zinc-400 mt-1 font-medium">
+              Net Outflow (₹0 Payouts)
             </div>
           </div>
         </div>
 
         {/* Detailed Allocation Breakdown */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-3 border-t border-b border-[var(--border-subtle)] text-xs font-mono">
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-zinc-300">
-              <span className="text-zinc-400">Propr</span>
-              <span className="font-semibold">{formatINR(finance.proprActualCashCostINR)}</span>
-            </div>
-            <div className="flex justify-between text-zinc-300">
-              <span className="text-zinc-400">Breakout</span>
-              <span className="font-semibold">{formatINR(finance.breakoutActualCashCostINR)}</span>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border-subtle)] text-xs font-mono text-zinc-400">
+          <div className="flex items-center gap-4">
+            <span>Propr: <strong className="text-zinc-200">{formatINR(finance.proprActualCashCostINR)}</strong></span>
+            <span>Breakout: <strong className="text-zinc-200">{formatINR(finance.breakoutActualCashCostINR)}</strong></span>
           </div>
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-zinc-300">
-              <span className="text-zinc-400">Active accounts</span>
-              <span className="font-semibold">{summary.activeEvals + summary.funded} at risk</span>
-            </div>
-            <div className="flex justify-between text-zinc-300">
-              <span className="text-zinc-400">Funded accounts</span>
-              <span className="font-semibold">{summary.funded} active</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Net Cash Outflow Strip (Prompt Requirement §10) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 text-xs font-mono">
-          <div className="text-zinc-400">
-            Payouts withdrawn:{" "}
-            <span className="text-emerald-400 font-semibold">{formatINR(totalPayoutsINR)}</span>
-          </div>
-          <div className="text-zinc-400">
-            Net cash outflow:{" "}
-            <span className="text-red-400 font-semibold">
-              −{formatINR(netOutflowINR)}
-            </span>
+          <div className="flex items-center gap-4">
+            <span>Payouts: <strong className="text-emerald-400">{formatINR(totalPayoutsINR)}</strong></span>
+            <span>Net: <strong className="text-red-400">−{formatINR(netOutflowINR)}</strong></span>
           </div>
         </div>
       </div>
 
-      {/* ─── 2. Account Health Banner (Prompt §3) ─────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-xs font-mono">
-        <div className="text-zinc-400 font-semibold uppercase tracking-wider">
-          Account Health:
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="px-2.5 py-1 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold">
-            {summary.activeEvals + summary.funded} ACTIVE
-          </span>
-          <span className="px-2.5 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 font-semibold">
-            {summary.funded} FUNDED
-          </span>
-          <span className="px-2.5 py-1 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-semibold">
-            {summary.passed} PASSED
-          </span>
-          <span className="px-2.5 py-1 rounded bg-red-950/40 text-red-400 border border-red-800/40 font-semibold">
-            {summary.failedBreached} FAILED
-          </span>
-        </div>
-      </div>
-
-      {/* ─── 3. Active Account Risk Command (Prompt §3 & §4) ──────────────── */}
+      {/* ─── 2. Active Accounts Risk ──────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             Active Accounts
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            {activeAccounts.length} MONITORED
+            {activeAccounts.length} monitored
           </span>
         </div>
 
@@ -140,14 +106,14 @@ export default async function OverviewPage() {
         )}
       </div>
 
-      {/* ─── 4. Universe Directory Table (Prompt §14) ─────────────────────── */}
+      {/* ─── 3. All Accounts Directory ─────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             All Accounts ({accounts.length})
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            HISTORICAL & ACTIVE
+            {summary.activeEvals + summary.funded} active • {summary.failedBreached} archived
           </span>
         </div>
 
@@ -160,9 +126,9 @@ export default async function OverviewPage() {
                 <th className="py-2.5 px-3 text-right">Starting</th>
                 <th className="py-2.5 px-3 text-right">Balance</th>
                 <th className="py-2.5 px-3 text-right">Equity</th>
-                <th className="py-2.5 px-3 text-right">DD Consumed</th>
+                <th className="py-2.5 px-3 text-right">Drawdown</th>
                 <th className="py-2.5 px-3 text-right">Target</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3 text-center">State</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">

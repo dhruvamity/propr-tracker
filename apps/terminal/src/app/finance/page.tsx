@@ -27,7 +27,7 @@ export default async function FinancePage() {
             <span>Cash Flow</span>
           </div>
           <span className="text-[11px] font-mono text-zinc-500">
-            BANK CASH • FACE VALUE • TRADING
+            Bank settled capital & outflows
           </span>
         </div>
 
@@ -138,7 +138,7 @@ export default async function FinancePage() {
             Expense Ledger
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            {finance.ledger.length} PURCHASES RECONCILED
+            {finance.ledger.length} transactions reconciled
           </span>
         </div>
 
@@ -148,11 +148,11 @@ export default async function FinancePage() {
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
                 <th className="py-2.5 px-3 text-left">Date</th>
                 <th className="py-2.5 px-3 text-left">Firm</th>
-                <th className="py-2.5 px-3 text-left">Challenge Name</th>
-                <th className="py-2.5 px-3 text-right">Face Value (USD)</th>
-                <th className="py-2.5 px-3 text-right">Actual Bank Debit (INR)</th>
-                <th className="py-2.5 px-3 text-left">Bank Reference / Invoice</th>
-                <th className="py-2.5 px-3 text-center">Verification</th>
+                <th className="py-2.5 px-3 text-left">Challenge</th>
+                <th className="py-2.5 px-3 text-right">USD Cost</th>
+                <th className="py-2.5 px-3 text-right">Bank Debit (INR)</th>
+                <th className="py-2.5 px-3 text-left">Invoice / Bank Ref</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">

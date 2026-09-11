@@ -63,12 +63,12 @@ export default async function HistoryPage() {
           <thead>
             <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
               <th className="py-2.5 px-3">Stage</th>
-              <th className="py-2.5 px-3">Account ID</th>
-              <th className="py-2.5 px-3">Challenge Type</th>
+              <th className="py-2.5 px-3">Account</th>
+              <th className="py-2.5 px-3">Challenge</th>
               <th className="py-2.5 px-3 text-right">Initial</th>
               <th className="py-2.5 px-3 text-right">Ending Balance</th>
-              <th className="py-2.5 px-3">Breach / Failure Reason</th>
-              <th className="py-2.5 px-3">Trade History</th>
+              <th className="py-2.5 px-3">Breach Reason</th>
+              <th className="py-2.5 px-3">Trades</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">

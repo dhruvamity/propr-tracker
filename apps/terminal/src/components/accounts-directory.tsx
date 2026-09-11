@@ -218,13 +218,13 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
               <th className="py-2.5 px-3 text-center w-10"></th>
               <th className="py-2.5 px-3 text-center">Stage</th>
-              <th className="py-2.5 px-3 text-left">Account ID / Challenge</th>
+              <th className="py-2.5 px-3 text-left">Account</th>
               <th className="py-2.5 px-3 text-right">Starting</th>
               <th className="py-2.5 px-3 text-right">Balance</th>
               <th className="py-2.5 px-3 text-right">Equity</th>
-              <th className="py-2.5 px-3 text-right">Drawdown Status</th>
+              <th className="py-2.5 px-3 text-right">Drawdown</th>
               <th className="py-2.5 px-3 text-right">Target</th>
-              <th className="py-2.5 px-3 text-center">State Detail</th>
+              <th className="py-2.5 px-3 text-center">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">

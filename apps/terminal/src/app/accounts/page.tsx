@@ -12,10 +12,10 @@ export default async function AccountsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
-            Accounts Universe Directory
+            Accounts Directory
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Filterable catalog of active evaluation attempts, funded accounts, and failure archives.
+            Active evaluations, funded accounts, and challenge history
           </p>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs">

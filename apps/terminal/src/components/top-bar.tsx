@@ -14,35 +14,35 @@ interface HealthData {
 const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
   "/": {
     title: "Overview",
-    subtitle: "Portfolio capital deployment & account health",
+    subtitle: "Portfolio status & capital allocation",
   },
   "/live": {
     title: "Live Risk",
-    subtitle: "Which account is closest to its breach floor?",
+    subtitle: "Breach proximity monitor",
   },
   "/accounts": {
     title: "Accounts",
-    subtitle: "Universe directory & lifecycle inspector",
+    subtitle: "Active evaluations & history",
   },
   "/positions": {
     title: "Positions",
-    subtitle: "Active perpetual exposures & mark prices",
+    subtitle: "Open perpetual exposures",
   },
   "/orders": {
     title: "Orders",
-    subtitle: "Resting limit orders & protective stops",
+    subtitle: "Resting limit & stop orders",
   },
   "/finance": {
-    title: "Cash & P&L",
-    subtitle: "Prop firm capital ledger & bank audit",
+    title: "Finance",
+    subtitle: "Capital ledger & cash flow",
   },
   "/history": {
     title: "History",
-    subtitle: "Challenge failure archive & execution logs",
+    subtitle: "Closed accounts & archives",
   },
   "/system": {
-    title: "Diagnostics",
-    subtitle: "Connection telemetry & data pipeline health",
+    title: "System",
+    subtitle: "Telemetry & gateway health",
   },
 };
 
@@ -151,15 +151,15 @@ export function TopBar() {
     };
   } else if (health.restStatus === "HEALTHY" && health.wsStatus === "CONNECTED") {
     statusBadge = {
-      label: "LIVE • REALTIME",
+      label: "STREAMING",
       dotClass: "bg-emerald-400 animate-pulse",
       textClass: "text-emerald-400",
       containerClass: "bg-emerald-950/40 border-emerald-800/50",
     };
   } else {
-    // REST healthy + WS disconnected (Polling ISR mode)
+    // REST healthy + WS disconnected (Polling mode)
     statusBadge = {
-      label: "SYNCED • POLLING",
+      label: "POLLING (15s)",
       dotClass: "bg-[var(--cyan)]",
       textClass: "text-[var(--cyan)]",
       containerClass: "bg-cyan-950/40 border-cyan-800/50",

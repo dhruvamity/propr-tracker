@@ -94,22 +94,23 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </span>
       </div>
 
-      {/* Dominant: Remaining to breach */}
+      {/* Dominant: Drawdown Buffer & Equity */}
       <div className="pl-1">
-        <div className={`text-2xl md:text-3xl font-mono font-bold ${dominantColor}`}>
-          {formatUSD(drawdownBufferNum)}
+        <div className="flex items-baseline justify-between">
+          <div className={`text-2xl md:text-3xl font-mono font-bold ${dominantColor}`}>
+            {formatUSD(drawdownBufferNum)}
+          </div>
+          <div className="text-xs font-mono text-zinc-400">
+            Equity <span className="text-white font-medium">{formatUSD(equityNum)}</span>
+          </div>
         </div>
-        <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">
-          remaining to breach
-        </span>
+        <div className="text-xs font-mono text-zinc-400 mt-0.5">
+          Drawdown buffer to floor <span className="text-red-400/90 font-medium">{formatUSD(breachFloorNum)}</span>
+        </div>
       </div>
 
       {/* Breach Floor Ruler */}
       <div className="pl-1">
-        <div className="flex justify-between text-[11px] font-mono text-zinc-500 mb-1.5">
-          <span>Floor {formatUSD(breachFloorNum)}</span>
-          <span className="text-zinc-300">{formatUSD(equityNum)}</span>
-        </div>
         <div className="relative h-1.5 w-full bg-zinc-900 rounded-full border border-zinc-800">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
@@ -128,30 +129,29 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </div>
       </div>
 
-      {/* Compact Metric List — single source of truth, no duplication */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 pl-1 text-xs font-mono">
+      {/* Limits & Room Matrix — high-signal, zero duplication */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2 pl-1 text-xs font-mono">
         <div className="flex justify-between">
-          <span className="text-zinc-500">Floor</span>
-          <span className="text-zinc-300">{formatUSD(breachFloorNum)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Equity</span>
-          <span className="text-white font-medium">{formatUSD(equityNum)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Buffer</span>
-          <span className="text-zinc-300">{formatUSD(drawdownBufferNum)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-zinc-500">Daily room</span>
-          <span className="text-zinc-300">{formatUSD(dailyRoomNum)}</span>
-        </div>
-        <div className="flex justify-between col-span-2 pt-1 border-t border-[var(--border-subtle)]/50">
           <span className="text-zinc-500">Daily loss</span>
-          <span className="text-zinc-300">
+          <span className="text-zinc-300 font-medium">
             {formatUSD(account.dailyLossUsedAmount || 0)}
             <span className="text-zinc-500 ml-1">/ {formatUSD(account.dailyLossLimitAmount || 0)}</span>
           </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-500">Daily room</span>
+          <span className="text-emerald-400 font-medium">{formatUSD(dailyRoomNum)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-500">Drawdown</span>
+          <span className="text-zinc-300 font-medium">
+            {formatPercent(account.drawdownUsedPercent, 2)}
+            <span className="text-zinc-500 ml-1">/ {account.maxDrawdownPercent}%</span>
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-500">Daily floor</span>
+          <span className="text-zinc-400">{formatUSD(account.dailyLossFloor)}</span>
         </div>
       </div>
 

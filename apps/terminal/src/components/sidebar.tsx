@@ -50,11 +50,11 @@ const navSections: NavSection[] = [
   },
   {
     title: "FINANCE",
-    items: [{ href: "/finance", label: "Cash & P&L", icon: Wallet }],
+    items: [{ href: "/finance", label: "Finance", icon: Wallet }],
   },
   {
     title: "SYSTEM",
-    items: [{ href: "/system", label: "Diagnostics", icon: Settings }],
+    items: [{ href: "/system", label: "System", icon: Settings }],
   },
 ];
 
@@ -157,18 +157,18 @@ export function Sidebar() {
         </button>
       )}
 
-      {/* Bottom Health Indicators (Prompt Requirement §1) */}
+      {/* Bottom Health Indicators */}
       <div className="px-3.5 py-3 border-t border-[var(--border-primary)] bg-black/20 text-[10px] font-mono space-y-1.5">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           {(!collapsed || isMobile) && (
-            <span className="text-zinc-400">REST HEALTHY</span>
+            <span className="text-zinc-400">REST connected</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           {(!collapsed || isMobile) && (
-            <span className="text-zinc-400">DATA FRESH</span>
+            <span className="text-zinc-400">Data synchronized</span>
           )}
         </div>
       </div>

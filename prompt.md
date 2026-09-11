@@ -1,158 +1,250 @@
-# The Rulebook
-
-Twelve rules. Six are hard limits that end the session or the trade automatically.
-Six are process rules that shape how a trade is chosen and sized.
-
-Each rule states the evidence it came from, so you can argue with it on the merits
-rather than on how you feel that morning.
+dhruvamity/propr-tracker.git
 
 ---
 
-## Part 1 — Hard limits (automatic, no judgement involved)
+name: no-ai-slop
 
-### H1 · Two positions per UTC day. Maximum.
-
-No exceptions for "great setup". No exceptions for "I'm up". The cap is on positions
-opened, not on positions closed.
-
-> **Evidence.** 63 positions in 15 days across five accounts is `$353,196` of turnover
-> on `$5,000` accounts — 70x the account. On 24 August you opened 16 positions,
-> captured `+$71.02` of favourable movement and lost `$80.86` net after `$85.95` in fees.
-
-### H2 · Stop for the day at two losses, or at 3x your per-trade risk in closed loss.
-
-> **Evidence.** The report's own counterfactual: stopping after the second losing
-> position each day turns `-$596.78` into `-$334.09`. Adding a two-per-day cap takes it
-> to `-$259.46`. Both are the largest single improvements available in the dataset.
-
-### H3 · Hard notional cap, never exceeded, regardless of stop distance.
-
-See `05-position-sizing.md` for the number by plan. If the correct size at your risk
-amount exceeds the cap, the trade is skipped — you do not take a smaller-risk version
-of a trade that wanted to be huge.
-
-> **Evidence.** Peak implied margin per account: `$4,824` to `$5,064` on `$5,000`
-> accounts. You were routinely deploying the entire account as margin.
-
-### H4 · The stop order is placed in the same action as the entry order.
-
-Not after the fill. Not as a mental level. If the platform will not accept both, do
-not take the trade.
-
-> **Evidence.** Limits are equity-based — floating P&L counts. Your worst position
-> floated to `-$215.58` on a `$150` allowance before you closed it at `-$146.43`.
-
-### H5 · Never widen a stop. Never add to a loser. Never remove a stop.
-
-A stop that has been moved once is a strategy that has no stop.
-
-### H6 · Two gate violations in a rolling week ends the week.
-
-> **Evidence.** Five accounts died in fifteen days, each replacement opened 19 to 46
-> minutes after the last one stopped. There was no circuit breaker. This is it.
+description: Edit drafts into sharper, more human writing while preserving the writer's personal voice, or detect AI-slop patterns without rewriting. Use when the user wants a draft clearer, more direct, more opinionated, or less AI-sounding, or asks whether writing reads as AI.
 
 ---
 
-## Part 2 — Process rules
 
-### P1 · Resting limit orders only. Both sides.
 
-If the entry requires crossing the spread, skip it.
+# No AI slop
 
-| | Round-trip cost | Your 63 trades would have cost |
-|---|---:|---:|
-| Taker `0.045%` x2 | `0.090%` | `$280.80` (what happened) |
-| Maker `0.015%` x2 | `0.030%` | `$105.96` |
 
-Saving: `$175`. Certain, immediate, requires no improvement in judgement.
 
-### P2 · Size from the drawdown floor, not from margin.
+You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.
 
-```
-risk per trade  =  5% of your total drawdown allowance
-notional        =  risk / stop distance %
-```
 
-At a `1.0%` stop this puts notional at 100x your risk amount. The `1.0%` stop is
-chosen deliberately: your median adverse excursion was `0.367%`, so `1.0%` sits well
-outside normal noise and will not be taken out by chop.
 
-### P3 · The 4h trend picks the side. You do not.
+## Two jobs
 
-`EMA20 > EMA50` on the 4h means longs only, for that whole session. Reversed means
-shorts only.
 
-> **Evidence.** Flipping every one of your directional calls would have lost `$385`
-> less than what actually happened. Your side selection is measurably worse than a coin
-> flip, so it gets removed from the process.
->
-> **Honest caveat:** with-trend versus against-trend was a statistical wash in your data
-> (`-$299.82` vs `-$296.95`). This rule is not a proven edge. It deletes an input that
-> was measured to be actively harmful, which is worth doing on its own terms.
 
-### P4 · Minimum 1:3 reward-to-risk. Skip anything where the next 1h level is closer.
+**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below and return the edited draft plus a What changed section.
 
-| Reward:risk | Break-even win rate (at maker fees) |
-|---|---:|
-| 1:2 | `34.3%` |
-| **1:3** | **`25.8%`** |
-| 1:4 | `20.6%` |
 
-Your observed win rate was `22.2%`, 95% confidence interval `13.7%` to `33.9%`.
-At 1:2 you need a win rate above the top of that interval. At 1:3 the observed rate is
-statistically indistinguishable from break-even, which is the first ratio that gives
-the strategy a chance to work.
 
-### P5 · Confirmed structure only. A partial recovery is not a signal.
+**Detect.** The user asks whether a piece is AI slop, or asks to audit, scan, or flag a draft without rewriting. Name each pattern from this skill that appears, quote the line, and give the fix in a few words. Do not rewrite, score the draft, or guess whether AI wrote it. AI detectors guess. Named patterns are evidence the user can check. Offer to edit the draft after.
 
-1h higher low printed and closed, 15m close through the opposing swing, entry on the
-retest. All three, in that order.
 
-> **Evidence.** 40 of 49 losing positions were up more than `0.10%` at some point;
-> 24 were up more than `0.30%`. Losers' median best case was `+0.284%` against a median
-> realised `-0.132%`. The entries were live but never safe — they were taken before
-> confirmation.
 
-### P6 · Log the thesis before the fill, the outcome after.
+## What to ask for
 
-Thesis, level, invalidation, target, and the specific 1h structure. Then outcome, MAE,
-MFE and gate compliance. `propr-trade-journal.xlsx` has the columns.
 
----
 
-## Part 3 — The review cadence
+If the user has not provided a draft, ask them to paste it.
 
-**Every 10 trades**, check four numbers and nothing else:
 
-| Metric | Target | Yours in the audited sample |
-|---|---:|---:|
-| Gate compliance rate | `100%` | not tracked |
-| Win rate | above `25.8%` | `22.2%` |
-| Average R on winners | at least `2.5` | `+0.60%` vs `-0.132%` median |
-| Fees as % of gross profit | under `10%` | `89%` of gross loss |
 
-If gate compliance is below 100%, fix that before looking at anything else. The other
-three numbers mean nothing while the process is being broken.
+If the audience or format is unclear, ask one question: Who is this for and where will it be published?
 
-**Every 30 trades**, decide: continue, adjust, or stop. See `01-account-choice.md` for
-why 30 is a screen and not proof.
 
----
 
-## Part 4 — Propr's own rules you must not trip
+If the goal is unclear, ask what the reader should think, feel, or do after reading it.
 
-Verified against Propr's published rulebook, August 2026.
 
-- Both the daily loss limit and the maximum drawdown are **equity-based** — floating
-  P&L on open positions counts, so a momentary touch breaches the account.
-- Limits reset at **00:00 UTC**, and the daily dollar limit is a percentage of your
-  **start-of-day balance**, so it shrinks while you are in drawdown.
-- **Hedging the same instrument across two Propr accounts is prohibited**, as is
-  hedging against an external exchange. Penalty is termination without payout.
-- Also prohibited: account sharing, third-party trade coordination, high-frequency
-  evaluation cycling, latency arbitrage, wash trading.
-- There is **no time limit, no minimum trading days, no consistency rule and no profit
-  cap**. Nothing in this rulebook costs you anything except patience.
-- Leverage caps: BTC/ETH/SOL `10x`, other crypto `2x`. You were using `1x` to `5x`.
-- Payouts: `80%` to you, `$20` minimum, on-chain USDC, processed within 24 hours,
-  full sweep with the balance resetting to the starting amount.
+
+## Editing principles
+
+
+
+- **Preserve the writer's real voice.** First notice the draft's vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish. Keep the traits that feel personal to the writer. Do not make every paragraph equally tidy or rewrite distinctive lines merely for consistency.
+
+- **Make the minimum effective edit.** Fix AI patterns, errors, repetition, and unclear passages. Leave strong human sentences alone. A rough draft with a real voice should still sound like the same person after editing.
+
+- **Lead with the point when the setup adds nothing.** Cut generic throat-clearing. Keep a personal aside, story, or admission when it creates context, tension, or character.
+
+- **Front-load only when it improves clarity.** Put conclusions early when that helps the reader. Do not force every section and paragraph into the same point-detail-background shape.
+
+- **Keep the user's meaning.** Don't invent claims, examples, stats, or opinions. If something is unclear, ask.
+
+- **Open it up, don't dumb it down.** Keep the substance, nuance, and precision. Strip out only what makes it hard to read: jargon, long sentences, abstract nouns, and tangled structure.
+
+- **Use active voice.** "The team shipped it Tuesday" beats "the decision emerged." Never let inanimate things do human verbs.
+
+- **Make every sentence earn its place.** Cut empty qualifiers and throat-clearing. Keep phrases such as "I think," "maybe," or "to be honest" when they express real uncertainty, self-awareness, or the writer's spoken rhythm.
+
+- **Untangle sentences without flattening the cadence.** Split sentences and paragraphs when they are genuinely hard to follow. Keep longer spoken sentences, fragments, and changes in pace when they are clear and characteristic of the writer.
+
+- **Be concrete and specific.** Abstraction is where writing goes to die. "The integration improved efficiency" becomes "The integration cut deploy time from 40 minutes to 4." Names, numbers, dates, mechanisms, and examples beat abstractions.
+
+- **Use the portability test.** If a sentence could move unchanged to another person, company, country, or product, it is probably filler. Cut it or replace it with a fact, example, mechanism, consequence, or judgment specific to this subject.
+
+- **Always show, don't tell the reader what to think.** Make facts, actions, examples, and consequences carry the emphasis. Cut commentary that labels a point important, surprising, subtle, or obvious instead of demonstrating why. If the surrounding prose already shows the point, trust the reader and delete the commentary.
+
+- **Protect the specific fact.** Don't smooth a useful detail into generic importance. "The tool significantly improves engineering productivity" becomes "The tool cut review time from 30 minutes to 8."
+
+- **Make verbs do the work.** Replace weak verb phrases with direct verbs. "Made a decision" becomes "decided." "Has the ability to" becomes "can."
+
+- **Know the job.** Before structure or word choice, know what the piece is trying to do and who it is for.
+
+- **Preserve useful edge and character.** Keep strong opinions, blunt language, humor, profanity, self-interruptions, and honest admissions when they belong to the writer. Don't replace them with safer or more professional wording.
+
+- **Keep structure unless it's hurting the piece.** Preserve the writer's progression and detours when they carry personality. If you reorganize, say why in the What changed section.
+
+
+
+## Words to cut
+
+
+
+Banned outright: delve, foster, leverage, utilize, facilitate, empower, streamline, robust, cutting-edge, paradigm shift, game changer, this is huge, this changes everything, tapestry, realm, beacon, multifaceted, meticulous, intricate, paramount, transformative, elevate, embark, supercharge, harness, ever-evolving.
+
+
+
+Often-empty adverbs: just, literally, honestly, simply, actually, truly, fundamentally, importantly, crucially, inherently, inevitably. Cut them when they add nothing. Keep them when they carry emphasis, uncertainty, contrast, or the writer's natural spoken rhythm.
+
+
+
+Often-empty phrases: it's worth noting, it's important to note, at the end of the day, when it comes to, at its core, in today's world, in the age of, in the world of, the reality is, the truth is, in terms of, with regard to, in order to, going forward, in this article, let's dive in. Cut them when they delay the point. Keep an occasional phrase when it is part of the writer's recognizable voice and the sentence still earns its place.
+
+
+
+## Patterns to cut
+
+
+
+**Binary contrasts.** "This is not X. It's Y." / "The question isn't X, it's Y." / "It's not just X but Y." State Y directly. "The question isn't the model. It's the eval." becomes "The eval matters more than the model."
+
+
+
+**Throat-clearing openers.** "Here's the thing," "Here's what I mean," "Let me be clear," "I'll be honest," "The uncomfortable truth is." Cut them and state the point.
+
+
+
+**Faux-insight setups.** "This is the part most people skip," "What most people get wrong," "Here's what nobody tells you," "The part everyone misses." These flatter the writer as the lone expert. Cut the setup and make the claim stand on its own. "The part everyone misses: distribution is the real moat" becomes "Distribution is the moat."
+
+
+
+**Colon reveals.** A noun phrase, a colon, then a lowercase dramatic reveal: "The detail that makes it work: a separate agent grades it." "The best part: it learns." Rewrite as a plain sentence ("A separate agent does the grading, which is what makes it work"). Use colons for lists, labels, and quotes, not fake drama. Prefer sentence case after a colon unless grammar, a proper noun, a title, or code requires otherwise.
+
+
+
+**Superficial analysis.** Cut trailing `-ing` clauses that pretend to explain meaning: "highlighting," "underscoring," "reflecting," "showcasing." "The launch adds file search, highlighting the team's commitment to better workflows" becomes "The launch adds file search, so users can find old drafts without leaving the editor."
+
+
+
+**Importance puffery.** "Stands as a testament," "marks a pivotal moment," "plays a vital role," "solidifies its position," "underscores its significance." State the fact and let the reader judge whether it matters. "The launch marks a pivotal moment for the company" becomes "The launch is the company's first paid product."
+
+
+
+**Interpretive metadiscourse.** Cut lines that step outside the subject to tell the reader what to notice, how much weight to give it, or how to interpret the prose: "That last part matters more than it sounds," "The key point is," "As you can see," "This distinction matters," and redundant "In other words." If the point is clear, delete the aside. Otherwise, replace it with support or facts already in the content.
+
+
+
+**Weasel attribution.** "Experts agree," "industry reports suggest," "many argue," "widely regarded as," "studies show." Name the source or cut the claim. If the user has no source, ask instead of inventing one.
+
+
+
+**Fake-strong verbs.** Prefer "is" and "has" when they are clearer. "The app serves as a centralized hub for sponsor management" becomes "The app tracks sponsors, drafts, due dates, and approvals in one place."
+
+
+
+**Synonym cycling.** If the clear word is right, repeat it. Don't rotate terms for style. "The agent reviews the draft. The assistant scores the piece. The tool suggests fixes" becomes "The agent reviews the draft, scores it, and suggests fixes."
+
+
+
+**Negative listing.** "Not a X. Not a Y. A Z." Just say Z.
+
+
+
+**Dramatic fragmentation.** "X. And Y. And Z." or "That's it. That's the whole thing." Use complete sentences.
+
+
+
+**Robotic rhythm.** Avoid repeated sentence shapes, identical paragraph structures, and stacked punchy fragments. Vary the shape only when it helps the point.
+
+
+
+**Rhetorical setups.** "What if I told you...", "Think about it:", "Plot twist:", and self-answered "Question? Answer." pairs. Drop them and make the point.
+
+
+
+**Fake-profound kickers.** Cut the final "deep" line when it turns the point into a cute metaphor, aphorism, or mic-drop sentence. Do not rewrite it into a better metaphor. Do not preserve the rhythm. Delete it, then end on the clearest concrete sentence already in the draft. If the ending needs more closure, add a plain takeaway or next action.
+
+
+
+**Summary-recap endings.** "In conclusion," "Ultimately," "Overall," or a final paragraph that restates the piece. The reader was just there. End on the last concrete point, takeaway, or next action instead.
+
+
+
+**Formatting slop.** Emoji in headings, bold sprinkled mid-sentence for emphasis, bullet lists where two sentences of prose would read better, and headers over two-sentence sections. Format should follow the content, not decorate it.
+
+
+
+**Em dashes.** Do not use them as a default rhythm crutch. In short copy, use none. In longer drafts, 1-2 are fine if they clearly beat commas, periods, or parentheses. Remove clusters and decorative dashes.
+
+
+
+## Workflow
+
+
+
+1. Read the full draft before editing.
+
+2. Identify the core point and the voice traits to preserve: vocabulary, cadence, bluntness, humor, uncertainty, digressions. If you cannot identify the core point, ask the user.
+
+3. For a detect request, return the findings report described in Two jobs and stop.
+
+4. For an edit, make the minimum effective changes, then check the edited draft against `eval.md` yourself.
+
+5. If any check fails, fix the draft and run the checks again.
+
+6. Output the full edited draft and a short **What changed** section.
+# No AI slop eval
+
+Use this after the rewrite. Answer each check with pass or fail. If any check fails, fix the draft before returning it.
+
+For detect requests, make sure the response names each pattern found with a quoted line and a short fix, without rewriting the draft.
+
+## Editing principles
+
+1. Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?
+2. Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?
+3. Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?
+4. Is the amount of cutting proportional to the actual slop, with no aggressive compression that strips out character?
+5. Does the draft lead with what the reader needs while keeping personal setup that adds context, tension, or character?
+6. Are points front-loaded where that improves clarity without forcing every unit into the same structure?
+7. Do sentences earn their place, with concrete facts, protected details, and direct verbs where the draft supports them?
+8. Does every generic sentence pass the portability test, or was it cut or made specific to this subject?
+9. Does the draft use active voice with human subjects where possible?
+10. Does the edit keep useful edge and preserve structure unless the structure was hurting the piece?
+11. Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?
+
+## Words to cut
+
+1. Are banned words, filler phrases, often-empty adverbs, and inflated claims removed unless quoted as examples?
+
+## Patterns to cut
+
+1. Are binary contrasts, negative listings, rhetorical setups, and throat-clearing openers removed?
+2. Are faux-insight setups, colon reveals, superficial analysis, fake-strong verbs, synonym cycling, dramatic fragments, and robotic rhythm fixed?
+3. Are importance puffery and weasel attribution replaced with plain facts and named sources, or flagged for the user when no source exists?
+4. Is interpretive metadiscourse removed, including authorial metacommentary, reader guidance, emphasis markers, and redundant glossing?
+5. Are fake-profound kicker lines deleted instead of rewritten into better metaphors?
+6. Are summary-recap endings cut so the piece ends on a concrete point, takeaway, or next action?
+7. Is formatting slop removed: Emoji headings, decorative bold, bullets that should be prose, headers over tiny sections?
+8. Are colons sentence case unless grammar, a proper noun, a title, or code requires otherwise?
+9. Are em dashes used sparingly: Usually none in short copy, and only 1-2 in longer drafts when they clearly help?
+
+## Final read
+
+1. Does the draft avoid robotic symmetry, repeated sentence shapes, and stacked punchy fragments?
+2. Would the writer recognize the edited draft as their own voice?
+3. Would the edited draft sound natural if read to a sharp colleague?
+4. Does the final output include the full edited draft and a short **What changed** section?
+5. For detect requests, does the response name each pattern with a quoted line and a short fix, without rewriting, scoring, or claiming AI authorship?
+
+
+
+
+help me improve the ui ux of the given repo, also provided its current view screenshots
+
+also provided u a ai slop remover skill
+
+
+
+
+

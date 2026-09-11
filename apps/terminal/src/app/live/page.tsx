@@ -28,10 +28,6 @@ export default async function LiveMonitorPage() {
     return bufA - bufB;
   });
 
-  // Derive transport label from health state
-  const isWsConnected = health.wsStatus === "CONNECTED";
-  const transportLabel = isWsConnected ? "REALTIME" : "REST POLLING";
-
   // Compute max buffer for proportional bars
   const maxBuffer = Math.max(
     ...rankedAccounts.map((a) => Number(a.drawdownRemaining || 0)),
@@ -41,28 +37,18 @@ export default async function LiveMonitorPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
-            Live Risk
-          </h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Closest accounts to breach
+          <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
+            Breach Proximity Radar
+          </h2>
+          <p className="text-[11px] text-zinc-500 mt-0.5">
+            Ranked by remaining buffer to breach floor
           </p>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs">
           <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-            {liveAccounts.length} active accounts
-          </span>
-          <span className={`px-2.5 py-1 rounded border flex items-center gap-1.5 ${
-            isWsConnected
-              ? "bg-emerald-950/40 border-emerald-800/40 text-emerald-400"
-              : "bg-cyan-950/40 border-cyan-800/40 text-[var(--cyan)]"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              isWsConnected ? "bg-emerald-400" : "bg-[var(--cyan)]"
-            }`} />
-            {transportLabel}
+            {liveAccounts.length} active evaluations
           </span>
         </div>
       </div>
@@ -115,13 +101,13 @@ export default async function LiveMonitorPage() {
         </div>
       )}
 
-      {/* Market Reference — compact, secondary position */}
-      <details className="group">
-        <summary className="flex items-center justify-between cursor-pointer py-2 text-xs font-mono text-zinc-400 hover:text-zinc-300 transition-colors">
+      {/* Market Reference */}
+      <div>
+        <div className="flex items-center justify-between mb-2 text-xs font-mono text-zinc-400">
           <span className="font-semibold tracking-wider uppercase">Market Reference</span>
-          <span className="text-[10px] text-zinc-500 group-open:hidden">Show</span>
-        </summary>
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto mt-1">
+          <span className="text-[10px] text-zinc-500">Perpetual Mark Prices</span>
+        </div>
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
             <thead>
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
@@ -148,7 +134,7 @@ export default async function LiveMonitorPage() {
             </tbody>
           </table>
         </div>
-      </details>
+      </div>
     </div>
   );
 }
