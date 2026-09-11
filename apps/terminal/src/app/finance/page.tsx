@@ -1,4 +1,5 @@
 import { fetchDashboardData } from "@/lib/propr-api";
+import { convertUsdToInr } from "@propr/calculations";
 import { CheckCircle2, Wallet } from "lucide-react";
 
 export const revalidate = 15;
@@ -124,7 +125,7 @@ export default async function FinancePage() {
                     {formatUSD(tx.amountUSD)}
                   </td>
                   <td className="py-2.5 px-3 font-mono text-[var(--text-secondary)]">
-                    {formatINR(Number(tx.amountUSD) * 84.5)}
+                    {formatINR(convertUsdToInr(tx.amountUSD, "84.5"))}
                   </td>
                   <td className="py-2.5 px-3 text-[var(--text-muted)]">{tx.invoiceNumber}</td>
                   <td className="py-2.5 px-3">
