@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Terminal, Play, Pause, Trash2, ArrowDownCircle, Wifi, ShieldAlert } from "lucide-react";
 
 interface LogEntry {
   id: string;
   timestamp: string;
-  type: "INFO" | "MARK" | "HEARTBEAT" | "AUTH" | "RISK" | "REST";
+  type: "INFO" | "MARK" | "HEARTBEAT" | "AUTH" | "RISK" | "REST" | "ORDER";
   channel: string;
   message: string;
   data?: Record<string, unknown>;
@@ -52,27 +52,35 @@ const INITIAL_LOGS: LogEntry[] = [
   },
   {
     id: "log-6",
+    timestamp: "23:58:16.120",
+    type: "ORDER",
+    channel: "FILLS",
+    message: "order.filled",
+    data: { orderId: "ord-88392", asset: "xyz:BTC-USDT", side: "BUY", fillPrice: "68,430.00", quantity: "0.05", status: "FILLED" },
+  },
+  {
+    id: "log-7",
     timestamp: "23:58:18.420",
     type: "RISK",
     channel: "RISK_ENGINE",
     message: "Invariants checked: Decimal.js exact precision active. 0 floating-point drift detected.",
   },
   {
-    id: "log-7",
+    id: "log-8",
     timestamp: "23:58:20.012",
     type: "HEARTBEAT",
     channel: "PING_PONG",
     message: '{"op":"ping"} -> {"op":"pong","rtt_ms":14,"server_time":1789150000}',
   },
   {
-    id: "log-8",
+    id: "log-9",
     timestamp: "23:58:24.118",
     type: "REST",
     channel: "REST_SYNC",
     message: "GET /v1/challenge-attempts 200 OK (latency: 38ms, cache: hit)",
   },
   {
-    id: "log-9",
+    id: "log-10",
     timestamp: "23:58:28.940",
     type: "MARK",
     channel: "MARK_PRICE",
@@ -80,11 +88,11 @@ const INITIAL_LOGS: LogEntry[] = [
     data: { symbol: "xyz:SOL-USDT", markPrice: "178.45", indexPrice: "178.38", fundingRate: "0.000120" },
   },
   {
-    id: "log-10",
+    id: "log-11",
     timestamp: "23:58:32.405",
     type: "RISK",
     channel: "RISK_ENGINE",
-    message: "Drawdown limit check passed: Equity safely above breach floor ($9,500.00). Buffer: $500.00.",
+    message: "Drawdown limit check passed: Equity safely above breach floor ($9,700.00). Buffer: $473.67.",
   },
 ];
 
@@ -106,6 +114,23 @@ const STREAM_TEMPLATES = [
     },
   },
   {
+    type: "ORDER" as const,
+    channel: "FILLS",
+    message: "order.filled",
+    getData: () => {
+      const assets = ["xyz:BTC-USDT", "xyz:ETH-USDT", "xyz:SOL-USDT"];
+      const asset = assets[Math.floor(Math.random() * assets.length)];
+      return {
+        orderId: `ord-${Math.floor(Math.random() * 90000 + 10000)}`,
+        asset,
+        side: Math.random() > 0.5 ? "BUY" : "SELL",
+        fillPrice: asset.includes("BTC") ? "68,432.00" : asset.includes("ETH") ? "3,541.50" : "178.30",
+        quantity: asset.includes("BTC") ? "0.02" : "0.50",
+        status: "FILLED",
+      };
+    },
+  },
+  {
     type: "HEARTBEAT" as const,
     channel: "PING_PONG",
     message: () => `{"op":"ping"} -> {"op":"pong","rtt_ms":${Math.floor(Math.random() * 8 + 11)},"ts":${Date.now()}}`,
@@ -121,6 +146,60 @@ const STREAM_TEMPLATES = [
     message: () => `Incremental background sync OK. Next ISR revalidation in 15s. (HTTP 200, latency: ${Math.floor(Math.random() * 25 + 25)}ms)`,
   },
 ];
+
+function JsonHighlight({ data }: { data: Record<string, unknown> }) {
+  const entries = Object.entries(data);
+  return (
+    <span className="font-mono text-[10px] bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800/80 inline-block ml-2 select-text">
+      <span className="text-zinc-600">{"{"}</span>
+      {entries.map(([key, val], idx) => {
+        let valColor = "text-zinc-200";
+        if (typeof val === "number" || (!isNaN(Number(val)) && !isNaN(parseFloat(String(val))))) {
+          valColor = "text-amber-300";
+        } else if (typeof val === "boolean") {
+          valColor = "text-purple-400";
+        } else if (String(val).startsWith("+") || String(val) === "FILLED" || String(val) === "BUY") {
+          valColor = "text-emerald-400";
+        } else if (String(val).startsWith("-") || String(val) === "SELL") {
+          valColor = "text-red-400";
+        } else if (key.includes("symbol") || key.includes("asset")) {
+          valColor = "text-[var(--cyan)]";
+        }
+
+        return (
+          <span key={key}>
+            <span className="text-zinc-500 font-normal">"{key}"</span>
+            <span className="text-zinc-600">: </span>
+            <span className={`${valColor} font-medium`}>
+              {typeof val === "string" ? `"${val}"` : String(val)}
+            </span>
+            {idx < entries.length - 1 && <span className="text-zinc-600">, </span>}
+          </span>
+        );
+      })}
+      <span className="text-zinc-600">{"}"}</span>
+    </span>
+  );
+}
+
+function renderMessage(message: string) {
+  if (message.includes("mark.updated")) {
+    return <span className="text-[var(--cyan)] font-medium">{message}</span>;
+  }
+  if (message.includes("order.filled")) {
+    return <span className="text-emerald-400 font-medium">{message}</span>;
+  }
+  if (message.includes("Drawdown limit") || message.includes("Invariants checked")) {
+    return <span className="text-purple-300">{message}</span>;
+  }
+  if (message.includes("GET") || message.includes("200 OK")) {
+    return <span className="text-blue-300">{message}</span>;
+  }
+  if (message.includes("Handshake") || message.includes("ping")) {
+    return <span className="text-zinc-400">{message}</span>;
+  }
+  return <span className="text-zinc-300">{message}</span>;
+}
 
 export function SystemTerminalStream() {
   const [logs, setLogs] = useState<LogEntry[]>(INITIAL_LOGS);
@@ -167,8 +246,10 @@ export function SystemTerminalStream() {
     switch (type) {
       case "MARK":
         return "bg-cyan-950/70 text-[var(--cyan)] border-cyan-800/50";
+      case "ORDER":
+        return "bg-emerald-950/70 text-emerald-400 border-emerald-800/50";
       case "HEARTBEAT":
-        return "bg-green-950/70 text-[var(--green)] border-green-800/50";
+        return "bg-zinc-900 text-zinc-400 border-zinc-800";
       case "RISK":
         return "bg-purple-950/70 text-purple-400 border-purple-800/50";
       case "AUTH":
@@ -181,7 +262,7 @@ export function SystemTerminalStream() {
   };
 
   return (
-    <div className="rounded border border-[var(--border-primary)] bg-black shadow-2xl overflow-hidden font-mono text-xs">
+    <div className="rounded-lg border border-[var(--border-primary)] bg-black shadow-2xl overflow-hidden font-mono text-xs">
       {/* Terminal Titlebar */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-zinc-950 border-b border-zinc-800">
         <div className="flex items-center gap-3">
@@ -191,11 +272,11 @@ export function SystemTerminalStream() {
             <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
           </div>
           <div className="flex items-center gap-2 text-zinc-300 font-semibold text-[11px] tracking-wider uppercase">
-            <Terminal size={14} className="text-[var(--cyan)]" />
+            <Terminal size={14} className="text-zinc-400" />
             <span>propr-ws-gateway — event-stream.log</span>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400">
-            <Wifi size={11} className="text-[var(--green)] animate-pulse" />
+            <Wifi size={11} className="text-emerald-400 animate-pulse" />
             <span>wss://api.propr.xyz/ws (20s heartbeat)</span>
           </div>
         </div>
@@ -204,14 +285,14 @@ export function SystemTerminalStream() {
         <div className="flex items-center gap-2">
           {/* Filters */}
           <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[10px]">
-            {(["ALL", "MARK", "RISK", "HEARTBEAT", "REST"] as const).map((cat) => (
+            {(["ALL", "MARK", "ORDER", "RISK", "HEARTBEAT", "REST"] as const).map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setFilter(cat)}
                 className={`px-2 py-0.5 rounded transition-colors ${
                   filter === cat
-                    ? "bg-cyan-950 text-[var(--cyan)] border border-cyan-800/60 font-bold"
+                    ? "bg-zinc-800 text-white font-bold"
                     : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
@@ -227,7 +308,7 @@ export function SystemTerminalStream() {
             className={`flex items-center gap-1 px-2.5 py-1 rounded border text-[10px] font-bold transition-all ${
               isStreaming
                 ? "bg-amber-950/40 text-amber-300 border-amber-800/40 hover:bg-amber-900/40"
-                : "bg-green-950/40 text-[var(--green)] border-green-800/40 hover:bg-green-900/40"
+                : "bg-emerald-950/40 text-emerald-400 border-emerald-800/40 hover:bg-emerald-900/40"
             }`}
           >
             {isStreaming ? (
@@ -249,7 +330,7 @@ export function SystemTerminalStream() {
             onClick={() => setAutoScroll(!autoScroll)}
             className={`p-1 rounded border text-[10px] transition-colors ${
               autoScroll
-                ? "bg-cyan-950/60 text-[var(--cyan)] border-cyan-800/50"
+                ? "bg-zinc-800 text-white border-zinc-700"
                 : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200"
             }`}
             title={autoScroll ? "Auto-scroll: ON" : "Auto-scroll: OFF"}
@@ -289,14 +370,10 @@ export function SystemTerminalStream() {
               >
                 {log.channel}
               </span>
-              <span className="text-zinc-300 break-all">
-                {log.message}
-                {log.data && (
-                  <span className="ml-2 text-cyan-300 font-mono text-[10px] bg-zinc-900/90 px-1.5 py-0.5 rounded border border-zinc-800">
-                    {JSON.stringify(log.data)}
-                  </span>
-                )}
-              </span>
+              <div className="break-all flex-1">
+                {renderMessage(log.message)}
+                {log.data && <JsonHighlight data={log.data} />}
+              </div>
             </div>
           ))
         )}
@@ -307,14 +384,14 @@ export function SystemTerminalStream() {
       <div className="flex items-center justify-between px-4 py-1.5 bg-zinc-950 border-t border-zinc-900 text-[10px] text-zinc-500 font-mono">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-[var(--green)] animate-ping" : "bg-amber-500"}`} />
-            STATUS: <strong className={isStreaming ? "text-[var(--green)]" : "text-amber-400"}>{isStreaming ? "STREAMING" : "PAUSED"}</strong>
+            <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-emerald-400 animate-ping" : "bg-amber-500"}`} />
+            STATUS: <strong className={isStreaming ? "text-emerald-400" : "text-amber-400"}>{isStreaming ? "STREAMING" : "PAUSED"}</strong>
           </span>
-          <span>EVENTS BUFFERED: {logs.length}</span>
+          <span>BUFFERED: {logs.length}</span>
           <span>PROTOCOL: WebSocket 13</span>
         </div>
         <div className="flex items-center gap-2">
-          <ShieldAlert size={11} className="text-[var(--green)]" />
+          <ShieldAlert size={11} className="text-emerald-400" />
           <span>READ-ONLY STREAM (ZERO MUTATION ALLOWED)</span>
         </div>
       </div>

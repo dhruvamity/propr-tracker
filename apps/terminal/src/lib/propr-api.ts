@@ -274,6 +274,8 @@ function d(v: string | number | undefined | null): Decimal {
   return new Decimal(v);
 }
 function ds(v: Decimal): string { return v.toString(); }
+function dsFixed(v: Decimal, decimals = 2): string { return v.toFixed(decimals); }
+
 
 // ─── Main Data Fetcher ────────────────────────────────────────────────────────
 
@@ -571,18 +573,18 @@ export async function fetchDashboardData(): Promise<DashboardData> {
           totalPnl: ds(totalPnl),
           drawdownType,
           profitTargetPercent,
-          profitTargetPct: ds(profitTargetPct),
-          profitTargetProgressPercent: ds(Decimal.min(Decimal.max(ptProgress, 0), 100)),
+          profitTargetPct: dsFixed(profitTargetPct, 2),
+          profitTargetProgressPercent: dsFixed(Decimal.min(Decimal.max(ptProgress, 0), 100), 2),
           maxDrawdownPercent,
-          drawdownUsedPercent: ds(Decimal.max(ddUsedPct, 0)),
-          drawdownLimitConsumedPercent: ds(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100)),
-          drawdownRemaining: ds(Decimal.max(ddRemaining, 0)),
-          breachFloor: ds(ddLimit),
+          drawdownUsedPercent: dsFixed(Decimal.max(ddUsedPct, 0), 2),
+          drawdownLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(ddLimitConsumed, 0), 100), 2),
+          drawdownRemaining: dsFixed(Decimal.max(ddRemaining, 0), 2),
+          breachFloor: dsFixed(ddLimit, 2),
           maxDailyLossPercent,
-          dailyLossUsedPercent: ds(Decimal.max(dlUsedPct, 0)),
-          dailyLossLimitConsumedPercent: ds(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100)),
-          dailyLossRemaining: ds(Decimal.max(dlRemaining, 0)),
-          dailyLossFloor: ds(dlLimit),
+          dailyLossUsedPercent: dsFixed(Decimal.max(dlUsedPct, 0), 2),
+          dailyLossLimitConsumedPercent: dsFixed(Decimal.min(Decimal.max(dlLimitConsumed, 0), 100), 2),
+          dailyLossRemaining: dsFixed(Decimal.max(dlRemaining, 0), 2),
+          dailyLossFloor: dsFixed(dlLimit, 2),
           highWaterMark,
           tradingDays: attempt?.tradingDays as number,
           requiredTradingDays: (phase?.minTradingDays || challenge?.requiredTradingDays) as number,

@@ -1,7 +1,9 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { useShell } from "./shell-context";
 
 interface HealthData {
   restStatus: "HEALTHY" | "ERROR" | "UNKNOWN";
@@ -9,7 +11,45 @@ interface HealthData {
   lastSyncAt: string;
 }
 
+const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
+  "/": {
+    title: "Overview",
+    subtitle: "Portfolio capital deployment & account health",
+  },
+  "/live": {
+    title: "Live Risk",
+    subtitle: "Which account is closest to its breach floor?",
+  },
+  "/accounts": {
+    title: "Accounts",
+    subtitle: "Universe directory & lifecycle inspector",
+  },
+  "/positions": {
+    title: "Positions",
+    subtitle: "Active perpetual exposures & mark prices",
+  },
+  "/orders": {
+    title: "Orders",
+    subtitle: "Resting limit orders & protective stops",
+  },
+  "/finance": {
+    title: "Cash & P&L",
+    subtitle: "Prop firm capital ledger & bank audit",
+  },
+  "/history": {
+    title: "History",
+    subtitle: "Challenge failure archive & execution logs",
+  },
+  "/system": {
+    title: "Diagnostics",
+    subtitle: "Connection telemetry & data pipeline health",
+  },
+};
+
 export function TopBar() {
+  const pathname = usePathname();
+  const { toggleMobileNav } = useShell();
+
   const [health, setHealth] = useState<HealthData>({
     restStatus: "HEALTHY",
     wsStatus: "DISCONNECTED",
@@ -17,8 +57,14 @@ export function TopBar() {
   });
   const [relativeTime, setRelativeTime] = useState("Just now");
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   const [isStale, setIsStale] = useState(false);
+
+  // Derive route title & subtitle
+  const headerInfo =
+    ROUTE_HEADERS[pathname] || {
+      title: "Trading Terminal",
+      subtitle: "Personal risk monitor",
+    };
 
   useEffect(() => {
     let isMounted = true;
@@ -62,7 +108,13 @@ export function TopBar() {
       if (diffSec < 10) setRelativeTime("Just now");
       else if (diffSec < 60) setRelativeTime(`${diffSec}s ago`);
       else if (diffSec < 3600) setRelativeTime(`${Math.floor(diffSec / 60)}m ago`);
-      else setRelativeTime(new Date(syncDate).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: false }) + " IST");
+      else
+        setRelativeTime(
+          new Date(syncDate).toLocaleTimeString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour12: false,
+          }) + " IST"
+        );
     };
 
     updateRelative();
@@ -75,60 +127,116 @@ export function TopBar() {
     window.location.reload();
   };
 
+  // Determine Semantic 4-State Status Badge (Prompt Requirement §2)
+  let statusBadge: {
+    label: string;
+    dotClass: string;
+    textClass: string;
+    containerClass: string;
+  };
+
+  if (health.restStatus === "ERROR") {
+    statusBadge = {
+      label: "OFFLINE",
+      dotClass: "bg-red-500",
+      textClass: "text-red-400",
+      containerClass: "bg-red-950/40 border-red-800/50",
+    };
+  } else if (isStale) {
+    statusBadge = {
+      label: "STALE",
+      dotClass: "bg-amber-500 animate-pulse",
+      textClass: "text-amber-400",
+      containerClass: "bg-amber-950/40 border-amber-800/50",
+    };
+  } else if (health.restStatus === "HEALTHY" && health.wsStatus === "CONNECTED") {
+    statusBadge = {
+      label: "LIVE • REALTIME",
+      dotClass: "bg-emerald-400 animate-pulse",
+      textClass: "text-emerald-400",
+      containerClass: "bg-emerald-950/40 border-emerald-800/50",
+    };
+  } else {
+    // REST healthy + WS disconnected (Polling ISR mode)
+    statusBadge = {
+      label: "SYNCED • POLLING",
+      dotClass: "bg-[var(--cyan)]",
+      textClass: "text-[var(--cyan)]",
+      containerClass: "bg-cyan-950/40 border-cyan-800/50",
+    };
+  }
+
   return (
-    <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)]">
-      {/* Title */}
+    <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] select-none">
+      {/* Contextual Left: Title & Subtitle + Mobile Toggle */}
       <div className="flex items-center gap-3">
-        <h1 className="text-[13px] font-semibold tracking-[0.2em] text-[var(--text-primary)]">
-          PROPR
-        </h1>
-        <span className="text-[var(--text-muted)] text-[11px]">{"//"}</span>
-        <span className="text-[11px] tracking-[0.15em] text-[var(--text-secondary)]">
-          ACCOUNT TERMINAL
-        </span>
+        <button
+          onClick={toggleMobileNav}
+          className="p-1.5 rounded md:hidden text-zinc-400 hover:text-white hover:bg-zinc-800"
+          aria-label="Open navigation menu"
+        >
+          <Menu size={18} />
+        </button>
+
+        <div>
+          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
+            {headerInfo.title}
+          </h1>
+          <p className="text-[11px] text-zinc-400 hidden sm:block">
+            {headerInfo.subtitle}
+          </p>
+        </div>
       </div>
 
-      {/* Status Indicators */}
-      <div className="flex items-center gap-4 md:gap-6">
-        {/* Sync Status Badge */}
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isStale ? "bg-[var(--amber)]" : health.restStatus === "HEALTHY" ? "bg-[var(--green)] animate-pulse" : "bg-[var(--red)]"}`} />
-          <span className={`text-[10px] tracking-wider font-mono font-medium hidden md:inline ${isStale ? "text-[var(--amber)]" : health.restStatus === "HEALTHY" ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
-            {isStale ? "STALE" : health.restStatus === "HEALTHY" ? "LIVE" : "ERROR"}
+      {/* Right: Semantic Connection State, Relative Sync & Refresh */}
+      <div className="flex items-center gap-3 md:gap-5">
+        {/* Semantic Status Badge */}
+        <div
+          className={`flex items-center gap-2 px-2.5 py-1 rounded-md border text-xs font-mono font-medium ${statusBadge.containerClass}`}
+        >
+          <div className={`w-2 h-2 rounded-full ${statusBadge.dotClass}`} />
+          <span className={`${statusBadge.textClass} text-[11px]`}>
+            {statusBadge.label}
           </span>
         </div>
 
-        {/* Real Last Sync Timestamp */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] tracking-wider text-[var(--text-muted)] hidden md:inline font-mono">
-            LAST SYNC
-          </span>
-          <span className="font-mono text-[11px] text-[var(--text-secondary)]">
-            {relativeTime}
-          </span>
+        {/* Relative Sync Timing */}
+        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-zinc-400">
+          <span>Synced</span>
+          <span className="text-zinc-200">{relativeTime}</span>
         </div>
 
-        {/* Health Badges */}
-        <div className="hidden md:flex items-center gap-3 font-mono">
+        {/* REST / WS Mini Telemetry Dots */}
+        <div className="hidden lg:flex items-center gap-3 text-[11px] font-mono">
           <div className="flex items-center gap-1.5" title={`REST API: ${health.restStatus}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${health.restStatus === "HEALTHY" ? "bg-[var(--green)]" : "bg-[var(--red)]"}`} />
-            <span className="text-[9px] tracking-wider text-[var(--text-muted)]">REST</span>
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                health.restStatus === "HEALTHY" ? "bg-emerald-400" : "bg-red-500"
+              }`}
+            />
+            <span className="text-zinc-400">REST</span>
           </div>
           <div className="flex items-center gap-1.5" title={`WebSocket: ${health.wsStatus}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${health.wsStatus === "CONNECTED" ? "bg-[var(--green)]" : "bg-[var(--amber)]"}`} />
-            <span className="text-[9px] tracking-wider text-[var(--text-muted)]">WS</span>
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                health.wsStatus === "CONNECTED" ? "bg-emerald-400" : "bg-amber-400"
+              }`}
+            />
+            <span className="text-zinc-400">WS</span>
           </div>
         </div>
 
-        {/* Refresh */}
+        {/* Refresh Button */}
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className={`p-1.5 rounded hover:bg-[var(--bg-elevated)] transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] ${isRefreshing ? "animate-spin" : ""}`}
+          className={`p-1.5 rounded hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-white ${
+            isRefreshing ? "animate-spin" : ""
+          }`}
           title="Refresh Data"
           aria-label="Refresh Data"
         >
-          <RefreshCw size={13} />
+          <RefreshCw size={14} />
         </button>
       </div>
     </header>
