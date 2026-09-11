@@ -24,10 +24,10 @@ export default async function FinancePage() {
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             <GitBranch size={15} className="text-zinc-400" />
-            <span>Three-Layer Accounting & Cash Flow Structure</span>
+            <span>Cash Flow</span>
           </div>
           <span className="text-[11px] font-mono text-zinc-500">
-            BANK CASH • FACE VALUE • TRADING METRICS
+            BANK CASH • FACE VALUE • TRADING
           </span>
         </div>
 
@@ -135,7 +135,7 @@ export default async function FinancePage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase flex items-center gap-2">
             <Wallet size={14} className="text-zinc-400" />
-            Prop Firm Expense Ledger (Reconciled Bank Debits)
+            Expense Ledger
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
             {finance.ledger.length} PURCHASES RECONCILED

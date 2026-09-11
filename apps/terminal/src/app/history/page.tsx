@@ -15,23 +15,48 @@ export default async function HistoryPage() {
       a.stage === "PASSED"
   );
 
+  const ddFailures = historicalAccounts.filter(
+    (a) => a.failureReason && a.failureReason.toLowerCase().includes("drawdown")
+  ).length;
+  const dailyLossFailures = historicalAccounts.filter(
+    (a) => a.failureReason && a.failureReason.toLowerCase().includes("daily")
+  ).length;
+  const otherFailures = historicalAccounts.length - ddFailures - dailyLossFailures;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide flex items-center gap-2">
-            <History size={16} className="text-zinc-400" />
-            Historical & Breached Account Archive
+          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
+            History
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Past challenge attempts, breach triggers, closed accounts, and full trade execution history.
+            Past challenge attempts and breach triggers
           </p>
         </div>
         <span className="text-xs font-mono px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-          {historicalAccounts.length} ARCHIVED
+          {historicalAccounts.length} archived
         </span>
       </div>
+
+      {/* Summary Strip */}
+      {historicalAccounts.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] font-mono text-center">
+            <div className="text-xl font-bold text-white">{historicalAccounts.length}</div>
+            <div className="text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">Breached</div>
+          </div>
+          <div className="p-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] font-mono text-center">
+            <div className="text-xl font-bold text-white">{ddFailures}</div>
+            <div className="text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">DD Failures</div>
+          </div>
+          <div className="p-3 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] font-mono text-center">
+            <div className="text-xl font-bold text-white">{dailyLossFailures || otherFailures}</div>
+            <div className="text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">{dailyLossFailures > 0 ? "Daily Loss" : "Other"}</div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
         <table className="w-full text-left text-xs font-mono">

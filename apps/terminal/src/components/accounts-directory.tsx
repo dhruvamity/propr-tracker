@@ -339,79 +339,75 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                       </td>
                     </tr>
 
-                    {/* Expandable Inspection Drawer (Prompt Requirement §9) */}
+                    {/* Expandable Inspection Drawer */}
                     {isExpanded && (
                       <tr className="bg-zinc-950/70 border-b border-zinc-800">
-                        <td colSpan={9} className="p-4 pl-12 space-y-3">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Proximity & Invariants */}
-                            <div className="p-3 rounded bg-zinc-900/60 border border-zinc-800 space-y-1 text-xs">
-                              <span className="text-[10px] uppercase font-semibold text-zinc-400 block mb-1">
-                                Risk Buffers & Floor Limits
+                        <td colSpan={9} className="p-4 pl-12">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Account Details */}
+                            <div className="space-y-2 text-xs font-mono">
+                              <span className="text-[10px] uppercase font-semibold text-zinc-400 block">
+                                Account Details
                               </span>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Breach Floor:</span>
-                                <span className="text-red-400 font-bold font-mono">
-                                  {formatUSD(acc.breachFloor)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Drawdown Headroom:</span>
-                                <span className="text-emerald-400 font-bold font-mono">
-                                  {formatUSD(acc.drawdownRemaining)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Daily Loss Room:</span>
-                                <span className="text-purple-400 font-bold font-mono">
-                                  {formatUSD(acc.dailyLossRemaining)}
-                                </span>
+                              <div className="space-y-1">
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Challenge</span>
+                                  <span className="text-zinc-200">{acc.challengeName || "Starter Turbo"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Breach floor</span>
+                                  <span className="text-red-400 font-bold">{formatUSD(acc.breachFloor)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Daily loss limit</span>
+                                  <span className="text-zinc-200">{formatUSD(acc.dailyLossRemaining)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Drawdown headroom</span>
+                                  <span className="text-zinc-200">{formatUSD(acc.drawdownRemaining)}</span>
+                                </div>
+                                {acc.failureReason && (
+                                  <div className="flex justify-between">
+                                    <span className="text-zinc-500">Failure reason</span>
+                                    <span className="text-red-400">{acc.failureReason.replace(/_/g, " ")}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
-                            {/* Lifecycle & Challenge Configuration */}
-                            <div className="p-3 rounded bg-zinc-900/60 border border-zinc-800 space-y-1 text-xs">
-                              <span className="text-[10px] uppercase font-semibold text-zinc-400 block mb-1">
-                                Lifecycle Configuration
+                            {/* Lifecycle & Trade Data */}
+                            <div className="space-y-2 text-xs font-mono">
+                              <span className="text-[10px] uppercase font-semibold text-zinc-400 block">
+                                Lifecycle
                               </span>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Phase:</span>
-                                <span className="text-zinc-200">Phase {acc.currentPhase || 1}</span>
+                              <div className="space-y-1">
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Phase</span>
+                                  <span className="text-zinc-200">Phase {acc.currentPhase || 1}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Trading days</span>
+                                  <span className="text-zinc-200">{acc.tradingDays || 1} / {acc.requiredTradingDays || 5}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Trade count</span>
+                                  <span className="text-zinc-200">{acc.trades?.length || 0} trades</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-zinc-500">Account URN</span>
+                                  <span className="text-zinc-500 text-[10px] truncate max-w-[200px]">{acc.accountId}</span>
+                                </div>
                               </div>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Trading Days:</span>
-                                <span className="text-zinc-200">
-                                  {acc.tradingDays || 1} / {acc.requiredTradingDays || 5} days
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-zinc-400">Full Account URN:</span>
-                                <span className="text-zinc-400 font-mono text-[10px] truncate max-w-[140px]">
-                                  {acc.accountId}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Actions & Execution Drawer */}
-                            <div className="p-3 rounded bg-zinc-900/60 border border-zinc-800 space-y-2 text-xs flex flex-col justify-between">
-                              <div>
-                                <span className="text-[10px] uppercase font-semibold text-zinc-400 block mb-1">
-                                  Audit & Trade Drawer
-                                </span>
-                                <p className="text-[11px] text-zinc-400">
-                                  {acc.trades && acc.trades.length > 0
-                                    ? `${acc.trades.length} historical trades recorded.`
-                                    : "No execution trades on record."}
-                                </p>
-                              </div>
-                              <div>
-                                <TradeDrawer
-                                  accountId={acc.accountId}
-                                  trades={acc.trades || []}
-                                  initialBalance={acc.initialBalance || "0"}
-                                  endingBalance={acc.balance || "0"}
-                                />
-                              </div>
+                              {acc.trades && acc.trades.length > 0 && (
+                                <div className="pt-2">
+                                  <TradeDrawer
+                                    accountId={acc.accountId}
+                                    trades={acc.trades || []}
+                                    initialBalance={acc.initialBalance || "0"}
+                                    endingBalance={acc.balance || "0"}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>

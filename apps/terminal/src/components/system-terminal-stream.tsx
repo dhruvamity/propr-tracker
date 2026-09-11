@@ -380,19 +380,19 @@ export function SystemTerminalStream() {
         <div ref={streamEndRef} />
       </div>
 
-      {/* Terminal Footer Status Bar */}
+      {/* Terminal Footer Status Bar — reflects actual connection state */}
       <div className="flex items-center justify-between px-4 py-1.5 bg-zinc-950 border-t border-zinc-900 text-[10px] text-zinc-500 font-mono">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
-            <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-emerald-400 animate-ping" : "bg-amber-500"}`} />
-            STATUS: <strong className={isStreaming ? "text-emerald-400" : "text-amber-400"}>{isStreaming ? "STREAMING" : "PAUSED"}</strong>
+            <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-[var(--cyan)]" : "bg-amber-500"}`} />
+            STATUS: <strong className={isStreaming ? "text-[var(--cyan)]" : "text-amber-400"}>{isStreaming ? "POLLING" : "PAUSED"}</strong>
           </span>
+          <span>FALLBACK: ISR 15s</span>
           <span>BUFFERED: {logs.length}</span>
-          <span>PROTOCOL: WebSocket 13</span>
         </div>
         <div className="flex items-center gap-2">
-          <ShieldAlert size={11} className="text-emerald-400" />
-          <span>READ-ONLY STREAM (ZERO MUTATION ALLOWED)</span>
+          <ShieldAlert size={11} className="text-zinc-500" />
+          <span>READ-ONLY</span>
         </div>
       </div>
     </div>

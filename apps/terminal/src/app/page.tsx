@@ -28,7 +28,7 @@ export default async function OverviewPage() {
             Portfolio Cash Position
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            ALL FIRMS COMBINED • AUDITED
+          ALL FIRMS • AUDITED
           </span>
         </div>
 
@@ -116,10 +116,10 @@ export default async function OverviewPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Active Account Risk Monitor
+            Active Accounts
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            {activeAccounts.length} MONITORED ACCOUNTS
+            {activeAccounts.length} MONITORED
           </span>
         </div>
 
@@ -144,10 +144,10 @@ export default async function OverviewPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Accounts Directory Overview ({accounts.length} Total)
+            All Accounts ({accounts.length})
           </h2>
           <span className="text-[11px] font-mono text-zinc-500">
-            HISTORICAL & ACTIVE ACCOUNTS
+            HISTORICAL & ACTIVE
           </span>
         </div>
 
@@ -249,9 +249,9 @@ export default async function OverviewPage() {
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4">
           <div className="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2">
             <h3 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-              Open Positions ({allPositions.length})
+              Positions ({allPositions.length})
             </h3>
-            <span className="text-[10px] font-mono text-zinc-500">LIVE EXPOSURE</span>
+            <span className="text-[10px] font-mono text-zinc-500">EXPOSURE</span>
           </div>
           {allPositions.length === 0 ? (
             <EmptyState
@@ -296,9 +296,9 @@ export default async function OverviewPage() {
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4">
           <div className="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2">
             <h3 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-              Open Orders ({allOrders.length})
+              Orders ({allOrders.length})
             </h3>
-            <span className="text-[10px] font-mono text-zinc-500">PENDING EXECUTION</span>
+            <span className="text-[10px] font-mono text-zinc-500">PENDING</span>
           </div>
           {allOrders.length === 0 ? (
             <EmptyState

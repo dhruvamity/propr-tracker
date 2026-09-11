@@ -12,44 +12,35 @@ export default async function PositionsPage() {
   ).length;
 
   return (
-    <div className="space-y-6 flex flex-col min-h-[calc(100vh-8rem)]">
-      {/* Page Header (Prompt §8) */}
+    <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide flex items-center gap-2">
-            <TrendingUp size={16} className="text-emerald-400" />
-            Active Trading Positions
+          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
+            Active Positions
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Real-time market exposures across evaluation and funded accounts.
+            Market exposures across active accounts
           </p>
         </div>
         <span className="text-xs font-mono px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-          {allPositions.length} POSITIONS
+          {allPositions.length}
         </span>
       </div>
 
       {allPositions.length === 0 ? (
-        /* Vertically Centered Compact Empty State (Prompt §8 & §10) */
-        <div className="flex-1 flex flex-col items-center justify-center py-12">
-          <div className="w-full max-w-md p-6 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)]">
-            <EmptyState
-              icon={TrendingUp}
-              title="No Open Positions"
-              description={`Your ${activeCount} active account${
-                activeCount === 1 ? "" : "s"
-              } currently ${
-                activeCount === 1 ? "has" : "have"
-              } no market exposure.`}
-              statusBadge="Position stream active"
-              metrics={{
-                activeAccounts: activeCount,
-                openPositions: 0,
-                openOrders: allOrders.length,
-                lastChecked: "Just now",
-              }}
-            />
-          </div>
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6">
+          <EmptyState
+            icon={TrendingUp}
+            title="No open positions"
+            description={`${activeCount} active account${activeCount === 1 ? " is" : "s are"} currently flat.`}
+            metrics={{
+              activeAccounts: activeCount,
+              openPositions: 0,
+              openOrders: allOrders.length,
+              lastChecked: "Just now",
+            }}
+          />
         </div>
       ) : (
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">

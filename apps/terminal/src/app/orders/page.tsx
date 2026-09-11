@@ -11,40 +11,35 @@ export default async function OrdersPage() {
   ).length;
 
   return (
-    <div className="space-y-6 flex flex-col min-h-[calc(100vh-8rem)]">
-      {/* Page Header (Prompt §8) */}
+    <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide flex items-center gap-2">
-            <ListOrdered size={16} className="text-amber-400" />
-            Open Orders & Conditionals
+          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
+            Open Orders
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Resting limit orders, trigger orders, and protective stops across accounts.
+            Resting limit orders and protective stops across accounts
           </p>
         </div>
         <span className="text-xs font-mono px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-          {allOrders.length} ORDERS
+          {allOrders.length}
         </span>
       </div>
 
       {allOrders.length === 0 ? (
-        /* Vertically Centered Compact Empty State (Prompt §8 & §10) */
-        <div className="flex-1 flex flex-col items-center justify-center py-12">
-          <div className="w-full max-w-md p-6 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)]">
-            <EmptyState
-              icon={ListOrdered}
-              title="No Pending Orders"
-              description="No resting limit orders, trigger orders, or protective stops currently pending."
-              statusBadge="Order engine active"
-              metrics={{
-                activeAccounts: activeCount,
-                openPositions: allPositions.length,
-                openOrders: 0,
-                lastChecked: "Just now",
-              }}
-            />
-          </div>
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6">
+          <EmptyState
+            icon={ListOrdered}
+            title="No pending orders"
+            description="No resting limit orders or protective stops currently pending."
+            metrics={{
+              activeAccounts: activeCount,
+              openPositions: allPositions.length,
+              openOrders: 0,
+              lastChecked: "Just now",
+            }}
+          />
         </div>
       ) : (
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
