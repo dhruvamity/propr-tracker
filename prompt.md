@@ -1,1866 +1,1427 @@
-# Propr Trading Terminal
-
-# FINAL RELEASE CERTIFICATION & PRODUCTION ACCEPTANCE AUDIT
+# Propr Tracker — Final AI-Slop Cleanup & Human-Code Refactor
 
 Repository:
 
 https://github.com/dhruvamity/propr-tracker.git
 
-Current claimed commit:
+Use the attached:
 
-18eb228
+* `eval.md`
+* `SKILL.md`
 
-Date:
+as the authoritative style standard for this task.
 
-2026-09-11
+The objective is to remove **AI slop** from the repository while preserving the actual product, behavior, architecture, financial correctness, tests, and established technical conventions.
 
----
+This is NOT a feature-development task.
 
-# PURPOSE
+This is NOT a visual redesign.
 
-This is the **final production-certification audit** of the Propr Trading Terminal.
+This is NOT an excuse to rewrite the repository into a generic "clean architecture."
 
-A comprehensive initial audit was already completed.
+The goal is:
 
-A subsequent remediation phase was completed.
-
-A post-remediation audit was completed.
-
-The repository now claims:
-
-* 83 tests passing
-* mutation tests passing
-* adversarial tests passing
-* API contract tests passing
-* type-check passing
-* lint passing
-* production build passing
-* historical financial defects resolved
-* active capital corrected
-* trailing drawdown implemented
-* failure-safe states implemented
-* mock-data fallback removed
-* monorepo/build issues resolved
-* route coverage completed
-* floating-point financial calculations audited
-
-This audit is therefore NOT another generic code audit.
-
-The sole objective is:
-
-> Determine whether the application is now safe and reliable enough to be treated as a production financial-monitoring terminal.
-
-Do not reward the repository for having a large test count.
-
-Do not trust:
-
-* AUDIT.md
-* POST_REMEDIATION_AUDIT.md
-* POST_REMEDIATION_TEST_REPORT.md
-* POST_REMEDIATION_FINDINGS.md
-* README claims
-* test names
-* commit messages
-* screenshots
-* comments
-
-without independently verifying the underlying behavior.
+> Make the repository look and read like it was written and maintained deliberately by a competent human engineer who understands this specific project.
 
 ---
 
-# ABSOLUTE RULE
+# 1. HARD RULES
 
-Do not modify production code during this audit.
+Before touching anything:
 
-This is a certification exercise.
+1. Read the entire repository.
+2. Read `eval.md` completely.
+3. Read `SKILL.md` completely.
+4. Inspect the existing codebase, documentation, comments, UI copy, tests, configuration, naming, and commit-visible artifacts.
+5. Understand the existing architecture before editing.
 
-If something fails:
+Do NOT:
 
-1. document it;
-2. reproduce it;
-3. assess severity;
-4. state the exact remediation;
-5. do not silently fix it.
+* change business logic merely for style;
+* rewrite working code because another implementation looks cleaner;
+* rename public APIs unnecessarily;
+* change financial calculations;
+* change API contracts;
+* change database schemas;
+* change Propr integration behavior;
+* change tests merely to make them shorter;
+* delete useful comments simply because they are verbose;
+* replace real project-specific language with generic professional language;
+* flatten personality out of README/documentation;
+* add abstractions solely because the current implementation looks repetitive;
+* introduce a new framework or dependency;
+* create a giant formatting/refactor diff.
 
-Production-code changes happen only after the certification decision.
+Preserve behavior first.
+
+Style cleanup is subordinate to correctness.
 
 ---
 
-# 1. VERIFY EXACT REPOSITORY STATE
+# 2. WHAT "AI SLOP" MEANS IN THIS REPOSITORY
 
-Verify:
+Apply `SKILL.md` and `eval.md` to the repository, adapting the principles to software.
+
+Look for writing and code patterns that make the repository feel machine-generated, over-produced, generic, repetitive, or detached from the actual product.
+
+The audit must cover at least:
 
 ```text
-remote repository
-branch
-HEAD SHA
-working tree
-uncommitted files
-latest commit
-commit ancestry
-tag/release
-lockfile
-Node version
-npm version
-Next.js version
-React version
-TypeScript version
-Vitest version
+README.md
+documentation
+markdown files
+comments
+JSDoc
+inline explanations
+UI labels
+UI descriptions
+error messages
+empty states
+tooltips
+button labels
+test descriptions
+test names
+variable names
+function names
+component names
+commit-visible generated text
+configuration comments
+architecture descriptions
+audit artifacts
 ```
 
-Confirm that the audited commit actually contains the remediation claimed by the prior audits.
-
-Record:
+Also inspect source structure for code-level AI slop:
 
 ```text
-AUDITED COMMIT:
-AUDITED BRANCH:
-AUDIT DATE:
-REMOTE VERIFIED:
-WORKTREE CLEAN:
+unnecessary abstraction
+over-engineered wrappers
+one-line helper functions used once
+generic "manager"/"service"/"handler"/"processor" classes
+ceremonial interfaces
+duplicated transformation layers
+pointless re-export layers
+excessive type wrappers
+needless factory functions
+generic adapter naming
+over-commenting obvious code
+comments that merely narrate syntax
+comments that restate function names
+comments that explain trivial assignments
 ```
 
-If the live GitHub repository cannot be accessed, explicitly mark remote verification as:
+Do NOT label ordinary technical abstraction as AI slop.
 
-```text
-UNVERIFIED
-```
-
-Never silently substitute a local copy and claim that the remote repository was verified.
+A useful abstraction solves a real problem.
 
 ---
 
-# 2. CLEAN-CHECKOUT REPRODUCTION
+# 3. PRESERVE THE PROJECT'S ACTUAL VOICE
 
-Perform the certification from a clean checkout.
+The source material explicitly requires preserving the writer's:
 
-Do not rely on:
+* vocabulary
+* cadence
+* bluntness
+* uncertainty
+* digressions
+* level of polish
+* useful edge
+* distinctive phrasing
 
-* existing node_modules
-* local build directories
-* local caches
-* local .env files
-* IDE state
-* ignored files
-* generated artifacts outside Git
+Do the same here.
 
-Execute from clean checkout:
+For this repository, preserve:
+
+* direct engineering language;
+* project-specific terminology;
+* Propr terminology;
+* financial terminology;
+* concise technical explanations;
+* useful blunt warnings;
+* actual implementation caveats;
+* uncertainty where uncertainty is real.
+
+Do NOT turn everything into:
+
+```text
+"robust and scalable architecture"
+"seamless experience"
+"powerful solution"
+"modern platform"
+"comprehensive monitoring"
+"enterprise-grade"
+```
+
+Those phrases are meaningless unless they describe something concrete.
+
+---
+
+# 4. BANNED LANGUAGE SWEEP
+
+Use the banned vocabulary from `SKILL.md`.
+
+Search the repository for:
+
+```text
+delve
+foster
+leverage
+utilize
+facilitate
+empower
+streamline
+robust
+cutting-edge
+paradigm shift
+game changer
+this is huge
+this changes everything
+tapestry
+realm
+beacon
+multifaceted
+meticulous
+intricate
+paramount
+transformative
+elevate
+embark
+supercharge
+harness
+ever-evolving
+```
+
+Also search for empty language such as:
+
+```text
+it's worth noting
+it's important to note
+at the end of the day
+when it comes to
+at its core
+in today's world
+in the world of
+the reality is
+the truth is
+in terms of
+with regard to
+in order to
+going forward
+let's dive in
+```
+
+The source specifically says these should be removed when they add nothing.
+
+Do NOT perform a blind global replacement.
+
+Inspect each occurrence and preserve it when it is genuinely meaningful or technical.
+
+---
+
+# 5. REMOVE AI-WRITING PATTERNS FROM DOCUMENTATION
+
+Apply the complete pattern list from `SKILL.md`.
+
+Find and remove:
+
+## Binary contrasts
+
+Examples:
+
+```text
+"This is not X. It's Y."
+"The question isn't X, it's Y."
+"It's not just X but Y."
+```
+
+Rewrite directly.
+
+Example:
+
+```text
+Bad:
+This is not a traditional trading dashboard. It's a complete command center.
+
+Better:
+This dashboard tracks accounts, risk, positions, orders, and finance.
+```
+
+---
+
+## Throat-clearing openers
+
+Remove:
+
+```text
+Here's the thing:
+Here's what I mean:
+Let me be clear:
+I'll be honest:
+The uncomfortable truth is:
+```
+
+Start with the actual point.
+
+---
+
+## Faux-insight setups
+
+Remove:
+
+```text
+"This is the part most people skip..."
+"What most people get wrong..."
+"Here's what nobody tells you..."
+"The part everyone misses..."
+```
+
+State the technical fact directly.
+
+These patterns are explicitly identified as AI-slop patterns in `SKILL.md`.
+
+---
+
+## Colon-reveal prose
+
+Avoid constructions like:
+
+```text
+The key insight: ...
+The biggest issue: ...
+The best part: ...
+The real reason: ...
+```
+
+when they are merely dramatic setups.
+
+Use normal sentences.
+
+Keep colons for:
+
+* lists
+* labels
+* configuration
+* code
+* actual grammatical use
+
+The source specifically calls this out.
+
+---
+
+## Superficial analysis
+
+Remove comments and documentation such as:
+
+```text
+highlighting...
+underscoring...
+reflecting...
+showcasing...
+demonstrating the importance of...
+```
+
+Replace them with actual mechanism or consequence when that information is useful.
+
+Example:
+
+```text
+Bad:
+This integration improves reliability, demonstrating the importance of centralized state.
+
+Better:
+The worker stores the latest account state in Redis so another process can reconstruct it after restart.
+```
+
+---
+
+## Importance puffery
+
+Remove language such as:
+
+```text
+critical milestone
+pivotal moment
+plays a vital role
+stands as a testament
+solidifies its position
+underscores its significance
+```
+
+State the technical fact.
+
+---
+
+## Interpretive metadiscourse
+
+Remove:
+
+```text
+The key point is...
+This distinction matters...
+As you can see...
+It's important to understand...
+In other words...
+What this means is...
+```
+
+when the surrounding code or prose already makes the point.
+
+The source explicitly calls this interpretive metadiscourse.
+
+---
+
+## Weasel attribution
+
+Remove:
+
+```text
+experts agree
+industry standards suggest
+many believe
+widely regarded as
+studies show
+```
+
+unless the repository actually identifies the source.
+
+Never invent authority.
+
+---
+
+## Fake-strong verbs
+
+Prefer simple verbs.
+
+Avoid unnecessary prose such as:
+
+```text
+"serves as a centralized hub"
+"acts as a mechanism for"
+"provides the ability to"
+```
+
+Prefer:
+
+```text
+"tracks"
+"stores"
+"loads"
+"fetches"
+"calculates"
+"renders"
+"validates"
+```
+
+---
+
+## Synonym cycling
+
+Use the same technical term consistently.
+
+Do NOT alternate between:
+
+```text
+account
+profile
+trading entity
+portfolio object
+account record
+```
+
+when they mean the same thing.
+
+Use the project's established term.
+
+The same applies to:
+
+```text
+trade
+position
+order
+purchase
+payout
+cash flow
+PnL
+```
+
+Do not rotate vocabulary merely to sound varied.
+
+---
+
+## Negative listing
+
+Remove:
+
+```text
+Not X.
+Not Y.
+Not Z.
+```
+
+unless the negative distinction is technically necessary.
+
+State the actual design.
+
+---
+
+## Dramatic fragments
+
+Avoid generated rhythm such as:
+
+```text
+Fast. Clean. Reliable.
+No complexity. No nonsense.
+Simple. Secure. Scalable.
+```
+
+unless the project already intentionally uses this style.
+
+---
+
+## Robotic rhythm
+
+Look for:
+
+```text
+three identical sentence structures
+every section containing exactly three bullets
+repeated "This X..." openings
+repeated "It..." sentences
+identical paragraph lengths
+mechanically parallel headings
+```
+
+Break the rhythm where it feels artificial.
+
+The goal is natural technical writing, not manufactured variation.
+
+---
+
+## Rhetorical setups
+
+Remove:
+
+```text
+What if I told you...
+Think about it:
+Plot twist:
+Question? Answer.
+```
+
+Make the point directly.
+
+---
+
+## Fake-profound kickers
+
+Delete manufactured endings such as:
+
+```text
+That's the real game changer.
+And that's where the magic happens.
+The code is only half the battle.
+This is what separates good systems from great ones.
+```
+
+End documentation on the last useful fact or action.
+
+---
+
+## Summary-recap endings
+
+Avoid repeating the same content at the end of every README section.
+
+Do not append:
+
+```text
+In conclusion...
+Ultimately...
+Overall...
+To summarize...
+```
+
+unless a summary is genuinely necessary.
+
+---
+
+# 6. REMOVE FORMAT SLOP
+
+Audit Markdown formatting.
+
+Remove:
+
+* emoji section headings unless the project intentionally uses them;
+* decorative bold;
+* bold used every few words;
+* excessive horizontal rules;
+* headings for tiny two-sentence sections;
+* nested bullet hierarchies that could be two sentences;
+* giant tables where prose is clearer;
+* repetitive callout blocks;
+* "important" / "note" boxes that restate the obvious.
+
+The source explicitly says formatting should follow the content rather than decorate it.
+
+Do NOT remove formatting that materially improves scanning of technical information.
+
+---
+
+# 7. EM DASH CLEANUP
+
+Search for:
+
+```text
+—
+```
+
+Remove decorative em dashes.
+
+Prefer:
+
+```text
+period
+comma
+parentheses
+semicolon
+sentence split
+```
+
+Use an em dash only where it clearly improves the sentence.
+
+The source recommends none in short copy and only occasional use in longer writing.
+
+Do not globally replace code operators or technical syntax.
+
+---
+
+# 8. CODE COMMENT AUDIT
+
+Inspect every nontrivial comment.
+
+Delete comments that merely narrate code.
+
+Example:
+
+```ts
+// Loop through accounts
+for (const account of accounts) {
+```
+
+Delete it.
+
+Also delete:
+
+```ts
+// Set the value
+value = nextValue;
+
+// Return the result
+return result;
+```
+
+Delete comments that restate the function:
+
+```ts
+// Calculate active capital
+calculateActiveCapital(...)
+```
+
+Keep comments that explain:
+
+* a non-obvious Propr API quirk;
+* a financial rule;
+* why a workaround exists;
+* a deployment constraint;
+* a security boundary;
+* an invariant;
+* an unusual data-shape decision;
+* a deliberately non-obvious algorithm;
+* a race-condition prevention mechanism.
+
+For each retained comment ask:
+
+> Would a competent engineer understand WHY this exists without the comment?
+
+If yes, delete the comment.
+
+If no, keep or rewrite it.
+
+---
+
+# 9. JSDoc AUDIT
+
+Review JSDoc especially carefully.
+
+Remove generic blocks such as:
+
+```ts
+/**
+ * This function is responsible for...
+ * This function takes...
+ * This function returns...
+ */
+```
+
+when the types and function name already make that obvious.
+
+Keep JSDoc when it documents:
+
+* financial semantics;
+* units;
+* currency;
+* API provenance;
+* invariants;
+* side effects;
+* failure modes;
+* external contracts.
+
+Example:
+
+```ts
+/**
+ * `amount` is USD face value, not actual bank cash cost.
+ */
+```
+
+That is useful.
+
+---
+
+# 10. TEST NAME AUDIT
+
+Make test names sound like engineers wrote them.
+
+Avoid:
+
+```text
+should successfully correctly calculate...
+should properly handle...
+should robustly support...
+should comprehensively validate...
+```
+
+Prefer:
+
+```text
+excludes failed purchases from active capital
+filters decimal zero quantities
+does not count pending payouts
+rejects stale REST state
+preserves HWM across restart
+```
+
+Use concrete behavior.
+
+---
+
+# 11. TEST DESCRIPTIONS
+
+Avoid prose like:
+
+```text
+This test verifies that the system is able to correctly...
+```
+
+Prefer:
+
+```text
+it("excludes failed challenges from active capital", ...)
+```
+
+The test itself should communicate the invariant.
+
+---
+
+# 12. VARIABLE / FUNCTION / COMPONENT NAMING
+
+Search for generic AI-shaped names:
+
+```text
+processData
+handleData
+transformData
+processResult
+handleResult
+manageState
+processState
+genericData
+resultData
+responseData
+payloadData
+tempData
+processedData
+enhancedData
+optimizedData
+finalData
+updatedData
+```
+
+Do NOT rename blindly.
+
+Rename only when:
+
+1. the name is actually vague;
+2. the real domain meaning is known;
+3. the change improves clarity;
+4. the rename does not create unnecessary churn.
+
+Prefer domain-specific names such as:
+
+```text
+accountSnapshot
+purchaseLedger
+activeCapital
+drawdownLimit
+lastSyncAt
+processedPayouts
+```
+
+when those are the actual concepts.
+
+---
+
+# 13. OVER-ENGINEERED CODE
+
+Look for structures that appear generated rather than necessary:
+
+```text
+one-use abstraction classes
+one-use interfaces
+wrapper around one function
+factory around one object
+service around one API call
+manager around one state value
+adapter around an already compatible object
+three layers of trivial data transformation
+```
+
+For each, ask:
+
+> Does this abstraction solve a real problem in this repository?
+
+If not, simplify it.
+
+But do NOT collapse architectural boundaries that are actually useful, such as:
+
+```text
+API client
+normalization
+calculation engine
+finance ledger
+UI
+sync worker
+```
+
+Those are meaningful boundaries in this project.
+
+---
+
+# 14. DUPLICATION AUDIT
+
+Find duplicated logic that looks generated.
+
+Pay particular attention to:
+
+```text
+formatting
+currency conversion
+account status labels
+error handling
+API response normalization
+risk labels
+financial calculations
+ledger aggregation
+```
+
+Prefer a shared function where duplication is genuinely harmful.
+
+Do not extract tiny helpers solely to eliminate two similar lines.
+
+The goal is clarity, not maximum abstraction.
+
+---
+
+# 15. DOCUMENTATION SPECIFICITY TEST
+
+For every paragraph in repository documentation, ask:
+
+> Could this sentence be pasted into documentation for another random SaaS product unchanged?
+
+If yes:
+
+1. delete it; or
+2. replace it with something specific to Propr Tracker.
+
+The source explicitly calls this the portability test.
+
+Example:
+
+```text
+Bad:
+The application provides a seamless and intuitive experience for managing your trading activities.
+
+Better:
+The terminal reads Propr account state, positions, orders, drawdown, payouts, and the finance ledger in one view.
+```
+
+---
+
+# 16. README CLEANUP
+
+Rewrite the README only as much as necessary.
+
+It should answer:
+
+```text
+What is this?
+Who is it for?
+What does it currently do?
+How do I run it?
+What services/packages exist?
+What environment variables are required?
+What is intentionally unsupported?
+```
+
+Do not turn it into:
+
+```text
+marketing copy
+architecture manifesto
+AI-generated feature catalog
+```
+
+Avoid claims like:
+
+```text
+enterprise-grade
+production-ready
+world-class
+comprehensive
+powerful
+seamless
+scalable
+```
+
+unless a concrete technical fact supports the statement.
+
+---
+
+# 17. UI COPY AUDIT
+
+Search all user-facing strings.
+
+Look for AI-sounding labels such as:
+
+```text
+Powerful Insights
+Comprehensive Overview
+Real-Time Intelligence
+Advanced Analytics
+Seamless Monitoring
+Centralized Command Center
+Enhanced Visibility
+Actionable Insights
+Smart Risk Management
+```
+
+Replace them with concrete UI language.
+
+Example:
+
+```text
+Bad:
+Advanced Portfolio Intelligence
+
+Better:
+Account Risk
+```
+
+```text
+Bad:
+Comprehensive Financial Overview
+
+Better:
+Cash Flow
+```
+
+```text
+Bad:
+Real-Time Trading Intelligence
+
+Better:
+Live Positions
+```
+
+The UI should describe what the screen contains.
+
+---
+
+# 18. ERROR MESSAGE AUDIT
+
+Avoid AI-polished error text.
+
+Bad:
+
+```text
+We encountered an unexpected issue while attempting to synchronize your account data. Please try again later.
+```
+
+Better:
+
+```text
+Propr sync failed. Last successful update: 42s ago.
+```
+
+Use actual technical information that helps the user.
+
+Do not expose secrets or internal stack traces.
+
+---
+
+# 19. EMPTY-STATE AUDIT
+
+Avoid:
+
+```text
+No data available at the moment.
+There's nothing here yet.
+Your dashboard is ready to come alive.
+```
+
+Prefer specific states:
+
+```text
+No open positions.
+No pending orders.
+No processed payouts.
+No finance transactions.
+Propr data is unavailable.
+```
+
+---
+
+# 20. COMMENT / DOC CLAIM AUDIT
+
+Remove comments that make unsupported claims:
+
+```text
+// This is the fastest approach
+// This is the most reliable implementation
+// This guarantees production safety
+// This ensures perfect accuracy
+```
+
+The comment should describe the mechanism, not praise it.
+
+---
+
+# 21. PRESERVE REAL UNCERTAINTY
+
+Do NOT remove legitimate uncertainty.
+
+Keep language such as:
+
+```text
+may
+can
+likely
+unknown
+not guaranteed
+depends on
+```
+
+when the implementation or API contract genuinely has uncertainty.
+
+Do not make uncertain code sound more authoritative just because the prose is being cleaned up.
+
+---
+
+# 22. DO NOT GAME AI DETECTORS
+
+Do not modify the repository merely to make it score better on a detector.
+
+Do not insert:
+
+* typos;
+* weird punctuation;
+* awkward fragments;
+* unnecessary slang;
+* random sentence variation;
+* fake personality;
+* fake anecdotes.
+
+The objective is human, useful engineering writing, not detector gaming.
+
+The source explicitly says named patterns are evidence and AI detectors are not the authority.
+
+---
+
+# 23. PRESERVE FINANCIAL TERMINOLOGY
+
+Never replace precise financial terminology merely because it sounds repetitive.
+
+Keep distinctions such as:
+
+```text
+active capital
+purchase face value
+actual cash cost
+realized PnL
+unrealized PnL
+cash PnL
+processed payout
+drawdown
+high-water mark
+daily loss
+```
+
+Do not synonym-cycle these terms.
+
+---
+
+# 24. PRESERVE PROPR TERMINOLOGY
+
+Use the terminology defined by the Propr API and existing implementation.
+
+Do not invent alternate labels just to make documentation more varied.
+
+Consistency is more important than stylistic variation in technical writing.
+
+---
+
+# 25. AUDIT ARTIFACT CLEANUP
+
+Review:
+
+```text
+FINAL_RELEASE_AUDIT.md
+FINAL_RELEASE_FINDINGS.md
+FINAL_RELEASE_RECONCILIATION.md
+FINAL_RELEASE_TEST_REPORT.md
+README.md
+```
+
+Remove AI-generated verbosity and repetitive certification language.
+
+Keep:
+
+* exact numbers;
+* evidence;
+* file references;
+* commands;
+* reproduction steps;
+* known limitations;
+* unresolved conditions;
+* final verdict.
+
+Do not remove evidence simply because it makes the document longer.
+
+---
+
+# 26. GIT DIFF DISCIPLINE
+
+Before editing:
 
 ```bash
-npm install
+git status
+git log -n 5 --oneline
+```
+
+After editing:
+
+```bash
+git diff --stat
+git diff
+```
+
+The final diff must be explainable.
+
+If the diff contains:
+
+```text
+hundreds of unrelated formatting changes
+mass renaming
+whole-file rewrites
+unnecessary reordering
+```
+
+stop and reduce the scope.
+
+---
+
+# 27. AUTOMATED SEARCH
+
+Perform repository-wide searches for:
+
+```text
+banned vocabulary
+empty phrases
+binary contrasts
+throat clearing
+faux insight
+colon reveals
+importance puffery
+interpretive metadiscourse
+weasel attribution
+fake-strong verbs
+synonym cycling
+negative listings
+dramatic fragments
+rhetorical setups
+fake profound endings
+summary recaps
+emoji headings
+decorative bold
+em dash clusters
+generic variable names
+narrative comments
+```
+
+Keep a temporary findings list during the cleanup.
+
+---
+
+# 28. MINIMUM EFFECTIVE EDIT
+
+Follow the core rule from `SKILL.md`:
+
+> Make the minimum effective edit.
+
+If a sentence is already clear and human, leave it alone.
+
+If a comment is useful, leave it alone.
+
+If a piece of architecture is valid, leave it alone.
+
+Do NOT normalize the entire repository into one writing style.
+
+---
+
+# 29. FINAL SELF-EVAL
+
+After editing, run every check from `eval.md`.
+
+The final repository must pass:
+
+### Meaning
+
+* Does the edit preserve the original technical meaning?
+* Were no unsupported claims introduced?
+* Were financial semantics preserved?
+
+### Voice
+
+* Does repository writing still feel specific to this project?
+* Has useful bluntness been preserved?
+* Has the writing avoided generic corporate prose?
+
+### Structure
+
+* Were only genuinely harmful structures changed?
+* Were useful technical sections preserved?
+
+### Clarity
+
+* Are sentences direct?
+* Are concrete facts used?
+* Are weak verbs removed?
+
+### AI-slop patterns
+
+* binary contrasts removed where unnecessary;
+* throat clearing removed;
+* fake insight removed;
+* dramatic colon reveals removed;
+* superficial analysis removed;
+* importance puffery removed;
+* metadiscourse removed;
+* weasel attribution removed;
+* synonym cycling reduced;
+* robotic rhythm reduced;
+* fake-profound endings removed;
+* summary recap endings reduced;
+* formatting slop removed;
+* decorative em dashes removed.
+
+These checks come directly from `eval.md` and `SKILL.md`.
+
+---
+
+# 30. CODE SAFETY VERIFICATION
+
+After all cleanup:
+
+```bash
 npm test
 npm run type-check
 npm run lint
 npm run build
 ```
 
-Then start the production build and exercise the actual application.
+All must pass.
 
-If any result differs from previous audit claims, the latest result wins.
+If any fail because of the cleanup:
 
----
-
-# 3. TEST-SUITE CERTIFICATION
-
-Run:
-
-```bash
-npm test
-```
-
-Then independently run:
-
-```bash
-npx vitest run tests/mutation/
-npx vitest run tests/adversarial/
-npx vitest run tests/contracts/
-```
-
-Verify the claimed:
-
-```text
-16 test files
-83 tests
-0 failures
-```
-
-Do not stop there.
-
-Determine whether the tests actually exercise production code paths.
-
-Classify each critical suite:
-
-```text
-DIRECT PRODUCTION CODE
-INDIRECT
-PURE FUNCTION ONLY
-MOCK ONLY
-FIXTURE ONLY
-NON-DETECTING
-```
+* fix the cleanup;
+* do not weaken the test;
+* do not remove the failing assertion;
+* do not suppress the lint rule unless it is genuinely correct.
 
 ---
 
-# 4. MUTATION CERTIFICATION
+# 31. BEHAVIORAL REGRESSION CHECK
 
-Reproduce the existing four historical mutations.
-
-Then add final certification mutations:
-
-### Mutation A
-
-Remove active-account filtering.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation B
-
-Replace drawdown-consumed calculation with raw account-loss percentage.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation C
-
-Restore string-based zero-quantity filtering.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation D
-
-Remove isolated margin from daily-loss base.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation E
-
-Reintroduce `createMockData()` as API fallback.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation F
-
-Allow `pending` orders to disappear.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation G
-
-Allow duplicate payout events to double count.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation H
-
-Reset high-water mark when process restarts.
-
-Expected:
-
-TEST FAILURE.
-
-### Mutation I
-
-Expose `PROPR_API_KEY` through client serialization.
-
-Expected:
-
-TEST FAILURE or security test failure.
-
-### Mutation J
-
-Allow a REST response with older data to overwrite newer WebSocket state.
-
-Expected:
-
-TEST FAILURE.
-
-Record:
+Verify specifically that cleanup did not alter:
 
 ```text
-MUTATIONS ATTEMPTED:
-MUTATIONS DETECTED:
-MUTATIONS SURVIVED:
-```
-
-A surviving mutation affecting financial correctness is a release blocker.
-
----
-
-# 5. REAL PROPR API VERIFICATION
-
-This is the most important remaining technical validation.
-
-Using the official Propr API documentation and a safe read-only credential where available, verify the live payloads for:
-
-```text
-/challenge-attempts
-/book-account-issuances
-/accounts
-/positions
-/orders
-/payouts
-```
-
-and WebSocket events where applicable.
-
-Compare:
-
-```text
-live payload
-      ↓
-schema
-      ↓
-normalizer
-      ↓
-calculation engine
-      ↓
-dashboard
-```
-
-The audit must identify any place where the application assumes fixture behavior that is not guaranteed by the real API.
-
----
-
-# 6. LIVE API CONTRACT DRIFT
-
-For every field used by financial calculations record:
-
-| Endpoint | Field | Actual Type | Nullable | Optional | Application Type | Match |
-| -------- | ----- | ----------- | -------- | -------- | ---------------- | ----- |
-
-Pay special attention to:
-
-```text
-accountId
-attemptId
-purchaseId
-status
-stage
-phase
-balance
-equity
-PnL
+active capital
+purchase accounting
+cash PnL
+INR conversion
 drawdown
+trailing HWM
 daily loss
-highWaterMark
-drawdownType
-positions
-quantity
-markPrice
-orders
-payout status
-```
-
-Any mismatch is:
-
-```text
-CONTRACT DRIFT
-```
-
----
-
-# 7. ACTIVE CAPITAL FINAL CERTIFICATION
-
-Independently calculate:
-
-```text
-total invested
-active capital
-failed capital
-historical capital
-funded capital
-evaluation capital
-refunds
-adjustments
-```
-
-Verify that:
-
-```text
-active capital
-```
-
-does not include:
-
-* failed accounts
-* closed accounts
-* refunded purchases
-* unrelated historical purchases
-* duplicate purchases
-* pending purchases without active account state
-
-Then reconcile the result against known verified purchase records.
-
-Record the exact calculation chain.
-
----
-
-# 8. ACCOUNT IDENTITY CERTIFICATION
-
-Determine the canonical identity of an account.
-
-Prove that all of these operations use the correct identity:
-
-```text
-account discovery
-position association
-order association
-trade association
-finance association
-payout association
-risk state
-high-water mark
-history
-UI detail pages
-```
-
-Create two simultaneous accounts with similar names and verify zero data crossover.
-
----
-
-# 9. FULL ACCOUNT-LIFECYCLE CERTIFICATION
-
-Exercise every relevant lifecycle:
-
-```text
-PURCHASED
-EVALUATION
-PASSED
-FUNDED
-REVIEW_PENDING
-CLOSED
-FAILED
-```
-
-Verify that the UI and finance layer correctly represent each state.
-
-No state may be inferred merely from:
-
-```text
-PnL
-balance
-equity
-purchase existence
-```
-
-unless that is explicitly part of the authoritative contract.
-
----
-
-# 10. TRAILING DRAWDOWN FINAL CERTIFICATION
-
-This is a release-blocking financial calculation.
-
-Verify the exact Propr rules.
-
-Test:
-
-```text
-initial balance
-initial DD floor
-profit increase
-new HWM
-new DD floor
-profit giveback
-breach
-recovery attempts
-restart
-reconnect
-REST reconciliation
-WS reconciliation
-```
-
-Test both:
-
-```text
-realized profit increase
-unrealized profit increase
-```
-
-where supported.
-
-Verify whether the floor moves on:
-
-* equity
-* balance
-* realized PnL
-* unrealized PnL
-
-based on the authoritative Propr contract.
-
-Never infer the answer from the implementation.
-
----
-
-# 11. DAILY LOSS FINAL CERTIFICATION
-
-Verify the official day-start methodology.
-
-Test:
-
-```text
-position opened yesterday
-position still open today
-new trade today
-realized loss today
-unrealized loss today
-isolated margin
-fees
-midnight boundary
-timezone boundary
-API reconnect at midnight
-process restart at midnight
-```
-
-The day boundary must be deterministic.
-
----
-
-# 12. EQUITY RECONCILIATION
-
-For every available account calculate:
-
-```text
-APPLICATION EQUITY
-VS
-PROPR EQUITY
-```
-
-Record:
-
-```text
-difference
-percentage difference
-explanation
-timestamp
-```
-
-Do not accept unexplained discrepancies.
-
-Perform this during:
-
-```text
-no positions
-one position
-multiple positions
-isolated position
-large PnL
-negative PnL
-```
-
----
-
-# 13. POSITION / PNL CERTIFICATION
-
-Verify:
-
-```text
-long
-short
-partial fill
-multiple fills
-multiple positions
-micro quantity
-large quantity
-zero quantity
-negative quantity if supported
-high precision price
-high precision quantity
-```
-
-Verify exact Decimal arithmetic end-to-end.
-
-Scan again for:
-
-```text
-Number(
-parseFloat(
-parseInt(
-Math.round(
-Math.floor(
-Math.ceil(
-.toFixed(
-```
-
-Every occurrence must be classified.
-
-No financial calculation may silently return to binary floating point.
-
----
-
-# 14. ORDER CERTIFICATION
-
-Verify application visibility for:
-
-```text
-open
-pending
-partially_filled
-filled
-cancelled
-triggered
-```
-
-Specifically verify:
-
-* stop orders
-* take-profit orders
-* conditional orders
-* partially filled orders
-
-Ensure the UI label "Open Orders" matches what is actually being shown.
-
----
-
-# 15. PAYOUT FINAL CERTIFICATION
-
-Verify payout states:
-
-```text
-requested
-processing
-processed
-rejected
-cancelled
-failed
-```
-
-Only completed cash withdrawals should affect:
-
-```text
-cash PnL
-total payouts
-withdrawn capital
-```
-
-Test:
-
-* duplicate payout event
-* repeated API response
-* payout reversal
-* failed payout after request
-* multiple payouts
-
----
-
-# 16. CASH-PNL FINAL RECONCILIATION
-
-The final application must clearly distinguish:
-
-```text
-Trading PnL
-Realized PnL
-Unrealized PnL
-Purchase Costs
-Refunds
-Adjustments
-Payouts
-Actual Cash PnL
-```
-
-Prove the final cash equation from source transactions.
-
-For example:
-
-```text
-cash PnL
-=
-processed payouts
--
-purchase costs
-+
-refunds
-+
-adjustments
-```
-
-using the repository's actual accounting definition.
-
-Do not substitute trading equity for cash PnL.
-
----
-
-# 17. BANK / LEDGER RECONCILIATION
-
-Use the currently verified historical purchase set.
-
-Reconcile:
-
-```text
-bank amount
-invoice amount
-purchase record
-purchaseId
-account
-ledger transaction
-cash PnL
-```
-
-Document which values are:
-
-```text
-BANK VERIFIED
-API VERIFIED
-MANUALLY SEEDED
-UNVERIFIED
-```
-
-The application must never present manually seeded historical data as live bank-synced truth.
-
----
-
-# 18. FUTURE PURCHASE FAILURE MODE
-
-Simulate a new purchase that exists in Propr but not in the local ledger.
-
-Determine:
-
-* does active capital update?
-* does total invested update?
-* does cash PnL update?
-* does the UI expose reconciliation discrepancy?
-* does the system silently remain wrong?
-
-The correct behavior must be explicit.
-
----
-
-# 19. REFUND / ADJUSTMENT FINAL TEST
-
-Inject:
-
-```text
-refund
-partial refund
-adjustment
-negative adjustment
-duplicate adjustment
-```
-
-Verify correct accounting.
-
----
-
-# 20. REALTIME ARCHITECTURE CERTIFICATION
-
-Do NOT assume that Vercel cannot host WebSockets.
-
-As of June 2026, Vercel publicly supports WebSocket connections on Vercel Functions in public beta, with connections pinned to a Function instance; shared durable state across instances still requires an appropriate shared store such as Redis.
-
-Therefore audit the repository against the **current** Vercel model.
-
-Determine which architecture is actually implemented:
-
-```text
-Vercel WebSocket
-Vercel polling
-external WebSocket worker
-hybrid
-```
-
-Do not certify based on assumptions.
-
----
-
-# 21. WEBSOCKET SOURCE CERTIFICATION
-
-Determine exactly:
-
-```text
-Who connects to Propr WS?
-Who authenticates?
-Who subscribes?
-Who owns connection state?
-Who performs reconnect?
-Who persists state?
-Who publishes updates to the UI?
-```
-
-Trace:
-
-```text
-Propr WS
-→ sync layer
-→ state store
-→ Next.js
-→ browser
-```
-
-or whatever architecture is actually present.
-
----
-
-# 22. MULTI-INSTANCE REALTIME CERTIFICATION
-
-If Vercel Functions are used for WebSockets:
-
-Test multiple simultaneous clients.
-
-Determine whether:
-
-```text
-client A → instance A
-client B → instance B
-```
-
-can observe consistent account state.
-
-Verify shared state and event propagation.
-
-If the architecture does not support multi-instance consistency, document the exact limitation.
-
----
-
-# 23. HIGH-WATER MARK PERSISTENCE
-
-Restart the relevant runtime.
-
-Verify:
-
-```text
-highWaterMark before restart
-highWaterMark after restart
-```
-
-They must reconcile correctly.
-
-Repeat after:
-
-* deployment
-* cold start
-* function recycling
-* WS reconnect
-* REST refresh
-
----
-
-# 24. REST/WS CONFLICT RESOLUTION
-
-Create contradictory values intentionally.
-
-Example:
-
-```text
-REST equity = X
-WS equity = Y
-REST timestamp older
-WS timestamp newer
-```
-
-Prove deterministic precedence.
-
-Never permit request completion order to determine financial truth.
-
----
-
-# 25. STALE DATA SAFETY
-
-Disconnect the Propr API.
-
-Disconnect WebSocket.
-
-Delay responses.
-
-Return stale responses.
-
-Return partial responses.
-
-Then verify the UI displays:
-
-```text
-LIVE
-STALE
-SYNC ERROR
-OFFLINE
-UNKNOWN
-```
-
-correctly.
-
-The user must never mistake stale financial values for current values.
-
----
-
-# 26. MOCK DATA CERTIFICATION
-
-Search:
-
-```text
-mock
-fixture
-seed
-fallback
-fake
-demo
-sample
-placeholder
-```
-
-For each occurrence determine whether it is:
-
-```text
-TEST ONLY
-DEVELOPMENT ONLY
-PRODUCTION PATH
-```
-
-Any production financial fallback to synthetic data is a release blocker.
-
----
-
-# 27. API ERROR MATRIX
-
-Test:
-
-```text
-401
-403
-404
-408
-409
-429
-500
-502
-503
-504
-timeout
-DNS failure
-invalid JSON
-schema mismatch
-empty response
-partial response
-```
-
-Every case must produce safe behavior.
-
-Never convert API failure into:
-
-```text
-$0
-0 trades
-0 PnL
-safe account
-no positions
-```
-
-unless the upstream explicitly returned those values.
-
----
-
-# 28. RATE-LIMIT CERTIFICATION
-
-Determine total REST request volume for:
-
-```text
-1 account
-5 accounts
-20 accounts
-50 accounts
-100 accounts
-```
-
-Measure:
-
-```text
-requests/page load
-requests/15 sec
-requests/account
-requests/reconnect
-requests/multi-tab
-```
-
-Verify caching prevents accidental request multiplication.
-
-Test a 429 response.
-
-Verify backoff behavior.
-
----
-
-# 29. SECURITY CERTIFICATION
-
-Search repository, generated bundles, server output and logs for:
-
-```text
-PROPR_API_KEY
-X-API-Key
-pk_live_
-Authorization
-```
-
-Verify secrets do not reach:
-
-```text
-client props
-browser HTML
-browser JS
-source maps
-logs
-error pages
-health endpoints
-API responses
-```
-
----
-
-# 30. READ-ONLY CERTIFICATION
-
-Prove the application cannot:
-
-```text
-create order
-modify order
-cancel order
-request payout
-purchase challenge
-modify account
-```
-
-Search all HTTP clients and routes.
-
-Any mutating endpoint reachable by production UI is a release blocker unless explicitly intentional and documented.
-
----
-
-# 31. AUTHENTICATION / ACCESS CONTROL
-
-Determine whether this application is:
-
-```text
-private single-user terminal
-authenticated multi-user application
-public dashboard
-```
-
-Then verify the architecture matches that assumption.
-
-If `PROPR_API_KEY` is a single-user secret:
-
-* it must never be accessible to unauthorized users;
-* public deployment must not expose another user's financial data;
-* health/status endpoints must not leak private data.
-
----
-
-# 32. HEALTH ENDPOINT SECURITY
-
-Audit:
-
-```text
-/api/health
-```
-
-Verify it exposes only necessary operational information.
-
-It must not expose:
-
-* secret values
-* raw Propr payloads
-* authorization headers
-* private account data
-* filesystem paths
-* stack traces
-
----
-
-# 33. DEPLOYMENT CERTIFICATION
-
-Deploy the exact audited commit to the intended production environment.
-
-Do not use a modified local checkout.
-
-Record:
-
-```text
-deployment ID
-build ID
-commit SHA
-environment
-region
-runtime
-deployment timestamp
-```
-
-Verify production and source SHA match.
-
----
-
-# 34. PRODUCTION BUILD CERTIFICATION
-
-Run the actual production artifact.
-
-Verify every route:
-
-```text
-/
-/accounts
-/positions
-/orders
-/finance
-/history
-/live
-/system
-/api/health
-```
-
-No route may depend on local-only files.
-
----
-
-# 35. VERCEL RUNTIME CERTIFICATION
-
-Determine exactly which execution model is used.
-
-Verify:
-
-```text
-Node runtime
-Fluid compute configuration
-function duration
-cache behavior
-revalidation
-WebSocket behavior if used
-shared state
-cold starts
-multi-instance behavior
-```
-
-Do not infer runtime behavior from local Next.js execution.
-
----
-
-# 36. ENVIRONMENT CERTIFICATION
-
-Inventory:
-
-```text
-required secrets
-optional variables
-public variables
-runtime variables
-build-time variables
-```
-
-Test:
-
-```text
-missing API key
-invalid API key
-empty API key
-wrong environment
-```
-
-Expected behavior must be safe and explicit.
-
----
-
-# 37. OBSERVABILITY CERTIFICATION
-
-Verify production monitoring exists for:
-
-```text
-API errors
-API latency
-429s
-WS reconnects
-WS failures
-schema failures
-stale data
-application errors
-build failures
-health failures
-```
-
-Determine where these events are observable.
-
-A financial monitoring terminal without operational observability is not fully production certified.
-
----
-
-# 38. HEALTH MONITORING
-
-Verify `/api/health` can be monitored externally.
-
-Test:
-
-```text
-healthy
-API degraded
-API unreachable
-stale
-WS disconnected
-internal exception
-```
-
-Health must not report "healthy" merely because the Next.js process itself is responding.
-
----
-
-# 39. INCIDENT / RECOVERY TEST
-
-Simulate:
-
-```text
-Propr API outage for 5 minutes
-WebSocket outage for 5 minutes
-deployment restart
-Redis/state-store outage if applicable
-Vercel function recycling
-```
-
-Verify recovery without:
-
-* duplicated trades
-* reset HWM
-* lost finance data
-* incorrect payout totals
-* fabricated state
-
----
-
-# 40. CACHE CERTIFICATION
-
-Determine all caches.
-
-For each:
-
-```text
-source
-TTL
-revalidation
-scope
-key
-invalidation
-failure behavior
-```
-
-A user-specific financial response must never leak across users or accounts via shared caching.
-
----
-
-# 41. BROWSER CACHE / CLIENT STATE
-
-Verify stale client state cannot overwrite fresher server state.
-
-Test:
-
-```text
-two tabs
-background tab
-page restore
-hard reload
-network reconnect
-browser sleep/resume
-```
-
----
-
-# 42. FINANCIAL DISPLAY CERTIFICATION
-
-Every displayed number must be traceable.
-
-Create a table:
-
-| UI Value | Source | Calculation | Timestamp | Expected | Actual |
-| -------- | ------ | ----------- | --------- | -------: | -----: |
-
-Cover:
-
-```text
-balance
-equity
-PnL
-fees
-drawdown
-daily loss
-active capital
-total invested
-payouts
-cash PnL
-trade count
-position count
-```
-
----
-
-# 43. NUMBER FORMATTING CERTIFICATION
-
-Verify:
-
-* NaN
-* Infinity
-* null
-* undefined
-* negative zero
-* tiny decimals
-* very large values
-
-Never display:
-
-```text
-NaN
-Infinity
-undefined
-null
--$0.00
-```
-
-unless intentionally specified.
-
----
-
-# 44. ACCESSIBILITY CERTIFICATION
-
-Verify:
-
-* keyboard navigation
-* semantic headings
-* tables
-* progress bars
-* ARIA
-* status indicators
-* focus management
-* color-independent risk states
-
-Risk states must be understandable without color.
-
----
-
-# 45. RESPONSIVE UI CERTIFICATION
-
-Test:
-
-```text
-desktop
-tablet
-mobile
-narrow viewport
-large viewport
-```
-
-No critical financial metric may become hidden or ambiguous.
-
----
-
-# 46. PERFORMANCE CERTIFICATION
-
-Measure:
-
-```text
-first load
-dashboard load
-API aggregation
-realtime event processing
-route transitions
-memory
-CPU
-```
-
-Test:
-
-```text
-1
-5
-20
-50
-100
-```
-
-accounts.
-
-Identify quadratic processing or repeated API aggregation.
-
----
-
-# 47. DEPENDENCY / SUPPLY-CHAIN CERTIFICATION
-
-Run:
-
-```bash
-npm audit
-```
-
-Classify:
-
-```text
-critical
-high
-medium
-low
-development-only
-production
-```
-
-Do not automatically dismiss vulnerabilities because "the app is private."
-
----
-
-# 48. DEAD-CODE / FAKE-COMPLETENESS CERTIFICATION
-
-Find:
-
-```text
-TODO
-FIXME
-placeholder
-coming soon
-hardcoded values
-fake metrics
-unused routes
-empty pages
-```
-
-Verify every production route is functional.
-
----
-
-# 49. DOCUMENTATION CLAIM AUDIT
-
-Compare source against:
-
-```text
-README
-AUDIT.md
-POST_REMEDIATION_AUDIT.md
-POST_REMEDIATION_FINDINGS.md
-POST_REMEDIATION_TEST_REPORT.md
-prompt.md
-```
-
-Every claim becomes:
-
-```text
-TRUE
-PARTIALLY TRUE
-FALSE
-UNVERIFIED
-```
-
-Pay particular attention to:
-
-```text
-real-time
-production ready
-read-only
-trailing drawdown
-failure-safe
-Vercel compatible
-83 tests
-API contract compliance
-```
-
----
-
-# 50. PRODUCTION DATA RECONCILIATION
-
-Use the known verified account and purchase dataset.
-
-Reconcile:
-
-```text
-account IDs
-purchase IDs
-account status
-purchase amount
-active capital
-historical capital
-failed capital
-realized PnL
-fees
-payouts
-cash PnL
-```
-
-Produce a complete reconciliation table.
-
-Every unexplained discrepancy blocks final certification.
-
----
-
-# 51. KNOWN-STATE END-TO-END TEST
-
-Create a fixed known state:
-
-```text
-Account A:
-known balance
-known position
-known mark
-known PnL
-known DD
-known purchase
-
-Account B:
-different known values
-```
-
-Then verify the complete journey:
-
-```text
-API
-→ normalization
-→ calculations
-→ cache/state
-→ page
-→ UI display
-```
-
-Every final number must match independently calculated expectations.
-
----
-
-# 52. FAILURE-STATE END-TO-END TEST
-
-Repeat the same test with:
-
-```text
-API unavailable
-WS unavailable
-stale response
-schema mismatch
-429
-invalid credentials
-```
-
-The UI must remain truthful.
-
----
-
-# 53. MULTI-ACCOUNT END-TO-END TEST
-
-Run two accounts simultaneously.
-
-Verify:
-
-```text
 PnL
 positions
 orders
-DD
-HWM
-capital
-history
-finance
-status
-```
-
-never cross-contaminate.
-
----
-
-# 54. BROWSER / PRODUCTION E2E
-
-Use a real browser against the production deployment.
-
-Verify:
-
-```text
-load
-navigation
-refresh
-hard refresh
-route transitions
-mobile viewport
-error state
-reconnect
-```
-
-No console errors.
-
-No hydration errors.
-
-No failed API requests other than intentionally simulated failures.
-
----
-
-# 55. DATA LOSS / RECOVERY
-
-Determine what happens if:
-
-```text
-process restarts
-deployment occurs
-cache disappears
-Redis/state store disappears
-browser storage disappears
-```
-
-For every state determine:
-
-```text
-recoverable?
-source of truth?
-reconstruction mechanism?
-```
-
-No financial state may depend exclusively on volatile memory if it cannot be reconstructed safely.
-
----
-
-# 56. FINAL RISK REGISTER
-
-Produce all remaining findings in:
-
-```text
-CRITICAL
-HIGH
-MEDIUM
-LOW
-INFO
-```
-
-Each finding must contain:
-
-```text
-ID
-Severity
-File
-Line
-Observed
-Expected
-Impact
-Reproduction
-Evidence
-Root cause
-Recommended action
-Regression protection
+payouts
+REST/WS reconciliation
+API failure states
+read-only behavior
+secret isolation
+multi-account isolation
 ```
 
 ---
 
-# 57. RELEASE-BLOCKER CONDITIONS
+# 32. FINAL DIFF REVIEW
 
-The application is NOT certified if any of these occur:
-
-1. Incorrect live financial calculation.
-2. Incorrect active capital.
-3. Incorrect drawdown.
-4. Incorrect daily loss.
-5. Incorrect payout accounting.
-6. API failure produces synthetic financial data.
-7. Secret exposure.
-8. Account cross-contamination.
-9. Non-deterministic REST/WS reconciliation.
-10. High-water mark loss without safe recovery.
-11. Production deployment differs from audited commit.
-12. Unexplained discrepancy against authoritative Propr data.
-13. Critical production security issue.
-14. Critical deployment/runtime failure.
-15. Critical mutation survives.
-16. Critical route broken.
-17. Production data can be stale while displayed as live.
-
----
-
-# 58. CONDITIONAL-RELEASE CONDITIONS
-
-The application may be:
+For every production-code change ask:
 
 ```text
-PRODUCTION READY WITH CONDITIONS
+Did this change remove AI slop?
+Did it improve human readability?
+Did it preserve behavior?
+Could the same result have been achieved with fewer changes?
 ```
 
-only when remaining issues are operational enhancements such as:
-
-* ledger automation
-* external monitoring
-* optional Redis optimization
-* advanced observability
-* cosmetic UX
-* non-critical performance improvements
-
-Conditions must NOT include unresolved financial correctness.
+If the answer to the first two is no, revert the change.
 
 ---
 
-# 59. FINAL CERTIFICATION SCORECARD
+# 33. FINAL OUTPUT
 
 Produce:
 
-| Area                   | PASS | CONDITIONAL | FAIL | Evidence |
-| ---------------------- | ---- | ----------- | ---- | -------- |
-| Repository integrity   |      |             |      |          |
-| Clean build            |      |             |      |          |
-| Tests                  |      |             |      |          |
-| Mutation testing       |      |             |      |          |
-| API contracts          |      |             |      |          |
-| Live API               |      |             |      |          |
-| Account discovery      |      |             |      |          |
-| Account lifecycle      |      |             |      |          |
-| Active capital         |      |             |      |          |
-| PnL                    |      |             |      |          |
-| Equity                 |      |             |      |          |
-| Drawdown               |      |             |      |          |
-| Daily loss             |      |             |      |          |
-| HWM                    |      |             |      |          |
-| Positions              |      |             |      |          |
-| Orders                 |      |             |      |          |
-| Payouts                |      |             |      |          |
-| Cash PnL               |      |             |      |          |
-| Ledger                 |      |             |      |          |
-| Reconciliation         |      |             |      |          |
-| Realtime               |      |             |      |          |
-| REST/WS consistency    |      |             |      |          |
-| Failure safety         |      |             |      |          |
-| Secret security        |      |             |      |          |
-| Read-only guarantee    |      |             |      |          |
-| Authentication/access  |      |             |      |          |
-| Caching                |      |             |      |          |
-| Vercel runtime         |      |             |      |          |
-| Production deployment  |      |             |      |          |
-| Observability          |      |             |      |          |
-| Recovery               |      |             |      |          |
-| Accessibility          |      |             |      |          |
-| Responsive UI          |      |             |      |          |
-| Performance            |      |             |      |          |
-| Documentation accuracy |      |             |      |          |
-
----
-
-# 60. FINAL PRODUCTION CERTIFICATION
-
-Only issue:
-
 ```text
-PRODUCTION READY
+AI_SLOP_CLEANUP_REPORT.md
 ```
 
-when every release-blocker condition is satisfied.
-
-Issue:
+with:
 
 ```text
-PRODUCTION READY WITH CONDITIONS
-```
-
-only when remaining conditions are non-financial, non-security, and non-correctness issues.
-
-Issue:
-
-```text
-NOT PRODUCTION READY
-```
-
-for any unresolved release blocker.
-
----
-
-# 61. FINAL DELIVERABLES
-
-Create exactly these artifacts:
-
-```text
-FINAL_RELEASE_AUDIT.md
-FINAL_RELEASE_TEST_REPORT.md
-FINAL_RELEASE_FINDINGS.md
-FINAL_RELEASE_RECONCILIATION.md
-```
-
-Optional supporting artifacts:
-
-```text
-tests/release/
-tests/live-contract/
-tests/reconciliation/
-tests/security/
-tests/deployment/
-```
-
-Do not modify production code during certification.
-
----
-
-# 62. FINAL OUTPUT
-
-End with exactly:
-
-```text
-FINAL PRODUCTION CERTIFICATION
-==============================
-
 Repository:
-Commit:
-Branch:
-Audit Date:
+Commit before cleanup:
+Commit after cleanup:
 
-Remote Repository Verified:
-Clean Checkout Verified:
-Production Deployment Verified:
+Files reviewed:
+Files changed:
+
+Documentation cleanup:
+Comment cleanup:
+UI copy cleanup:
+Naming cleanup:
+Code abstraction cleanup:
+Formatting cleanup:
+
+AI-slop patterns removed:
+- count
+
+Behavioral changes:
+- MUST BE ZERO unless explicitly justified
 
 Tests:
 Typecheck:
 Lint:
 Build:
-Mutation Testing:
-Adversarial Testing:
-API Contract Testing:
-Live API Verification:
-Financial Reconciliation:
-Production E2E:
-Security Verification:
-Deployment Verification:
-Recovery Verification:
 
-Critical Findings:
-High Findings:
-Medium Findings:
-Low Findings:
-
-Financial Correctness:
-Realtime Correctness:
-Operational Reliability:
-Security:
-Deployment:
-
-FINAL STATUS:
-[PRODUCTION READY]
-[PRODUCTION READY WITH CONDITIONS]
-[NOT PRODUCTION READY]
+Remaining intentional patterns:
+- explanation
 ```
 
-Then provide:
+Also produce a concise final report containing:
 
-## Why This Status Is Correct
+## What Changed
 
-## Remaining Conditions, if any
+Only concrete changes.
 
-## Evidence of Financial Correctness
+## What Was Deliberately Left Alone
 
-## Evidence of Production Reliability
+Explain why some verbose or repetitive code/docs were preserved.
 
-## Evidence of Security
+## Verification
 
-## Known Limitations
-
-## Exact Trigger for the Next Audit
-
-The next audit should NOT occur merely because more code was written.
-
-The next audit should be triggered only by:
+Show:
 
 ```text
-major Propr API contract change
-major financial calculation change
-new account/challenge type
-new payout/accounting model
-major realtime architecture change
-new external financial integration
-authentication architecture change
-material production security incident
-major deployment architecture change
+npm test
+npm run type-check
+npm run lint
+npm run build
 ```
 
-Otherwise this certification should be treated as the final audit baseline.
+and their results.
+
+---
+
+# 34. FINAL ACCEPTANCE CRITERIA
+
+The cleanup is accepted only when:
+
+```text
+[ ] no important technical meaning was lost
+[ ] no financial semantics changed
+[ ] no unsupported claims were introduced
+[ ] banned AI vocabulary has been reviewed
+[ ] filler phrases have been reviewed
+[ ] AI-writing patterns have been reviewed
+[ ] comments explain reasons rather than syntax
+[ ] test names describe concrete behavior
+[ ] UI copy is concrete
+[ ] documentation is project-specific
+[ ] unnecessary abstractions were removed only where justified
+[ ] useful abstractions were preserved
+[ ] no large meaningless formatting diff exists
+[ ] no unnecessary dependency was added
+[ ] tests pass
+[ ] typecheck passes
+[ ] lint passes
+[ ] build passes
+[ ] git diff is explainable
+```
+
+---
+
+# 35. IMPORTANT FINAL RULE
+
+Do not finish by saying:
+
+```text
+"The code is now cleaner, more robust, and production-ready."
+```
+
+That is exactly the kind of generic conclusion this task is intended to remove.
+
+End with concrete facts:
+
+```text
+X files changed.
+Y comments removed/reworked.
+Z documentation sections rewritten.
+N AI-slop patterns removed.
+No business logic changed.
+All tests pass.
+Build passes.
+```
+
+The repository should feel less generated because the writing and code became more specific, restrained, and intentional—not because it was rewritten into a new artificial "human" style.

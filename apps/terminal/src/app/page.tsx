@@ -48,17 +48,20 @@ export default async function OverviewPage() {
     <div className="space-y-6">
       {/* ─── Executive Financial Header (Prompt §11) ────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Total Invested */}
+        {/* Total Actual Cash Spent */}
         <div className="p-4 rounded border border-[var(--border-primary)] bg-[var(--bg-surface)]">
           <div className="flex items-center justify-between text-[11px] font-mono tracking-wider text-[var(--text-muted)]">
-            <span>TOTAL INVESTED</span>
-            <span className="text-[10px] px-1 rounded bg-black/40 text-[var(--text-secondary)]">PROPR</span>
+            <span>TOTAL ACTUAL CASH SPENT</span>
+            <span className="text-[10px] px-1 rounded bg-black/40 text-[var(--text-secondary)]">ALL FIRMS</span>
           </div>
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--text-primary)]">
-            {formatINR(finance.totalInvestedINR)}
+            {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
           </div>
           <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
-            {formatUSD(finance.totalInvestedUSD)} USD
+            Propr Face: {formatUSD(finance.totalInvestedUSD)} USD
+          </div>
+          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+            Propr {formatINR(finance.proprActualCashCostINR)} + Breakout {formatINR(finance.breakoutActualCashCostINR)}
           </div>
         </div>
 
@@ -69,10 +72,13 @@ export default async function OverviewPage() {
             <span className="text-[10px] px-1 rounded bg-cyan-950/50 text-[var(--cyan)]">AT RISK</span>
           </div>
           <div className="mt-2 text-xl md:text-2xl font-mono font-bold text-[var(--cyan)]">
-            {formatINR(finance.activeCapitalINR)}
+            {formatINR(finance.activeActualCashCostINR || finance.activeCapitalINR)}
           </div>
           <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
-            {formatUSD(finance.activeCapitalUSD)} USD
+            Active Face: {formatUSD(finance.activeCapitalUSD)} USD
+          </div>
+          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+            Est Face INR: {formatINR(finance.activeCapitalINR)}
           </div>
         </div>
 
@@ -88,6 +94,9 @@ export default async function OverviewPage() {
           <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
             {formatUSD(finance.totalPayoutsUSD)} USD
           </div>
+          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+            Processed Bank Cash
+          </div>
         </div>
 
         {/* Actual Cash PnL */}
@@ -100,7 +109,10 @@ export default async function OverviewPage() {
             {formatINR(finance.actualCashPnLINR)}
           </div>
           <div className="mt-1 text-xs font-mono text-[var(--text-secondary)]">
-            {formatUSD(finance.actualCashPnLUSD)} USD
+            Net Outflow: {formatINR(finance.totalActualCashCostINR || finance.totalInvestedINR)}
+          </div>
+          <div className="mt-0.5 text-[10px] font-mono text-[var(--text-muted)]">
+            All Prop Firms Combined
           </div>
         </div>
       </div>

@@ -128,14 +128,21 @@ export interface SystemHealth {
 export interface FinanceTransaction {
   id: string;
   date: string;
+  cashTransactionDate?: string;
   firm: string;
   challengeName?: string;
   type: "purchase" | "payout" | "refund" | "adjustment";
+  transactionType?: "purchase" | "payout" | "refund" | "adjustment";
   amountUSD: string;
   amountINR?: string;
+  purchaseFaceValueUSD?: string;
+  actualCashCostINR?: string;
   bankVerified: boolean;
+  bankReference?: string;
   invoiceNumber?: string;
   purchaseId?: string;
+  accountId?: string;
+  notes?: string;
 }
 
 export interface DashboardData {
@@ -147,12 +154,19 @@ export interface DashboardData {
   finance: {
     totalInvestedUSD: string;
     totalInvestedINR: string;
+    proprActualCashCostINR: string;
+    breakoutActualCashCostINR: string;
+    totalActualCashCostINR: string;
     totalPayoutsUSD: string;
     totalPayoutsINR: string;
     actualCashPnLUSD: string;
     actualCashPnLINR: string;
     activeCapitalUSD: string;
     activeCapitalINR: string;
+    activeActualCashCostINR: string;
+    historicalSunkCashCostINR: string;
+    totalRefundsINR: string;
+    totalAdjustmentsINR: string;
     ledger: FinanceTransaction[];
   };
   summary: {
@@ -252,12 +266,19 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       finance: {
         totalInvestedUSD: "0",
         totalInvestedINR: "0",
+        proprActualCashCostINR: "0",
+        breakoutActualCashCostINR: "0",
+        totalActualCashCostINR: "0",
         totalPayoutsUSD: "0",
         totalPayoutsINR: "0",
         actualCashPnLUSD: "0",
         actualCashPnLINR: "0",
         activeCapitalUSD: "0",
         activeCapitalINR: "0",
+        activeActualCashCostINR: "0",
+        historicalSunkCashCostINR: "0",
+        totalRefundsINR: "0",
+        totalAdjustmentsINR: "0",
         ledger: SEED_PURCHASES,
       },
       summary: { activeEvals: 0, funded: 0, passed: 0, failedBreached: 0, totalAccounts: 0 },
@@ -513,41 +534,78 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       accountId: p.accountId as string,
     }));
 
-    // Finance calculations (accounting for purchases, refunds, and adjustments)
+    // Finance calculations (Three-Layer Accounting: Face Value, Actual Cash, Trading Performance)
     const ledger = SEED_PURCHASES;
-    let totalPurchases = new Decimal(0);
-    let totalRefunds = new Decimal(0);
-    let totalAdjustments = new Decimal(0);
-    for (const tx of ledger) {
-      if (tx.type === "purchase") totalPurchases = totalPurchases.plus(d(tx.amountUSD));
-      if (tx.type === "refund") totalRefunds = totalRefunds.plus(d(tx.amountUSD));
-      if (tx.type === "adjustment") totalAdjustments = totalAdjustments.plus(d(tx.amountUSD));
-    }
-    const totalInvested = totalPurchases.minus(totalRefunds);
-
-    let totalPayouts = new Decimal(0);
-    for (const p of payouts) {
-      if (p.status === "processed") {
-        totalPayouts = totalPayouts.plus(d(p.userAmount || p.amount));
-      }
-    }
-
-    const cashPnl = totalPayouts.minus(totalInvested).plus(totalAdjustments);
     const rate = d(USD_TO_INR);
 
-    // Link active accounts to purchases to compute true active capital at risk
+    // Active accounts tracking
     const activePurchaseIds = new Set<string>();
+    const activeAccountIds = new Set<string>();
     for (const acc of accounts) {
-      if ((acc.stage === "EVALUATION" || acc.stage === "FUNDED") && acc.purchaseId) {
-        activePurchaseIds.add(acc.purchaseId);
+      if (acc.stage === "EVALUATION" || acc.stage === "FUNDED") {
+        activeAccountIds.add(acc.accountId);
+        if (acc.purchaseId) activePurchaseIds.add(acc.purchaseId);
       }
     }
-    let activeCapital = new Decimal(0);
+
+    let proprFaceUSD = new Decimal(0);
+    let proprActualCashINR = new Decimal(0);
+    let breakoutActualCashINR = new Decimal(0);
+    let activeFaceUSD = new Decimal(0);
+    let activeActualCashINR = new Decimal(0);
+    let sunkActualCashINR = new Decimal(0);
+    let totalRefundsINR = new Decimal(0);
+    let totalAdjustmentsINR = new Decimal(0);
+
     for (const tx of ledger) {
-      if (tx.type === "purchase" && activePurchaseIds.has(tx.id)) {
-        activeCapital = activeCapital.plus(d(tx.amountUSD));
+      const isPropr = tx.firm.toLowerCase() === "propr";
+      const isBreakout = tx.firm.toLowerCase() === "breakout";
+
+      if (tx.type === "purchase") {
+        const faceUSD = d(tx.purchaseFaceValueUSD || tx.amountUSD || "0");
+        const actualINR = d(tx.actualCashCostINR || tx.amountINR || "0");
+        const isActive = Boolean(
+          (tx.accountId && activeAccountIds.has(tx.accountId)) ||
+          (tx.id && activePurchaseIds.has(tx.id))
+        );
+
+        if (isPropr) {
+          proprFaceUSD = proprFaceUSD.plus(faceUSD);
+          proprActualCashINR = proprActualCashINR.plus(actualINR);
+        } else if (isBreakout) {
+          breakoutActualCashINR = breakoutActualCashINR.plus(actualINR);
+        }
+
+        if (isActive) {
+          activeFaceUSD = activeFaceUSD.plus(faceUSD);
+          activeActualCashINR = activeActualCashINR.plus(actualINR);
+        } else {
+          sunkActualCashINR = sunkActualCashINR.plus(actualINR);
+        }
+      } else if (tx.type === "refund") {
+        const inr = d(tx.refundINR || tx.amountINR || "0");
+        totalRefundsINR = totalRefundsINR.plus(inr);
+      } else if (tx.type === "adjustment") {
+        const inr = d(tx.adjustmentINR || tx.amountINR || "0");
+        totalAdjustmentsINR = totalAdjustmentsINR.plus(inr);
       }
     }
+
+    const totalActualPropFirmCashCostINR = proprActualCashINR.plus(breakoutActualCashINR);
+    const totalActualCashOutflowINR = totalActualPropFirmCashCostINR.minus(totalRefundsINR).minus(totalAdjustmentsINR);
+
+    let totalPayoutsUSD = new Decimal(0);
+    let totalPayoutsINR = new Decimal(0);
+    for (const p of payouts) {
+      if (p.status === "processed") {
+        const amtUSD = d(p.userAmount || p.amount);
+        totalPayoutsUSD = totalPayoutsUSD.plus(amtUSD);
+        totalPayoutsINR = totalPayoutsINR.plus(amtUSD.times(rate));
+      }
+    }
+
+    const actualCashPnLINR = totalPayoutsINR.minus(totalActualCashOutflowINR);
+    const actualCashPnLUSD = rate.isZero() ? new Decimal(0) : actualCashPnLINR.dividedBy(rate);
 
     // Summary
     const summary = {
@@ -571,14 +629,21 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         apiHealthy: true,
       },
       finance: {
-        totalInvestedUSD: ds(totalInvested),
-        totalInvestedINR: ds(totalInvested.times(rate)),
-        totalPayoutsUSD: ds(totalPayouts),
-        totalPayoutsINR: ds(totalPayouts.times(rate)),
-        actualCashPnLUSD: ds(cashPnl),
-        actualCashPnLINR: ds(cashPnl.times(rate)),
-        activeCapitalUSD: ds(activeCapital),
-        activeCapitalINR: ds(activeCapital.times(rate)),
+        totalInvestedUSD: ds(proprFaceUSD),
+        totalInvestedINR: ds(proprFaceUSD.times(rate)),
+        proprActualCashCostINR: ds(proprActualCashINR),
+        breakoutActualCashCostINR: ds(breakoutActualCashINR),
+        totalActualCashCostINR: ds(totalActualPropFirmCashCostINR),
+        totalPayoutsUSD: ds(totalPayoutsUSD),
+        totalPayoutsINR: ds(totalPayoutsINR),
+        actualCashPnLUSD: ds(actualCashPnLUSD),
+        actualCashPnLINR: ds(actualCashPnLINR),
+        activeCapitalUSD: ds(activeFaceUSD),
+        activeCapitalINR: ds(activeFaceUSD.times(rate)),
+        activeActualCashCostINR: ds(activeActualCashINR),
+        historicalSunkCashCostINR: ds(sunkActualCashINR),
+        totalRefundsINR: ds(totalRefundsINR),
+        totalAdjustmentsINR: ds(totalAdjustmentsINR),
         ledger,
       },
       summary,
@@ -600,12 +665,19 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       finance: {
         totalInvestedUSD: "0",
         totalInvestedINR: "0",
+        proprActualCashCostINR: "0",
+        breakoutActualCashCostINR: "0",
+        totalActualCashCostINR: "0",
         totalPayoutsUSD: "0",
         totalPayoutsINR: "0",
         actualCashPnLUSD: "0",
         actualCashPnLINR: "0",
         activeCapitalUSD: "0",
         activeCapitalINR: "0",
+        activeActualCashCostINR: "0",
+        historicalSunkCashCostINR: "0",
+        totalRefundsINR: "0",
+        totalAdjustmentsINR: "0",
         ledger: SEED_PURCHASES,
       },
       summary: { activeEvals: 0, funded: 0, passed: 0, failedBreached: 0, totalAccounts: 0 },

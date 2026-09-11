@@ -158,3 +158,140 @@ export function calculateSpendingBreakdown(
     otherSpend: fromDecimal(otherSpend),
   };
 }
+
+/**
+ * Calculate active actual cash cost in INR (actual bank debits for currently active accounts).
+ * Distinct from active face capital (USD).
+ */
+export function calculateActiveActualCashCost(
+  transactions: FinanceTransaction[],
+  activeAccountIds: string[]
+): DecimalString {
+  const activeSet = new Set(activeAccountIds);
+  let total = new Decimal(0);
+  for (const tx of transactions) {
+    if (tx.type === "purchase" && tx.accountId && activeSet.has(tx.accountId)) {
+      const inr = tx.actualCashCostINR || tx.amountINR;
+      if (inr) {
+        total = total.plus(toDecimal(inr));
+      }
+    }
+  }
+  return fromDecimal(total);
+}
+
+/**
+ * Calculate actual net cash outflow in INR across all prop firms (Propr + Breakout).
+ * Formula: sum(actual purchase cash costs) - refunds +/- adjustments
+ */
+export function calculateActualCashOutflowINR(
+  transactions: FinanceTransaction[]
+): DecimalString {
+  let totalPurchases = new Decimal(0);
+  let totalRefunds = new Decimal(0);
+  let totalAdjustments = new Decimal(0);
+
+  for (const tx of transactions) {
+    if (tx.type === "purchase") {
+      const inr = tx.actualCashCostINR || tx.amountINR || "0";
+      totalPurchases = totalPurchases.plus(toDecimal(inr));
+    } else if (tx.type === "refund") {
+      const inr = tx.refundINR || tx.amountINR || "0";
+      totalRefunds = totalRefunds.plus(toDecimal(inr));
+    } else if (tx.type === "adjustment") {
+      const inr = tx.adjustmentINR || tx.amountINR || "0";
+      totalAdjustments = totalAdjustments.plus(toDecimal(inr));
+    }
+  }
+
+  // Net outflow: purchases - refunds - positive adjustments (or + negative adjustments)
+  const netOutflow = totalPurchases.minus(totalRefunds).minus(totalAdjustments);
+  return fromDecimal(netOutflow);
+}
+
+/**
+ * Calculate actual cash PnL in INR from actual bank debits, refunds, adjustments, and payouts.
+ * Formula (Section 7):
+ * Actual Cash PnL = Processed Payouts + Refunds + Positive Adjustments - Actual Purchase Cash Costs - Negative Adjustments
+ *                = Processed Payouts - Net Cash Outflow
+ */
+export function calculateActualCashPnLFromCashLedger(
+  transactions: FinanceTransaction[],
+  processedPayoutsINR: DecimalString | string = "0"
+): DecimalString {
+  const netOutflow = toDecimal(calculateActualCashOutflowINR(transactions));
+  const payouts = toDecimal(processedPayoutsINR);
+  return fromDecimal(payouts.minus(netOutflow));
+}
+
+/**
+ * Compute the complete 12 aggregates required by Section 10 of Final Financial Reconciliation.
+ */
+export function calculateThreeLayerFinanceAggregates(
+  transactions: FinanceTransaction[],
+  activeAccountIds: string[],
+  processedPayoutsINR: DecimalString | string = "0"
+) {
+  const activeSet = new Set(activeAccountIds);
+
+  let proprFaceUSD = new Decimal(0);
+  let proprActualCashINR = new Decimal(0);
+  let breakoutActualCashINR = new Decimal(0);
+  let activeFaceUSD = new Decimal(0);
+  let activeActualCashINR = new Decimal(0);
+  let sunkActualCashINR = new Decimal(0);
+  let totalRefundsINR = new Decimal(0);
+  let totalAdjustmentsINR = new Decimal(0);
+
+  for (const tx of transactions) {
+    const isPropr = tx.firm.toLowerCase() === "propr";
+    const isBreakout = tx.firm.toLowerCase() === "breakout";
+
+    if (tx.type === "purchase") {
+      const faceUSD = toDecimal(tx.purchaseFaceValueUSD || tx.amountUSD || "0");
+      const actualINR = toDecimal(tx.actualCashCostINR || tx.amountINR || "0");
+      const isActive = Boolean(tx.accountId && activeSet.has(tx.accountId));
+
+      if (isPropr) {
+        proprFaceUSD = proprFaceUSD.plus(faceUSD);
+        proprActualCashINR = proprActualCashINR.plus(actualINR);
+      } else if (isBreakout) {
+        breakoutActualCashINR = breakoutActualCashINR.plus(actualINR);
+      }
+
+      if (isActive) {
+        activeFaceUSD = activeFaceUSD.plus(faceUSD);
+        activeActualCashINR = activeActualCashINR.plus(actualINR);
+      } else {
+        sunkActualCashINR = sunkActualCashINR.plus(actualINR);
+      }
+    } else if (tx.type === "refund") {
+      const inr = toDecimal(tx.refundINR || tx.amountINR || "0");
+      totalRefundsINR = totalRefundsINR.plus(inr);
+    } else if (tx.type === "adjustment") {
+      const inr = toDecimal(tx.adjustmentINR || tx.amountINR || "0");
+      totalAdjustmentsINR = totalAdjustmentsINR.plus(inr);
+    }
+  }
+
+  const totalActualPropFirmCashCostINR = proprActualCashINR.plus(breakoutActualCashINR);
+  const totalActualCashOutflowINR = totalActualPropFirmCashCostINR.minus(totalRefundsINR).minus(totalAdjustmentsINR);
+  const payoutsINR = toDecimal(processedPayoutsINR);
+  const actualCashPnLINR = payoutsINR.minus(totalActualCashOutflowINR);
+
+  return {
+    totalProprFacePurchaseValueUSD: proprFaceUSD.toFixed(2) as DecimalString,
+    totalProprActualCashCostINR: proprActualCashINR.toFixed(2) as DecimalString,
+    totalBreakoutActualCashCostINR: breakoutActualCashINR.toFixed(2) as DecimalString,
+    totalActualPropFirmCashCostINR: totalActualPropFirmCashCostINR.toFixed(2) as DecimalString,
+    totalActiveFaceCapitalUSD: activeFaceUSD.toFixed(2) as DecimalString,
+    totalActiveActualCashCostINR: activeActualCashINR.toFixed(2) as DecimalString,
+    totalHistoricalSunkActualCashCostINR: sunkActualCashINR.toFixed(2) as DecimalString,
+    totalRefundsINR: totalRefundsINR.toFixed(2) as DecimalString,
+    totalAdjustmentsINR: totalAdjustmentsINR.toFixed(2) as DecimalString,
+    totalProcessedPayoutsINR: payoutsINR.toFixed(2) as DecimalString,
+    totalActualCashOutflowINR: totalActualCashOutflowINR.toFixed(2) as DecimalString,
+    totalActualCashPnLINR: actualCashPnLINR.toFixed(2) as DecimalString,
+  };
+}
+

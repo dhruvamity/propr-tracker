@@ -207,8 +207,16 @@ export interface FinanceTransaction {
   accountId?: string;
   challengeName?: string;
   type: FinanceTransactionType;
+  transactionType?: FinanceTransactionType;
   amountUSD: DecimalString;
   amountINR?: DecimalString;
+  purchaseFaceValueUSD?: DecimalString;
+  actualCashCostINR?: DecimalString;
+  actualCashCostUSDEquivalent?: DecimalString;
+  refundINR?: DecimalString;
+  adjustmentINR?: DecimalString;
+  payoutINR?: DecimalString;
+  cashTransactionDate?: string;
   bankVerified: boolean;
   bankReference?: string;
   invoiceNumber?: string;
