@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   X,
   LineChart,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShell } from "./shell-context";
@@ -38,6 +39,7 @@ const navSections: NavSection[] = [
     title: "Risk",
     items: [
       { href: "/live", label: "Monitor", icon: Radio },
+      { href: "/rules", label: "Rules & Gate", icon: ShieldCheck },
     ],
   },
   {
