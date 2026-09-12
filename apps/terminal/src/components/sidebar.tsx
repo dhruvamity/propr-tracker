@@ -46,7 +46,6 @@ const navSections: NavSection[] = [
     title: "ACCOUNTS",
     items: [
       { href: "/accounts", label: "Accounts", icon: Layers },
-      { href: "/history", label: "History", icon: History },
     ],
   },
   {

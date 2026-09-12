@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatUSD, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
 import {
   Search,
@@ -8,8 +9,11 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  X,
+  ArrowUpRight,
+  ArrowDownRight,
+  ExternalLink,
 } from "lucide-react";
-import { TradeDrawer } from "./trade-drawer";
 
 export interface AccountItem {
   accountId: string;
@@ -58,15 +62,31 @@ interface AccountsDirectoryProps {
   accounts: AccountItem[];
 }
 
-type FilterState = "ALL" | "ACTIVE" | "FAILED" | "FUNDED";
+type FilterState = "ALL" | "ACTIVE" | "FUNDED" | "ARCHIVED";
 type SortOption = "RISK" | "EQUITY_DESC" | "TARGET_PROGRESS" | "ID";
 
 export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
-  const [filter, setFilter] = useState<FilterState>("ALL");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  const [filter, setFilter] = useState<FilterState>(() => {
+    if (tabParam === "archived" || tabParam === "failed" || tabParam === "history") return "ARCHIVED";
+    if (tabParam === "active") return "ACTIVE";
+    if (tabParam === "funded") return "FUNDED";
+    return "ALL";
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("RISK");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [drawerAccount, setDrawerAccount] = useState<AccountItem | null>(null);
+
+  useEffect(() => {
+    if (tabParam === "archived" || tabParam === "failed" || tabParam === "history") {
+      setFilter("ARCHIVED");
+    }
+  }, [tabParam]);
 
   const copyToClipboard = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,11 +102,11 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
   const filteredAndSortedAccounts = useMemo(() => {
     return accounts
       .filter((acc) => {
-        const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED";
+        const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED" || acc.stage === "CLOSED";
         const isActive = acc.stage === "EVALUATION" || acc.stage === "FUNDED";
 
         if (filter === "ACTIVE" && !isActive) return false;
-        if (filter === "FAILED" && !isFailed) return false;
+        if (filter === "ARCHIVED" && !isFailed) return false;
         if (filter === "FUNDED" && acc.stage !== "FUNDED") return false;
 
         if (searchTerm.trim()) {
@@ -125,13 +145,13 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
   ).length;
   const failedCount = accounts.filter(
-    (a) => a.stage === "FAILED" || a.stage === "BREACHED"
+    (a) => a.stage === "FAILED" || a.stage === "BREACHED" || a.stage === "CLOSED"
   ).length;
   const fundedCount = accounts.filter((a) => a.stage === "FUNDED").length;
 
   return (
     <div className="space-y-4">
-      {/* ─── Compact Control Strip (Prompt Requirement §9) ───────────────── */}
+      {/* ─── Control Strip: Tabs & Search ───────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)]">
         {/* Filter Pills */}
         <div className="flex items-center gap-1.5 font-mono text-xs">
@@ -159,17 +179,6 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
           </button>
           <button
             type="button"
-            onClick={() => setFilter("FAILED")}
-            className={`px-3 py-1 rounded-md transition-colors ${
-              filter === "FAILED"
-                ? "bg-zinc-800 text-white font-semibold"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            Failed ({failedCount})
-          </button>
-          <button
-            type="button"
             onClick={() => setFilter("FUNDED")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "FUNDED"
@@ -179,11 +188,21 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
           >
             Funded ({fundedCount})
           </button>
+          <button
+            type="button"
+            onClick={() => setFilter("ARCHIVED")}
+            className={`px-3 py-1 rounded-md transition-colors ${
+              filter === "ARCHIVED"
+                ? "bg-zinc-800 text-white font-semibold"
+                : "text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            Archived / Breached ({failedCount})
+          </button>
         </div>
 
         {/* Search & Sort Controls */}
         <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono">
-          {/* Search Box */}
           <div className="relative flex-1 md:w-56">
             <Search
               size={13}
@@ -198,7 +217,6 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             />
           </div>
 
-          {/* Sort Dropdown */}
           <div className="flex items-center gap-1 text-zinc-400">
             <span>Sort:</span>
             <select
@@ -215,271 +233,270 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
         </div>
       </div>
 
-      {/* ─── Expandable Accounts Table (Prompt Requirement §9) ───────────── */}
+      {/* ─── Consolidated Accounts Table (Prompt Requirement §5) ───────────── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
         <table className="w-full text-left text-xs font-mono">
           <thead>
             <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
-              <th className="py-2.5 px-3 text-center w-10"></th>
               <th className="py-2.5 px-3 text-center">Stage</th>
               <th className="py-2.5 px-3 text-left">Account</th>
-              <th className="py-2.5 px-3 text-right">Starting</th>
-              <th className="py-2.5 px-3 text-right">Balance</th>
+              <th className="py-2.5 px-3 text-right">Starting Capital</th>
               <th className="py-2.5 px-3 text-right">Equity</th>
-              <th className="py-2.5 px-3 text-right">Drawdown</th>
-              <th className="py-2.5 px-3 text-right">Target</th>
-              <th className="py-2.5 px-3 text-center">Status</th>
+              <th className="py-2.5 px-3 text-right">Net P&L</th>
+              <th className="py-2.5 px-3 text-left">Failure Trigger / Target</th>
+              <th className="py-2.5 px-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
             {filteredAndSortedAccounts.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-zinc-500">
+                <td colSpan={7} className="py-8 text-center text-zinc-500">
                   No accounts match the selected filter.
                 </td>
               </tr>
             ) : (
               filteredAndSortedAccounts.map((acc) => {
-                const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED";
+                const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED" || acc.stage === "CLOSED";
                 const isActive = acc.stage === "EVALUATION" || acc.stage === "FUNDED";
-                const isExpanded = expandedId === acc.accountId;
-                const ddConsumed = Number(acc.drawdownLimitConsumedPercent || 0);
+                const startBal = Number(acc.initialBalance || acc.startingBalance || 10000);
+                const currentEq = Number(acc.equity || acc.balance || startBal);
+                const netPnlNum = currentEq - startBal;
+                const pnlPct = startBal > 0 ? (netPnlNum / startBal) * 100 : 0;
+                const isPos = netPnlNum >= 0;
 
                 return (
-                  <React.Fragment key={acc.accountId}>
-                    <tr
-                      onClick={() => toggleExpand(acc.accountId)}
-                      className={`cursor-pointer transition-colors ${
-                        isExpanded ? "bg-white/[0.04]" : "hover:bg-white/[0.02]"
-                      }`}
-                    >
-                      {/* Expand toggle icon */}
-                      <td className="py-2.5 px-3 text-center text-zinc-500">
-                        {isExpanded ? (
-                          <ChevronUp size={14} className="text-zinc-300" />
-                        ) : (
-                          <ChevronDown size={14} />
-                        )}
-                      </td>
+                  <tr
+                    key={acc.accountId}
+                    className="hover:bg-white/[0.02] transition-colors"
+                  >
+                    {/* Column 1: Stage Badge */}
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          isActive
+                            ? "bg-zinc-800 text-white border-zinc-700"
+                            : isFailed
+                            ? "bg-red-950/60 text-red-400 border-red-800/50"
+                            : "bg-zinc-900 text-zinc-400 border-zinc-800"
+                        }`}
+                      >
+                        {acc.stage}
+                      </span>
+                    </td>
 
-                      {/* Stage Badge */}
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                            isActive
-                              ? "bg-zinc-800 text-white border-zinc-700"
-                              : isFailed
-                              ? "bg-red-950/60 text-red-400 border-red-800/50"
-                              : "bg-zinc-900 text-zinc-400 border-zinc-800"
-                          }`}
+                    {/* Column 2: Account Identifier + Challenge Tier */}
+                    <td className="py-2.5 px-3 text-left font-medium text-white">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>
+                        <span className="text-zinc-500 text-[11px] font-normal">({formatShortId(acc.accountId)})</span>
+                        <button
+                          type="button"
+                          onClick={(e) => copyToClipboard(acc.accountId, e)}
+                          className="p-1 rounded text-zinc-500 hover:text-zinc-200 transition-colors"
+                          title="Copy full account ID"
                         >
-                          {acc.stage}
-                        </span>
-                      </td>
+                          {copiedId === acc.accountId ? (
+                            <Check size={11} className="text-emerald-400" />
+                          ) : (
+                            <Copy size={11} />
+                          )}
+                        </button>
+                      </div>
+                      <span className="text-[11px] text-zinc-400 block font-normal">
+                        {acc.challengeName || "Starter Turbo"}
+                      </span>
+                    </td>
 
-                      {/* Account ID / Challenge */}
-                      <td className="py-2.5 px-3 text-left font-medium text-white">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>
-                          <span className="text-zinc-500 text-[11px] font-normal">{formatShortId(acc.accountId)}</span>
-                          <button
-                            type="button"
-                            onClick={(e) => copyToClipboard(acc.accountId, e)}
-                            className="p-1 rounded text-zinc-500 hover:text-zinc-200 transition-colors"
-                            title="Copy full account ID"
-                          >
-                            {copiedId === acc.accountId ? (
-                              <Check size={11} className="text-emerald-400" />
-                            ) : (
-                              <Copy size={11} />
-                            )}
-                          </button>
+                    {/* Column 3: Starting Capital (Right-aligned) */}
+                    <td className="py-2.5 px-3 text-right text-zinc-400 whitespace-nowrap">
+                      {formatUSD(startBal)}
+                    </td>
+
+                    {/* Column 4: Current / Ending Equity (Right-aligned) */}
+                    <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
+                      {formatUSD(currentEq)}
+                    </td>
+
+                    {/* Column 5: Net PnL (Right-aligned) */}
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <span className={`font-semibold ${isPos ? "text-emerald-400" : "text-red-400"}`}>
+                        {isPos ? `+${formatUSD(netPnlNum)}` : `-${formatUSD(Math.abs(netPnlNum))}`}
+                      </span>
+                      <span className={`text-[10px] block ${isPos ? "text-emerald-400/80" : "text-red-400/80"}`}>
+                        {isPos ? "+" : ""}{formatPercent(pnlPct, 2)}
+                      </span>
+                    </td>
+
+                    {/* Column 6: Failure Trigger / Target Progress (Left-aligned) */}
+                    <td className="py-2.5 px-3 text-left">
+                      {acc.failureReason ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/50 text-red-400 border border-red-800/40">
+                          {acc.failureReason.replace(/_/g, " ")}
+                        </span>
+                      ) : isActive ? (
+                        <div className="text-zinc-300 text-[11px]">
+                          <span className="font-medium text-white">{formatPercent(acc.profitTargetPct, 2)}</span>
+                          <span className="text-zinc-500 ml-1">/ {acc.profitTargetPercent || "9"}% target</span>
+                          {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 && (
+                            <span className="text-zinc-400 block text-[10px]">
+                              ({formatUSD(acc.toTargetAmount)} left)
+                            </span>
+                          )}
                         </div>
-                        <span className="text-[10px] text-zinc-400 block font-normal">
-                          {acc.challengeName || "Starter Turbo"} ({acc.drawdownType || "static"} DD • {acc.tradingDays || 1} active {acc.tradingDays === 1 ? "day" : "days"})
-                        </span>
-                      </td>
+                      ) : (
+                        <span className="text-zinc-500 text-[10px]">Archived</span>
+                      )}
+                    </td>
 
-                      {/* Starting */}
-                      <td className="py-2.5 px-3 text-right text-zinc-400 whitespace-nowrap">
-                        {formatUSD(acc.initialBalance || acc.startingBalance)}
-                      </td>
-
-                      {/* Balance */}
-                      <td className="py-2.5 px-3 text-right font-medium text-zinc-200 whitespace-nowrap">
-                        {formatUSD(acc.balance)}
-                      </td>
-
-                      {/* Equity */}
-                      <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
-                        {formatUSD(acc.equity)}
-                      </td>
-
-                      {/* Drawdown Status */}
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                        <span
-                          className={
-                            ddConsumed >= 100 || isFailed
-                              ? "text-red-400 font-bold"
-                              : ddConsumed > 75
-                              ? "text-red-400 font-semibold"
-                              : ddConsumed > 40
-                              ? "text-amber-400 font-medium"
-                              : "text-zinc-200"
-                          }
-                        >
-                          {formatPercent(acc.drawdownUsedPercent, 2)}
-                          <span className="text-zinc-500 font-normal ml-1">/ {acc.maxDrawdownPercent || "3"}%</span>
-                        </span>
-                        <span className="text-[10px] text-zinc-500 block">
-                          {formatUSD(acc.drawdownRemaining)} buffer
-                        </span>
-                      </td>
-
-                      {/* Target Progress */}
-                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                        <span className="font-medium text-white">
-                          {formatPercent(acc.profitTargetPct, 2)}
-                        </span>
-                        <span className="text-[10px] text-zinc-500 block">
-                          target: {acc.profitTargetPercent || "9"}%
-                          {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 ? ` • ${formatUSD(acc.toTargetAmount)} left` : ""}
-                        </span>
-                      </td>
-
-                      {/* State Detail */}
-                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                        {acc.failureReason ? (
-                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-950/50 text-red-400 border border-red-800/40">
-                            {acc.failureReason.replace(/_/g, " ")}
-                          </span>
-                        ) : isActive ? (
-                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950/50 text-emerald-400 border border-emerald-800/40">
-                            Evaluation Active
-                          </span>
-                        ) : (
-                          <span className="text-zinc-500 text-[10px]">Archived</span>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* Expandable Inspection Drawer */}
-                    {isExpanded && (
-                      <tr className="bg-zinc-950/70 border-b border-zinc-800">
-                        <td colSpan={9} className="p-4 pl-12">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Account Details */}
-                            <div className="space-y-2 text-xs font-mono">
-                              <span className="text-[10px] uppercase font-semibold text-zinc-400 block">
-                                Risk & Limits
-                              </span>
-                              <div className="space-y-1">
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Challenge</span>
-                                  <span className="text-zinc-200">{acc.challengeName || "Starter Turbo"}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Breach floor</span>
-                                  <span className="text-red-400 font-bold">{formatUSD(acc.breachFloor)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Drawdown used / limit</span>
-                                  <span className="text-zinc-200">
-                                    {formatUSD(acc.drawdownUsedAmount || 0)} / {formatUSD(acc.maxDrawdownAmount || 0)} ({formatPercent(acc.drawdownUsedPercent, 2)} / {acc.maxDrawdownPercent}%)
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Daily loss used / limit</span>
-                                  <span className="text-zinc-200">
-                                    {formatUSD(acc.dailyLossUsedAmount || 0)} / {formatUSD(acc.dailyLossLimitAmount || 0)} ({formatPercent(acc.dailyLossUsedPercent, 2)} / {acc.maxDailyLossPercent}%)
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Daily loss remaining</span>
-                                  <span className="text-zinc-200">{formatUSD(acc.dailyLossRemaining)}</span>
-                                </div>
-                                {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-zinc-500">Distance to target</span>
-                                    <span className="text-emerald-400 font-medium">{formatUSD(acc.toTargetAmount)}</span>
-                                  </div>
-                                )}
-                                {acc.failureReason && (
-                                  <div className="flex justify-between pt-1 border-t border-red-900/30">
-                                    <span className="text-red-400 font-semibold">Breach trigger</span>
-                                    <span className="text-red-400 font-bold">{acc.failureReason.replace(/_/g, " ")}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Lifecycle & Trade Data */}
-                            <div className="space-y-2 text-xs font-mono">
-                              <span className="text-[10px] uppercase font-semibold text-zinc-400 block">
-                                Trade Performance
-                              </span>
-                              <div className="space-y-1">
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Win rate</span>
-                                  <span className="text-zinc-200">{acc.winRate || "0.0%"}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Realized PnL</span>
-                                  <span className={`font-medium ${Number(acc.realizedPnl || 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                                    {formatUSD(acc.realizedPnl)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Trading fees</span>
-                                  <span className="text-zinc-400">{formatUSD(acc.fees)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Trading days</span>
-                                  <span className="text-zinc-200">{acc.tradingDays || 1} active (Unlimited / No min)</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Trade count</span>
-                                  <span className="text-zinc-200">
-                                    {acc.closedTradesCount || acc.trades?.length || 0} trades
-                                    {acc.winLossRatio ? ` (${acc.winLossRatio})` : ""}
-                                    {acc.rawFillsCount ? ` • ${acc.rawFillsCount} fills` : ""}
-                                  </span>
-                                </div>
-                                {acc.worstTradeUSD && Number(acc.worstTradeUSD) < 0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-zinc-500">Worst trade</span>
-                                    <span className="text-red-400 font-medium">
-                                      -${Math.round(Math.abs(Number(acc.worstTradeUSD)))} ({formatUSD(acc.worstTradeUSD)})
-                                    </span>
-                                  </div>
-                                )}
-                                <div className="flex justify-between">
-                                  <span className="text-zinc-500">Account URN</span>
-                                  <span className="text-zinc-500 text-[10px] truncate max-w-[200px]">{acc.accountId}</span>
-                                </div>
-                              </div>
-                              {acc.trades && acc.trades.length > 0 && (
-                                <div className="pt-2">
-                                  <TradeDrawer
-                                    accountId={acc.accountId}
-                                    trades={acc.trades || []}
-                                    initialBalance={acc.initialBalance || "0"}
-                                    endingBalance={acc.balance || "0"}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
+                    {/* Column 7: Action (Clickable View Trades) */}
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setDrawerAccount(acc)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono font-medium text-[var(--cyan)] hover:text-white hover:bg-zinc-800 transition-colors"
+                      >
+                        <span>View Trades</span>
+                        <ExternalLink size={11} />
+                      </button>
+                    </td>
+                  </tr>
                 );
               })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* ─── Slide-out Account Detail & Trade History Drawer (Prompt Requirement §10) ─── */}
+      {drawerAccount && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+            onClick={() => setDrawerAccount(null)}
+          />
+          <div className="relative w-full max-w-2xl bg-zinc-950 border-l border-zinc-800 h-full overflow-y-auto p-6 space-y-6 shadow-2xl z-10 animate-in slide-in-from-right duration-200">
+            {/* Drawer Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-zinc-800">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-semibold text-white">
+                    {drawerAccount.challengeName || "Account Details"}
+                  </h3>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-bold">
+                    {formatAccountTag(drawerAccount.accountId)}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 uppercase">
+                    {drawerAccount.stage}
+                  </span>
+                </div>
+                <p className="text-xs font-mono text-zinc-500 mt-1">
+                  {drawerAccount.accountId}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDrawerAccount(null)}
+                className="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+                aria-label="Close drawer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs font-mono">
+              <div>
+                <span className="text-zinc-500 text-[10px] block uppercase">Equity</span>
+                <span className="text-sm font-bold text-white">{formatUSD(drawerAccount.equity || drawerAccount.balance)}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 text-[10px] block uppercase">Starting</span>
+                <span className="text-sm font-bold text-zinc-300">{formatUSD(drawerAccount.initialBalance || drawerAccount.startingBalance)}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 text-[10px] block uppercase">Drawdown Buffer</span>
+                <span className="text-sm font-bold text-zinc-200">{formatUSD(drawerAccount.drawdownRemaining)}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 text-[10px] block uppercase">Daily Room</span>
+                <span className="text-sm font-bold text-emerald-400">{formatUSD(drawerAccount.dailyLossRemaining)}</span>
+              </div>
+            </div>
+
+            {/* Account Trade History */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="font-semibold text-white uppercase tracking-wider">
+                  Order Execution History ({drawerAccount.closedTradesCount || drawerAccount.trades?.length || 0} trades)
+                </span>
+                {drawerAccount.winLossRatio && (
+                  <span className="text-zinc-400">{drawerAccount.winLossRatio}</span>
+                )}
+              </div>
+
+              {!drawerAccount.trades || drawerAccount.trades.length === 0 ? (
+                <div className="p-8 text-center text-zinc-500 text-xs font-mono rounded border border-zinc-800">
+                  No trade history recorded for this account.
+                </div>
+              ) : (
+                <div className="rounded border border-zinc-800 overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 text-[10px] uppercase">
+                        <th className="py-2 px-3">Time</th>
+                        <th className="py-2 px-3">Asset</th>
+                        <th className="py-2 px-3">Side</th>
+                        <th className="py-2 px-3 text-right">Price</th>
+                        <th className="py-2 px-3 text-right">Size</th>
+                        <th className="py-2 px-3 text-right">Fee</th>
+                        <th className="py-2 px-3 text-right">Net PnL</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/60 text-[11px]">
+                      {drawerAccount.trades.map((t, idx) => {
+                        const pnl = Number(t.realizedPnl || 0);
+                        const isPnlPos = pnl >= 0;
+
+                        return (
+                          <tr key={t.tradeId || idx} className="hover:bg-white/[0.02]">
+                            <td className="py-2 px-3 text-zinc-500 whitespace-nowrap">
+                              {t.executedAt ? new Date(t.executedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "—"}
+                            </td>
+                            <td className="py-2 px-3 font-semibold text-white">
+                              {t.asset ? t.asset.replace("xyz:", "") : "—"}
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                                t.side?.toLowerCase() === "buy" ? "text-emerald-400 bg-emerald-950/40" : "text-red-400 bg-red-950/40"
+                              }`}>
+                                {t.side ? t.side.toUpperCase() : "—"}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-right text-zinc-300 whitespace-nowrap">
+                              {formatUSD(t.price)}
+                            </td>
+                            <td className="py-2 px-3 text-right text-zinc-300">
+                              {t.quantity || "—"}
+                            </td>
+                            <td className="py-2 px-3 text-right text-zinc-500">
+                              {formatUSD(t.fee)}
+                            </td>
+                            <td className={`py-2 px-3 text-right font-semibold whitespace-nowrap ${
+                              isPnlPos ? "text-emerald-400" : "text-red-400"
+                            }`}>
+                              {isPnlPos ? `+${formatUSD(pnl)}` : `-${formatUSD(Math.abs(pnl))}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

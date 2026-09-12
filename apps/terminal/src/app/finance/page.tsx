@@ -1,5 +1,5 @@
 import { fetchDashboardData } from "@/lib/propr-api";
-import { CheckCircle2, Wallet, ArrowDown, GitBranch } from "lucide-react";
+import { CheckCircle2, Wallet, GitBranch } from "lucide-react";
 import { BankRefBadge } from "@/components/bank-ref-badge";
 import { formatUSD, formatINR, formatShortId, formatAccountTag } from "@/lib/utils";
 
@@ -19,30 +19,30 @@ export default async function FinancePage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── 1. Cash Reconciliation & Allocation (Prompt Requirement §3 & §4) ─────────── */}
+      {/* ─── 1. Cash Reconciliation & Allocation (24px+ Hero Font) ─────────── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 space-y-5">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
           <div className="flex items-center gap-2 text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             <GitBranch size={15} className="text-zinc-400" />
             <span>Cash Reconciliation</span>
           </div>
-          <span className="text-[11px] font-mono text-zinc-500">
+          <span className="text-xs font-mono text-zinc-400">
             Bank settled capital & outflows
           </span>
         </div>
 
-        {/* 4 Reconciliation Cards (Process arrows removed) */}
+        {/* 4 Clean Reconciliation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Card 1: Total Cash Spent */}
           <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
               Total Cash Spent
             </span>
-            <div className="text-xl md:text-2xl font-mono font-bold text-white">
+            <div className="text-2xl font-mono font-bold text-white tracking-tight">
               {formatINR(totalSpentINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+              <span className="text-xs font-normal text-zinc-400 font-sans">INR</span>
             </div>
-            <div className="pt-2 border-t border-zinc-800/80 text-[11px] font-mono text-zinc-400 space-y-1">
+            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 space-y-1">
               <div className="flex justify-between">
                 <span>Propr:</span>
                 <span className="text-zinc-200">{formatINR(finance.proprActualCashCostINR)}</span>
@@ -54,51 +54,51 @@ export default async function FinancePage() {
             </div>
           </div>
 
-          {/* Card 2: Active Cash at Risk (Subordinate to actual cash) */}
+          {/* Card 2: Active Cash at Risk */}
           <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
                 Active Cash at Risk
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-950/40 text-amber-400 border border-amber-800/30">
+              <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-400 border border-amber-800/30">
                 2 active evals
               </span>
             </div>
-            <div className="text-xl md:text-2xl font-mono font-bold text-amber-300">
+            <div className="text-2xl font-mono font-bold text-amber-300 tracking-tight">
               {formatINR(activeAtRiskINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+              <span className="text-xs font-normal text-zinc-400 font-sans">INR</span>
             </div>
-            <div className="pt-2 border-t border-zinc-800/80 text-[11px] font-mono text-zinc-400 space-y-1">
+            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 space-y-1">
               <div className="flex justify-between">
-                <span className="text-zinc-500">Estimated face value:</span>
-                <span className="text-zinc-300 font-medium">{formatUSD(finance.activeCapitalUSD)}</span>
+                <span className="text-zinc-400">Target capital:</span>
+                <span className="text-zinc-200 font-medium">{formatUSD(finance.activeCapitalUSD)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-500">Trading capital:</span>
-                <span className="text-zinc-400">$15,000 USD nominal</span>
+                <span className="text-zinc-400">Nominal size:</span>
+                <span className="text-zinc-300">$15,000 USD</span>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Payouts Received (Zero is neutral) */}
+          {/* Card 3: Payouts Received */}
           <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
               Payouts Received
             </span>
-            <div className={`text-xl md:text-2xl font-mono font-bold ${
+            <div className={`text-2xl font-mono font-bold tracking-tight ${
               totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-300"
             }`}>
               {formatINR(totalPayoutsINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+              <span className="text-xs font-normal text-zinc-400 font-sans">INR</span>
             </div>
-            <div className="pt-2 border-t border-zinc-800/80 text-[11px] font-mono text-zinc-400 space-y-1">
+            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 space-y-1">
               <div className="flex justify-between">
                 <span>USD Processed:</span>
                 <span className="text-zinc-200">{formatUSD(finance.totalPayoutsUSD)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
-                <span className="text-zinc-400">
+                <span className="text-zinc-300">
                   {totalPayoutsINR > 0 ? "Bank Settled" : "None Processed"}
                 </span>
               </div>
@@ -107,21 +107,21 @@ export default async function FinancePage() {
 
           {/* Card 4: Net Cash Outflow */}
           <div className="p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
               Net Cash Outflow
             </span>
-            <div className="text-xl md:text-2xl font-mono font-bold text-zinc-200">
+            <div className="text-2xl font-mono font-bold text-zinc-200 tracking-tight">
               −{formatINR(netOutflowINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+              <span className="text-xs font-normal text-zinc-400 font-sans">INR</span>
             </div>
-            <div className="pt-2 border-t border-zinc-800/80 text-[11px] font-mono text-zinc-400 space-y-1">
+            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 space-y-1">
               <div className="flex justify-between">
                 <span>Net Outflow:</span>
                 <span className="text-zinc-200 font-semibold">{formatINR(netOutflowINR)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Cost Basis:</span>
-                <span className="text-zinc-400">Planned Challenge Fees</span>
+                <span className="text-zinc-300">Planned Challenge Fees</span>
               </div>
             </div>
           </div>
@@ -133,9 +133,9 @@ export default async function FinancePage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase flex items-center gap-2">
             <Wallet size={14} className="text-zinc-400" />
-            Expense Ledger
+            <span>Expense Ledger</span>
           </h2>
-          <span className="text-[11px] font-mono text-zinc-500">
+          <span className="text-xs font-mono text-zinc-400">
             {finance.ledger.length} transactions reconciled
           </span>
         </div>
@@ -151,10 +151,10 @@ export default async function FinancePage() {
                 <th className="py-2.5 px-3 text-right">USD Cost</th>
                 <th className="py-2.5 px-3 text-right">Bank Debit (INR)</th>
                 <th className="py-2.5 px-3 text-left">Invoice / Bank Ref</th>
-                <th className="py-2.5 px-3 text-center">Status</th>
+                <th className="py-2.5 px-3 text-center">Verified</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
+            <tbody className="divide-y divide-[var(--border-subtle)] text-xs">
               {finance.ledger.map((tx) => (
                 <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors">
                   {/* Date (Left-aligned) */}
@@ -170,7 +170,7 @@ export default async function FinancePage() {
                   {/* Firm (Left-aligned) */}
                   <td className="py-2.5 px-3 text-left">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      className={`px-2 py-0.5 rounded text-xs font-bold border ${
                         tx.firm.toLowerCase() === "breakout"
                           ? "bg-amber-950/50 text-amber-400 border-amber-800/40"
                           : "bg-zinc-800 text-zinc-200 border-zinc-700"
@@ -190,10 +190,10 @@ export default async function FinancePage() {
                     {tx.accountId && tx.accountId.startsWith("urn:prp-account:") ? (
                       <div>
                         <span className="text-white font-semibold">{formatAccountTag(tx.accountId)}</span>
-                        <span className="text-zinc-500 text-[10px] block font-normal">{formatShortId(tx.accountId)}</span>
+                        <span className="text-zinc-400 text-xs block font-normal">{formatShortId(tx.accountId)}</span>
                       </div>
                     ) : (
-                      <span className="text-zinc-500 text-[10px]">-</span>
+                      <span className="text-zinc-500 text-xs">-</span>
                     )}
                   </td>
 
@@ -216,12 +216,11 @@ export default async function FinancePage() {
                     />
                   </td>
 
-                  {/* Verification Status (Centered) */}
+                  {/* Verification Status (Muted green checkmark icon) */}
                   <td className="py-2.5 px-3 text-center">
-                    <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 whitespace-nowrap">
-                      <CheckCircle2 size={11} />
-                      BANK VERIFIED
-                    </span>
+                    <div className="flex items-center justify-center" title="Bank Settled & Verified">
+                      <CheckCircle2 size={16} className="text-emerald-400/90" />
+                    </div>
                   </td>
                 </tr>
               ))}

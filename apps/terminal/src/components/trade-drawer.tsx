@@ -87,28 +87,28 @@ export function TradeDrawer({ accountId, trades, initialBalance, endingBalance }
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--cyan)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 text-xs font-mono font-medium text-[var(--cyan)] hover:text-white transition-colors cursor-pointer"
       >
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        {sorted.length} trade{sorted.length !== 1 ? "s" : ""}
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span>{sorted.length} trade{sorted.length !== 1 ? "s" : ""}</span>
       </button>
 
       {open && (
-        <div className="mt-2 ml-0 rounded border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] overflow-hidden">
+        <div className="mt-2.5 ml-0 rounded-lg border border-[var(--border-subtle)] bg-zinc-950/80 overflow-hidden">
           {/* Trades Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-[10px] font-mono">
+            <table className="w-full text-left text-xs font-mono">
               <thead>
-                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-[var(--text-muted)] uppercase">
-                  <th className="py-1.5 px-2">Time</th>
-                  <th className="py-1.5 px-2">Asset</th>
-                  <th className="py-1.5 px-2">Side</th>
-                  <th className="py-1.5 px-2">Type</th>
-                  <th className="py-1.5 px-2 text-right">Price</th>
-                  <th className="py-1.5 px-2 text-right">Qty</th>
-                  <th className="py-1.5 px-2 text-right">Fee</th>
-                  <th className="py-1.5 px-2 text-right">Realized PnL</th>
-                  <th className="py-1.5 px-2">Liq.</th>
+                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-zinc-400 uppercase text-[11px]">
+                  <th className="py-2 px-2.5">Time</th>
+                  <th className="py-2 px-2.5">Asset</th>
+                  <th className="py-2 px-2.5">Side</th>
+                  <th className="py-2 px-2.5">Type</th>
+                  <th className="py-2 px-2.5 text-right">Price</th>
+                  <th className="py-2 px-2.5 text-right">Qty</th>
+                  <th className="py-2 px-2.5 text-right">Fee</th>
+                  <th className="py-2 px-2.5 text-right">Realized PnL</th>
+                  <th className="py-2 px-2.5">Liq.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -117,39 +117,39 @@ export function TradeDrawer({ accountId, trades, initialBalance, endingBalance }
                   const rpnlPositive = rpnl >= 0;
                   return (
                     <tr key={trade.tradeId} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-1.5 px-2 text-[var(--text-secondary)] whitespace-nowrap">
+                      <td className="py-2 px-2.5 text-zinc-400 whitespace-nowrap">
                         {formatDate(trade.executedAt)}
                       </td>
-                      <td className="py-1.5 px-2 text-[var(--text-primary)] font-medium">
+                      <td className="py-2 px-2.5 text-white font-medium">
                         {(trade.base || trade.asset || "").replace("xyz:", "")}
                       </td>
-                      <td className="py-1.5 px-2">
+                      <td className="py-2 px-2.5">
                         <span className={`inline-flex items-center gap-0.5 font-bold ${
-                          trade.side === "buy" ? "text-[var(--green)]" : "text-[var(--red)]"
+                          trade.side === "buy" ? "text-emerald-400" : "text-red-400"
                         }`}>
-                          {trade.side === "buy" ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                          {trade.side === "buy" ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                           {trade.side.toUpperCase()}
                         </span>
                       </td>
-                      <td className="py-1.5 px-2 text-[var(--text-muted)]">
+                      <td className="py-2 px-2.5 text-zinc-400">
                         {trade.type}
                       </td>
-                      <td className="py-1.5 px-2 text-right text-[var(--text-primary)]">
+                      <td className="py-2 px-2.5 text-right text-white font-medium">
                         {formatUSD(trade.price)}
                       </td>
-                      <td className="py-1.5 px-2 text-right text-[var(--text-secondary)]">
+                      <td className="py-2 px-2.5 text-right text-zinc-300">
                         {formatNum(trade.quantity)}
                       </td>
-                      <td className="py-1.5 px-2 text-right text-[var(--orange)]">
+                      <td className="py-2 px-2.5 text-right text-amber-400">
                         {formatUSD(trade.fee)}
                       </td>
-                      <td className={`py-1.5 px-2 text-right font-semibold ${
-                        rpnlPositive ? "text-[var(--green)]" : "text-[var(--red)]"
+                      <td className={`py-2 px-2.5 text-right font-semibold ${
+                        rpnlPositive ? "text-emerald-400" : "text-red-400"
                       }`}>
                         {rpnlPositive ? "+" : ""}{formatUSD(trade.realizedPnl)}
                       </td>
-                      <td className="py-1.5 px-2">
-                        <span className={`px-1 py-0.5 rounded text-[9px] font-bold uppercase ${
+                      <td className="py-2 px-2.5">
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                           trade.liquidityType === "maker"
                             ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/30"
                             : "bg-amber-950/40 text-amber-400 border border-amber-800/30"
@@ -165,28 +165,28 @@ export function TradeDrawer({ accountId, trades, initialBalance, endingBalance }
           </div>
 
           {/* Reconciliation Summary */}
-          <div className="border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-2 flex flex-wrap gap-x-6 gap-y-1 text-[10px] font-mono">
+          <div className="border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] px-3 py-2.5 flex flex-wrap gap-x-6 gap-y-1.5 text-xs font-mono">
             <div>
-              <span className="text-[var(--text-muted)]">Starting: </span>
-              <span className="text-[var(--text-primary)] font-semibold">{formatUSD(initialBalance)}</span>
+              <span className="text-zinc-400">Starting: </span>
+              <span className="text-white font-semibold">{formatUSD(initialBalance)}</span>
             </div>
             <div>
-              <span className="text-[var(--text-muted)]">Ending: </span>
-              <span className="text-[var(--text-primary)] font-semibold">{formatUSD(endingBalance)}</span>
+              <span className="text-zinc-400">Ending: </span>
+              <span className="text-white font-semibold">{formatUSD(endingBalance)}</span>
             </div>
             <div>
-              <span className="text-[var(--text-muted)]">Total Fees: </span>
-              <span className="text-[var(--orange)] font-semibold">{formatUSD(totalFees)}</span>
+              <span className="text-zinc-400">Total Fees: </span>
+              <span className="text-amber-400 font-semibold">{formatUSD(totalFees)}</span>
             </div>
             <div>
-              <span className="text-[var(--text-muted)]">Net Realized PnL: </span>
-              <span className={`font-semibold ${isPnlPositive ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
+              <span className="text-zinc-400">Net Realized PnL: </span>
+              <span className={`font-semibold ${isPnlPositive ? "text-emerald-400" : "text-red-400"}`}>
                 {isPnlPositive ? "+" : ""}{formatUSD(totalRealizedPnl)}
               </span>
             </div>
             <div>
-              <span className="text-[var(--text-muted)]">Balance Δ: </span>
-              <span className={`font-semibold ${netPnl >= 0 ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
+              <span className="text-zinc-400">Balance Δ: </span>
+              <span className={`font-semibold ${netPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {netPnl >= 0 ? "+" : ""}{formatUSD(netPnl)}
               </span>
             </div>

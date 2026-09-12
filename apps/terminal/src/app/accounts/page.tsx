@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { fetchDashboardData } from "@/lib/propr-api";
 import { AccountsDirectory } from "@/components/accounts-directory";
 
@@ -32,7 +33,9 @@ export default async function AccountsPage() {
       </div>
 
       {/* Interactive Accounts Directory with filter strip, sorting, search, and expandable inspection */}
-      <AccountsDirectory accounts={accounts} />
+      <Suspense fallback={<div className="p-8 text-center text-zinc-500 font-mono text-xs">Loading accounts directory...</div>}>
+        <AccountsDirectory accounts={accounts} />
+      </Suspense>
     </div>
   );
 }

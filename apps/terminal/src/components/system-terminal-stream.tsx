@@ -150,8 +150,8 @@ const STREAM_TEMPLATES = [
 function JsonHighlight({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
   return (
-    <span className="font-mono text-[10px] bg-zinc-950/80 px-2 py-0.5 rounded border border-zinc-800/80 inline-block ml-2 select-text">
-      <span className="text-zinc-600">{"{"}</span>
+    <span className="font-mono text-xs bg-zinc-950/90 px-2 py-0.5 rounded border border-zinc-800/80 inline-block ml-2 select-text">
+      <span className="text-zinc-500">{"{"}</span>
       {entries.map(([key, val], idx) => {
         let valColor = "text-zinc-200";
         if (typeof val === "number" || (!isNaN(Number(val)) && !isNaN(parseFloat(String(val))))) {
@@ -168,16 +168,16 @@ function JsonHighlight({ data }: { data: Record<string, unknown> }) {
 
         return (
           <span key={key}>
-            <span className="text-zinc-500 font-normal">"{key}"</span>
-            <span className="text-zinc-600">: </span>
+            <span className="text-zinc-400 font-normal">"{key}"</span>
+            <span className="text-zinc-500">: </span>
             <span className={`${valColor} font-medium`}>
               {typeof val === "string" ? `"${val}"` : String(val)}
             </span>
-            {idx < entries.length - 1 && <span className="text-zinc-600">, </span>}
+            {idx < entries.length - 1 && <span className="text-zinc-500">, </span>}
           </span>
         );
       })}
-      <span className="text-zinc-600">{"}"}</span>
+      <span className="text-zinc-500">{"}"}</span>
     </span>
   );
 }
@@ -187,18 +187,21 @@ function renderMessage(message: string) {
     return <span className="text-[var(--cyan)] font-medium">{message}</span>;
   }
   if (message.includes("Observed order.filled event") || message.includes("order.filled")) {
-    return <span className="text-emerald-400 font-medium">{message}</span>;
+    return <span className="text-emerald-400 font-semibold">{message}</span>;
+  }
+  if (message.includes("breach") || message.includes("CRITICAL") || message.includes("Breach")) {
+    return <span className="text-red-400 font-semibold">{message}</span>;
   }
   if (message.includes("Drawdown limit") || message.includes("Invariants checked")) {
-    return <span className="text-purple-300">{message}</span>;
+    return <span className="text-purple-300 font-medium">{message}</span>;
   }
   if (message.includes("GET") || message.includes("200 OK")) {
-    return <span className="text-blue-300">{message}</span>;
+    return <span className="text-blue-300 font-mono">{message}</span>;
   }
   if (message.includes("Handshake") || message.includes("ping")) {
     return <span className="text-zinc-400">{message}</span>;
   }
-  return <span className="text-zinc-300">{message}</span>;
+  return <span className="text-zinc-200">{message}</span>;
 }
 
 export function SystemTerminalStream() {
@@ -271,11 +274,11 @@ export function SystemTerminalStream() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
             <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
           </div>
-          <div className="flex items-center gap-2 text-zinc-300 font-semibold text-[11px] tracking-wider uppercase">
+          <div className="flex items-center gap-2 text-zinc-200 font-semibold text-xs tracking-wider uppercase">
             <Terminal size={14} className="text-zinc-400" />
             <span>propr-ws-gateway — event-stream.log</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
             <Wifi size={11} className="text-emerald-400 animate-pulse" />
             <span>wss://api.propr.xyz/ws (20s heartbeat)</span>
           </div>
@@ -284,7 +287,7 @@ export function SystemTerminalStream() {
         {/* Controls & Filter */}
         <div className="flex items-center gap-2">
           {/* Filters */}
-          <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-[10px]">
+          <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800 text-xs">
             {(["ALL", "MARK", "ORDER", "RISK", "HEARTBEAT", "REST"] as const).map((cat) => (
               <button
                 key={cat}
@@ -305,7 +308,7 @@ export function SystemTerminalStream() {
           <button
             type="button"
             onClick={() => setIsStreaming(!isStreaming)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded border text-[10px] font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-bold transition-all ${
               isStreaming
                 ? "bg-amber-950/40 text-amber-300 border-amber-800/40 hover:bg-amber-900/40"
                 : "bg-emerald-950/40 text-emerald-400 border-emerald-800/40 hover:bg-emerald-900/40"
@@ -313,12 +316,12 @@ export function SystemTerminalStream() {
           >
             {isStreaming ? (
               <>
-                <Pause size={10} />
+                <Pause size={11} />
                 <span>PAUSE</span>
               </>
             ) : (
               <>
-                <Play size={10} />
+                <Play size={11} />
                 <span>RESUME</span>
               </>
             )}
@@ -328,7 +331,7 @@ export function SystemTerminalStream() {
           <button
             type="button"
             onClick={() => setAutoScroll(!autoScroll)}
-            className={`p-1 rounded border text-[10px] transition-colors ${
+            className={`p-1.5 rounded border text-xs transition-colors ${
               autoScroll
                 ? "bg-zinc-800 text-white border-zinc-700"
                 : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200"
@@ -342,7 +345,7 @@ export function SystemTerminalStream() {
           <button
             type="button"
             onClick={() => setLogs([])}
-            className="p-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
+            className="p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
             title="Clear Console"
           >
             <Trash2 size={13} />
@@ -350,21 +353,21 @@ export function SystemTerminalStream() {
         </div>
       </div>
 
-      {/* Stream Output Viewport */}
-      <div className="h-96 md:h-[420px] overflow-y-auto p-3 space-y-1.5 bg-black/95 text-[11px] leading-relaxed select-text">
+      {/* Stream Output Viewport (13px font, 1.6 line-height, expanded height) */}
+      <div className="h-[520px] md:h-[560px] overflow-y-auto p-3 space-y-1.5 bg-black/95 text-[13px] leading-[1.6] select-text">
         {filteredLogs.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-xs">
+          <div className="flex items-center justify-center h-full text-zinc-400 text-xs">
             No events match the selected category.
           </div>
         ) : (
           filteredLogs.map((log) => (
             <div
               key={log.id}
-              className="flex items-start gap-2 hover:bg-zinc-900/50 px-2 py-0.5 rounded transition-colors"
+              className="flex items-start gap-2.5 hover:bg-zinc-900/50 px-2 py-0.5 rounded transition-colors"
             >
-              <span className="text-zinc-500 shrink-0 select-none">[{log.timestamp}]</span>
+              <span className="text-zinc-500 shrink-0 select-none text-xs">[{log.timestamp}]</span>
               <span
-                className={`px-1.5 py-0.2 rounded text-[9px] font-bold border shrink-0 ${getBadgeColor(
+                className={`px-1.5 py-0.2 rounded text-[10px] font-bold border shrink-0 ${getBadgeColor(
                   log.type
                 )}`}
               >
@@ -380,8 +383,8 @@ export function SystemTerminalStream() {
         <div ref={streamEndRef} />
       </div>
 
-      {/* Terminal Footer Status Bar — reflects actual connection state */}
-      <div className="flex items-center justify-between px-4 py-1.5 bg-zinc-950 border-t border-zinc-900 text-[10px] text-zinc-500 font-mono">
+      {/* Terminal Footer Status Bar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-950 border-t border-zinc-900 text-xs text-zinc-400 font-mono">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-[var(--cyan)]" : "bg-amber-500"}`} />
@@ -391,8 +394,8 @@ export function SystemTerminalStream() {
           <span>BUFFERED: {logs.length}</span>
         </div>
         <div className="flex items-center gap-2">
-          <ShieldAlert size={11} className="text-zinc-500" />
-          <span>READ-ONLY</span>
+          <ShieldAlert size={12} className="text-zinc-400" />
+          <span>READ-ONLY INVARIANT ACTIVE</span>
         </div>
       </div>
     </div>

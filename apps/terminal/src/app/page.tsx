@@ -1,9 +1,9 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { formatUSD, formatINR, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
-import { TrendingUp, ListOrdered } from "lucide-react";
+import { TrendingUp, ListOrdered, ShieldCheck, ArrowUpRight } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
-import { TrendSparkline } from "@/components/trend-sparkline";
+import Link from "next/link";
 
 export const revalidate = 15; // Revalidate data every 15 seconds
 
@@ -17,12 +17,6 @@ export default async function OverviewPage() {
   const archivedAccounts = accounts.filter(
     (a) => a.stage !== "EVALUATION" && a.stage !== "FUNDED"
   );
-  const ddBreachCount = archivedAccounts.filter(
-    (a) => a.failureReason?.toLowerCase().includes("drawdown")
-  ).length;
-  const dlBreachCount = archivedAccounts.filter(
-    (a) => a.failureReason?.toLowerCase().includes("daily")
-  ).length;
 
   // Sort active accounts by active breach proximity (lowest effective buffer first)
   const rankedActiveAccounts = [...activeAccounts].sort((a, b) => {
@@ -48,9 +42,42 @@ export default async function OverviewPage() {
   const totalPayoutsINR = Number(finance.totalPayoutsINR || 0);
   const netOutflowINR = totalSpentINR - totalPayoutsINR;
 
+  // Identify most critical account for attention alert
+  const criticalAccount = rankedActiveAccounts.find((acc) => {
+    const dailyRoom = Number(acc.dailyLossRemaining || 0);
+    const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
+    const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
+    const dailyBurn = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
+    return dailyBurn >= 75 || dailyRoom <= 35;
+  });
+
   return (
     <div className="space-y-6">
-      {/* ─── 1. Capital Ledger ────────────── */}
+      {/* ─── Attention Banner (Prompt Requirement §7 & §27) ─── */}
+      {criticalAccount && (
+        <div className="p-4 rounded-lg border border-red-800/60 bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <div>
+              <div className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                Attention Required · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
+              </div>
+              <div className="text-xs text-zinc-300 mt-0.5">
+                {formatUSD(criticalAccount.dailyLossRemaining)} daily-loss room remaining ({((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% of daily budget consumed)
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/live"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-red-900/50 hover:bg-red-800/60 border border-red-700/60 text-xs text-red-200 font-semibold transition-colors self-start sm:self-center"
+          >
+            <span>Monitor Risk</span>
+            <ArrowUpRight size={13} />
+          </Link>
+        </div>
+      )}
+
+      {/* ─── 1. Capital Ledger (Baseline-aligned 24px+ figures) ─── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 transition-all">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3 mb-4">
           <div className="flex items-center gap-2">
@@ -62,66 +89,66 @@ export default async function OverviewPage() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium">
+            <span className="px-2 py-0.5 rounded text-xs font-mono bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium">
               {summary.activeEvals + summary.funded} Active
             </span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-red-950/40 text-red-400 border border-red-800/40 font-medium">
+            <span className="px-2 py-0.5 rounded text-xs font-mono bg-red-950/40 text-red-400 border border-red-800/40 font-medium">
               {summary.failedBreached} Failed
             </span>
           </div>
         </div>
 
-        {/* Primary Cash Numbers */}
+        {/* Primary Cash Figures (24px-30px bold numbers) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-4">
           <div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-white">
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-white tracking-tight">
               {formatINR(totalSpentINR)}{" "}
               <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Total Capital Outflow
+              Total Cash Spent
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-amber-300">
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-amber-300 tracking-tight">
               {formatINR(activeAtRiskINR)}{" "}
               <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Active Capital at Risk (2 Evals)
+              Active Cash at Risk (2 evals)
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-200">
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-200 tracking-tight">
               −{formatINR(netOutflowINR)}{" "}
               <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
             </div>
             <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Net Capital Outflow
+              Net Cash Outflow
             </div>
           </div>
         </div>
 
-        {/* Detailed Allocation Breakdown */}
+        {/* Breakdown Row */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border-subtle)] text-xs font-mono text-zinc-400">
           <div className="flex items-center gap-4">
             <span>Propr: <strong className="text-zinc-200">{formatINR(finance.proprActualCashCostINR)}</strong></span>
             <span>Breakout: <strong className="text-zinc-200">{formatINR(finance.breakoutActualCashCostINR)}</strong></span>
             <span>Payouts: <strong className={totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-400"}>{formatINR(totalPayoutsINR)}</strong></span>
           </div>
-          <a href="/finance" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-4">
-            View full audited ledger →
-          </a>
+          <Link href="/finance" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-4">
+            Audited ledger →
+          </Link>
         </div>
       </div>
 
-      {/* ─── 2. Active Accounts Risk ──────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
+      {/* ─── 2. Active Accounts Risk Cards ─── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
             Active Accounts
           </h2>
-          <span className="text-[11px] font-mono text-zinc-500">
+          <span className="text-xs font-mono text-zinc-500">
             {rankedActiveAccounts.length} monitored by breach proximity
           </span>
         </div>
@@ -143,253 +170,47 @@ export default async function OverviewPage() {
         )}
       </div>
 
-      {/* ─── 3. Accounts Directory: High-Level Comparison (Prompt Requirement §5) ─── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Active Accounts ({rankedActiveAccounts.length})
-          </h2>
-          <span className="text-[11px] font-mono text-zinc-500">
-            High-level account risk comparison
+      {/* ─── 3. Market Exposure & Order Summary (Prompt Requirement §7 & §14) ─── */}
+      <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] font-mono text-xs">
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5 mb-3">
+          <span className="text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
+            Market Exposure
+          </span>
+          <span className="text-zinc-500 text-[11px]">
+            Live operational status
           </span>
         </div>
-
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
-            <thead>
-              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
-                <th className="py-2.5 px-3 text-center">Stage</th>
-                <th className="py-2.5 px-3 text-left">Account</th>
-                <th className="py-2.5 px-3 text-right">Equity</th>
-                <th className="py-2.5 px-3 text-center">Risk State</th>
-                <th className="py-2.5 px-3 text-right">Binding Room</th>
-                <th className="py-2.5 px-3 text-right">Daily Room</th>
-                <th className="py-2.5 px-3 text-right">Drawdown Room</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
-              {rankedActiveAccounts.map((acc) => {
-                const ddBuffer = Number(acc.drawdownRemaining || 0);
-                const dailyRoom = Number(acc.dailyLossRemaining || 0);
-                const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
-                const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
-                const dailyBurn = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
-                const ddConsumed = Number(acc.drawdownLimitConsumedPercent || 0);
-                const isDailyConstrained = dailyBurn >= 70 || (dailyRoom > 0 && dailyRoom < ddBuffer);
-                const effectiveBuffer = isDailyConstrained ? dailyRoom : ddBuffer;
-                const pctUsed = isDailyConstrained ? dailyBurn : ddConsumed;
-
-                let riskBadgeClass = "bg-emerald-950/50 text-emerald-400 border-emerald-800/40";
-                let riskLabel = "SAFE";
-
-                if (pctUsed >= 90) {
-                  riskBadgeClass = "bg-red-950/60 text-red-400 border-red-800/50 animate-pulse";
-                  riskLabel = "CRITICAL";
-                } else if (pctUsed >= 75) {
-                  riskBadgeClass = "bg-orange-950/60 text-orange-400 border-orange-800/50";
-                  riskLabel = "CRITICAL";
-                } else if (pctUsed >= 50) {
-                  riskBadgeClass = "bg-amber-950/50 text-amber-400 border-amber-800/40";
-                  riskLabel = "CAUTION";
-                }
-
-                return (
-                  <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-white border border-zinc-700">
-                        {acc.stage}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-left font-medium text-white">
-                      {acc.challengeName || "Starter Turbo"}{" "}
-                      <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
-                      <span className="text-zinc-500 text-[10px]">({formatShortId(acc.accountId)})</span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
-                      {formatUSD(acc.equity)}
-                    </td>
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${riskBadgeClass}`}>
-                        {riskLabel}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                      <span className={`font-semibold ${pctUsed >= 75 ? "text-red-400 font-bold" : "text-zinc-200"}`}>
-                        {formatUSD(effectiveBuffer)}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 block">
-                        {isDailyConstrained ? "Daily-loss limit" : "Drawdown floor"}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                      <span className={`font-medium ${dailyRoom < 50 ? "text-red-400 font-bold" : "text-emerald-400"}`}>
-                        {formatUSD(dailyRoom)}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 block">
-                        {dailyBurn.toFixed(0)}% used
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-zinc-300 whitespace-nowrap">
-                      <span className="font-medium text-zinc-200">
-                        {formatUSD(ddBuffer)}
-                      </span>
-                      <span className="text-[10px] text-zinc-500 block">
-                        Max {acc.maxDrawdownPercent || "3"}%
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Collapsible Archived / Breached Accounts */}
-        {archivedAccounts.length > 0 && (
-          <details className="group rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-3 text-xs font-mono">
-            <summary className="cursor-pointer flex items-center justify-between text-zinc-400 select-none hover:text-zinc-200 font-semibold">
-              <span>Archived / Breached Accounts ({archivedAccounts.length})</span>
-              <span className="text-[11px] text-zinc-500 font-normal group-open:hidden">
-                Show {archivedAccounts.length} archived accounts ({dlBreachCount} daily loss, {ddBreachCount} drawdown breaches) ▼
-              </span>
-              <span className="text-[11px] text-zinc-500 font-normal hidden group-open:inline">
-                Hide archived accounts ▲
-              </span>
-            </summary>
-            <div className="mt-3 overflow-x-auto border-t border-[var(--border-subtle)] pt-3">
-              <table className="w-full text-left text-xs font-mono">
-                <thead>
-                  <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
-                    <th className="py-2 px-3 text-center">Stage</th>
-                    <th className="py-2 px-3 text-left">Account</th>
-                    <th className="py-2 px-3 text-right">Initial</th>
-                    <th className="py-2 px-3 text-right">Ending Balance</th>
-                    <th className="py-2 px-3 text-center">Breach Reason</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
-                  {archivedAccounts.map((acc) => (
-                    <tr key={acc.accountId} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-2 px-3 text-center">
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950/60 text-red-400 border border-red-800/50">
-                          {acc.stage}
-                        </span>
-                      </td>
-                      <td className="py-2 px-3 text-left font-medium text-white">
-                        {acc.challengeName || "Starter Turbo"}
-                        <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>{" "}
-                        <span className="text-zinc-500 text-[10px]">({formatShortId(acc.accountId)})</span>
-                      </td>
-                      <td className="py-2 px-3 text-right text-zinc-400">
-                        {formatUSD(acc.initialBalance || acc.startingBalance)}
-                      </td>
-                      <td className="py-2 px-3 text-right font-medium text-zinc-200">
-                        {formatUSD(acc.balance)}
-                      </td>
-                      <td className="py-2 px-3 text-center">
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-950/50 text-red-400 border border-red-800/40">
-                          {acc.failureReason ? acc.failureReason.replace(/_/g, " ") : "Closed"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex items-center justify-between p-3.5 rounded bg-zinc-900/60 border border-zinc-800">
+            <div>
+              <div className="text-zinc-400 text-xs">Open Positions</div>
+              <div className="text-xl font-bold text-white mt-0.5">{allPositions.length}</div>
+              <div className="text-zinc-400 text-xs mt-0.5">
+                {allPositions.length === 0 ? "Flat across 2 active accounts" : `${allPositions.length} active perpetuals`}
+              </div>
             </div>
-          </details>
-        )}
-      </div>
-
-      {/* ─── 5. Open Exposures Summary (Prompt §8) ────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Positions Summary */}
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4">
-          <div className="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2">
-            <h3 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-              Positions ({allPositions.length})
-            </h3>
-            <span className="text-[10px] font-mono text-zinc-500">EXPOSURE</span>
+            <Link
+              href="/positions"
+              className="text-xs text-[var(--cyan)] hover:text-white transition-colors"
+            >
+              View positions →
+            </Link>
           </div>
-          {allPositions.length === 0 ? (
-            <EmptyState
-              icon={TrendingUp}
-              title="No Open Positions"
-              description="Your 2 active accounts currently have no market exposure."
-              metrics={{
-                activeAccounts: activeAccounts.length,
-                openPositions: 0,
-                openOrders: allOrders.length,
-                lastChecked: "Just now",
-              }}
-              className="py-6"
-            />
-          ) : (
-            <div className="space-y-2">
-              {allPositions.map((pos) => (
-                <div
-                  key={pos.positionId}
-                  className="flex justify-between text-xs font-mono border-b border-[var(--border-subtle)] pb-2"
-                >
-                  <span className="text-white font-bold">
-                    {pos.asset} {pos.positionSide.toUpperCase()}
-                  </span>
-                  <span className="text-zinc-300">
-                    {pos.quantity} @ {pos.entryPrice}
-                  </span>
-                  <span
-                    className={
-                      Number(pos.unrealizedPnl) >= 0 ? "text-emerald-400" : "text-red-400"
-                    }
-                  >
-                    {formatUSD(pos.unrealizedPnl)} ({pos.returnOnEquity}%)
-                  </span>
-                </div>
-              ))}
+          <div className="flex items-center justify-between p-3.5 rounded bg-zinc-900/60 border border-zinc-800">
+            <div>
+              <div className="text-zinc-400 text-xs">Resting Orders</div>
+              <div className="text-xl font-bold text-white mt-0.5">{allOrders.length}</div>
+              <div className="text-zinc-400 text-xs mt-0.5">
+                {allOrders.length === 0 ? "No pending orders or stops" : `${allOrders.length} resting limit orders`}
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Orders Summary */}
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4">
-          <div className="flex items-center justify-between mb-3 border-b border-[var(--border-subtle)] pb-2">
-            <h3 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-              Orders ({allOrders.length})
-            </h3>
-            <span className="text-[10px] font-mono text-zinc-500">PENDING</span>
+            <Link
+              href="/orders"
+              className="text-xs text-[var(--cyan)] hover:text-white transition-colors"
+            >
+              View orders →
+            </Link>
           </div>
-          {allOrders.length === 0 ? (
-            <EmptyState
-              icon={ListOrdered}
-              title="No Pending Orders"
-              description="No resting limit orders or protective stops currently pending."
-              metrics={{
-                activeAccounts: activeAccounts.length,
-                openPositions: allPositions.length,
-                openOrders: 0,
-                lastChecked: "Just now",
-              }}
-              className="py-6"
-            />
-          ) : (
-            <div className="space-y-2">
-              {allOrders.map((ord) => (
-                <div
-                  key={ord.orderId}
-                  className="flex justify-between text-xs font-mono border-b border-[var(--border-subtle)] pb-2"
-                >
-                  <span className="text-white">
-                    {ord.asset} {ord.side.toUpperCase()}
-                  </span>
-                  <span className="text-zinc-400">
-                    {ord.type} {ord.quantity}
-                  </span>
-                  <span className="text-zinc-200 font-semibold">
-                    {ord.price || ord.triggerPrice || "MKT"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>
