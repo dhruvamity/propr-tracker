@@ -269,34 +269,35 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     key={acc.accountId}
                     className="hover:bg-white/[0.02] transition-colors"
                   >
-                    {/* Column 1: Stage (Prompt §12: dot + text, no capsules) */}
+                    {/* Column 1: Stage (Prompt §18: standardized dot + text) */}
                     <td className="py-2.5 px-3 text-left whitespace-nowrap font-sans">
                       {isFailed ? (
                         <span className="inline-flex items-center gap-1.5 text-red-400 font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                           <span>Failed</span>
                         </span>
-                      ) : isActive ? (
-                        <span className="text-zinc-300 font-medium">
-                          Evaluation
+                      ) : acc.stage === "FUNDED" ? (
+                        <span className="inline-flex items-center gap-1.5 text-zinc-300 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                          <span>Funded</span>
                         </span>
                       ) : (
-                        <span className="text-zinc-400">
-                          {acc.stage}
+                        <span className="inline-flex items-center gap-1.5 text-zinc-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
+                          <span>Evaluation</span>
                         </span>
                       )}
                     </td>
 
-                    {/* Column 2: Account Identifier + Challenge Tier */}
-                    <td className="py-2.5 px-3 text-left">
+                    {/* Column 2: Account Identifier + Challenge Tier (Prompt §19: clean ID + hover copy) */}
+                    <td className="py-2.5 px-3 text-left group">
                       <div className="flex items-center gap-1.5 font-sans">
                         <span className="font-semibold text-zinc-100">{formatAccountTag(acc.accountId)}</span>
-                        <span className="text-zinc-400 text-[11px] font-mono font-normal">({formatShortId(acc.accountId)})</span>
                         <button
                           type="button"
                           onClick={(e) => copyToClipboard(acc.accountId, e)}
-                          className="p-1 rounded text-zinc-500 hover:text-zinc-200 transition-colors"
-                          title="Copy full account ID"
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-zinc-500 hover:text-zinc-200 transition-opacity"
+                          title="Copy account ID"
                         >
                           {copiedId === acc.accountId ? (
                             <Check size={11} className="text-emerald-400" />

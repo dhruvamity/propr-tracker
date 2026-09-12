@@ -12,11 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
-  ExternalLink,
-  BookOpen,
-  Info,
 } from "lucide-react";
-import { RadialGauge, WinRateArc } from "./radial-gauge";
 import { EquityCurveChart, type DataPoint } from "./equity-curve-chart";
 import {
   DailyPnlChart,
@@ -24,7 +20,6 @@ import {
   type DailyPnlItem,
 } from "./performance-charts";
 import { AccountSwitcherModal } from "./account-switcher-modal";
-import Link from "next/link";
 
 interface AnalyticsViewProps {
   accounts: AccountSnapshot[];
@@ -522,40 +517,16 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
       </div>
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* ─── TAB 1: OVERVIEW ────────────────────────────────────────────────────── */}
+      {/* ─── TAB 1: OVERVIEW (Prompt §14 & §15) ─────────────────────────────────── */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === "OVERVIEW" && (
         <div className="space-y-6">
-          {/* Top 6 Overview Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {/* 1. 24H Net P&L */}
-            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
-                <span>24H Net P&L</span>
-                <ExternalLink size={12} className="text-zinc-500" />
-              </div>
+          {/* Top 4 Core Metric Cards (Prompt §14) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
+            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1">
+              <div className="text-xs text-zinc-400">Net P&L</div>
               <div
-                className={`text-lg font-mono font-bold ${
-                  metrics.pnl24h >= 0 ? "text-emerald-400" : "text-red-400"
-                }`}
-              >
-                {metrics.pnl24h >= 0
-                  ? `+${formatUSD(metrics.pnl24h)}`
-                  : `-${formatUSD(Math.abs(metrics.pnl24h))}`}
-              </div>
-              <div className="text-[11px] font-mono text-zinc-500">
-                {formatPercent(metrics.pnl24hPct, 2, true)}
-              </div>
-            </div>
-
-            {/* 2. Lifetime P&L */}
-            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
-                <span>Lifetime P&L</span>
-                <ExternalLink size={12} className="text-zinc-500" />
-              </div>
-              <div
-                className={`text-lg font-mono font-bold ${
+                className={`text-2xl font-mono font-bold tracking-tight ${
                   metrics.netPnl >= 0 ? "text-emerald-400" : "text-red-400"
                 }`}
               >
@@ -563,64 +534,31 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                   ? `+${formatUSD(metrics.netPnl)}`
                   : `-${formatUSD(Math.abs(metrics.netPnl))}`}
               </div>
-              <div className="text-[11px] text-zinc-500 truncate">
-                {currentAccount?.challengeName?.replace(/^\$[0-9]+K\s*/, "") || "1-Step Turbo"}
+            </div>
+
+            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1">
+              <div className="text-xs text-zinc-400">Win rate</div>
+              <div className="text-2xl font-mono font-bold text-white tracking-tight">
+                {metrics.winRate.toFixed(1)}%
               </div>
             </div>
 
-            {/* 3. Equity */}
-            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
-              <div className="text-xs text-zinc-400">Equity</div>
-              <div className="text-lg font-mono font-bold text-white">
-                {formatUSD(metrics.currEquity)}
-              </div>
-              <div className="text-[11px] font-mono text-zinc-500">
-                Start {formatUSD(metrics.initialBal)}
-              </div>
-            </div>
-
-            {/* 4. Win Rate with Arc Meter */}
-            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="text-xs text-zinc-400">Win Rate</div>
-                <div className="text-lg font-mono font-bold text-white">
-                  {metrics.winRate.toFixed(2)}%
-                </div>
-                <div className="text-[11px] font-sans text-zinc-500">
-                  out of {metrics.totalTrades} trades
-                </div>
-              </div>
-              <WinRateArc
-                wins={metrics.winningTrades}
-                losses={metrics.losingTrades}
-                size={48}
-              />
-            </div>
-
-            {/* 5. Profit Factor */}
-            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
-              <div className="text-xs text-zinc-400">Profit Factor</div>
-              <div className="text-lg font-mono font-bold text-white">
+            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1">
+              <div className="text-xs text-zinc-400">Profit factor</div>
+              <div className="text-2xl font-mono font-bold text-white tracking-tight">
                 {metrics.profitFactor.toFixed(2)}
               </div>
-              <div className="text-[11px] font-sans text-zinc-500">
-                Net PNL ratio
-              </div>
             </div>
 
-            {/* 6. Sharpe Ratio */}
-            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
-              <div className="text-xs text-zinc-400">Sharpe Ratio</div>
-              <div className="text-lg font-mono font-bold text-white">
+            <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1">
+              <div className="text-xs text-zinc-400">Sharpe</div>
+              <div className="text-2xl font-mono font-bold text-white tracking-tight">
                 {metrics.sharpe.toFixed(2)}
-              </div>
-              <div className="text-[11px] font-sans text-zinc-500">
-                Risk adjusted return
               </div>
             </div>
           </div>
 
-          {/* Main 2-Column: Left Chart (2/3) + Right Account Status (1/3) */}
+          {/* Main 2-Column: Left Large Chart + Right Clean Risk Panel (Prompt §14) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
             {/* Left: Equity Curve Chart */}
             <div className="lg:col-span-2">
@@ -635,105 +573,111 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
               />
             </div>
 
-            {/* Right: Account Status Card */}
-            <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-5">
-              <div className="border-b border-[var(--border-subtle)] pb-3">
+            {/* Right: Clean Risk Panel (Prompt §14: No circular gauges, no rules button) */}
+            <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4 font-sans">
+              <div className="border-b border-[var(--border-subtle)] pb-2.5">
                 <h3 className="text-xs font-semibold text-zinc-200">
-                  Account Status
+                  Risk
                 </h3>
               </div>
 
-              {/* Status Row 1: Profit Target */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-zinc-400">Profit Target</div>
-                  <div className="text-sm font-mono font-bold text-emerald-400 mt-0.5">
-                    {formatPercent(currentAccount?.profitTargetPct || "2.00")}{" "}
-                    <span className="text-zinc-500 font-normal">
+              {/* Profit Target */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">Profit target</span>
+                  <span className="font-mono font-semibold text-emerald-400">
+                    {formatPercent(currentAccount?.profitTargetPct || "2.00")}
+                    <span className="text-zinc-500 font-normal ml-1">
                       / {currentAccount?.profitTargetPercent || "9"}%
                     </span>
-                  </div>
+                  </span>
                 </div>
-                <RadialGauge
-                  value={Number(currentAccount?.profitTargetPct || 2)}
-                  max={Number(currentAccount?.profitTargetPercent || 9)}
-                  color="#10b981"
-                  size={54}
-                />
+                <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          (Number(currentAccount?.profitTargetPct || 0) /
+                            Number(currentAccount?.profitTargetPercent || 9)) *
+                            100
+                        )
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Status Row 2: Drawdown Used */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-zinc-400">Drawdown Used</div>
-                  <div className="text-sm font-mono font-bold text-zinc-200 mt-0.5">
-                    {formatPercent(currentAccount?.drawdownUsedPercent || "0.00")}{" "}
-                    <span className="text-zinc-500 font-normal">
+              {/* Drawdown Used */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">Drawdown used</span>
+                  <span className="font-mono font-semibold text-zinc-200">
+                    {formatPercent(currentAccount?.drawdownUsedPercent || "0.00")}
+                    <span className="text-zinc-500 font-normal ml-1">
                       / {currentAccount?.maxDrawdownPercent || "3"}%
                     </span>
-                  </div>
-                  <div className="text-[11px] font-mono text-zinc-500 mt-0.5">
-                    Floor: {formatUSD(currentAccount?.breachFloor || metrics.initialBal * 0.97)}
-                  </div>
+                  </span>
                 </div>
-                <RadialGauge
-                  value={Number(currentAccount?.drawdownUsedPercent || 0)}
-                  max={Number(currentAccount?.maxDrawdownPercent || 3)}
-                  color="#ef4444"
-                  size={54}
-                />
+                <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-red-500 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          (Number(currentAccount?.drawdownUsedPercent || 0) /
+                            Number(currentAccount?.maxDrawdownPercent || 3)) *
+                            100
+                        )
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <div className="text-[11px] font-mono text-zinc-500">
+                  Floor: {formatUSD(currentAccount?.breachFloor || metrics.initialBal * 0.97)}
+                </div>
               </div>
 
-              {/* Status Row 3: Daily Loss Limit */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-zinc-400">Daily Loss Limit</div>
-                  <div className="text-sm font-mono font-bold text-amber-400 mt-0.5">
-                    {formatPercent(currentAccount?.dailyLossUsedPercent || "0.72")}{" "}
-                    <span className="text-zinc-500 font-normal">
+              {/* Daily Loss */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-400">Daily loss</span>
+                  <span className="font-mono font-semibold text-amber-400">
+                    {formatPercent(currentAccount?.dailyLossUsedPercent || "0.72")}
+                    <span className="text-zinc-500 font-normal ml-1">
                       / {currentAccount?.maxDailyLossPercent || "3"}%
                     </span>
-                  </div>
-                  <div className="text-[11px] font-mono text-zinc-500 mt-0.5">
-                    Today&apos;s snapshot: {formatUSD(metrics.dayStartBal)}
-                  </div>
+                  </span>
                 </div>
-                <RadialGauge
-                  value={Number(currentAccount?.dailyLossUsedPercent || 0.72)}
-                  max={Number(currentAccount?.maxDailyLossPercent || 3)}
-                  color="#f59e0b"
-                  size={54}
-                />
-              </div>
-
-              {/* Snapshot Info Block */}
-              <div className="pt-4 border-t border-[var(--border-subtle)] space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                  <span>Snapshot Today, 05:30 AM</span>
-                  <Info size={13} className="text-zinc-500" />
+                <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          (Number(currentAccount?.dailyLossUsedPercent || 0.72) /
+                            Number(currentAccount?.maxDailyLossPercent || 3)) *
+                            100
+                        )
+                      )}%`,
+                    }}
+                  />
                 </div>
-                <div className="text-xl font-mono font-bold text-white">
-                  {formatUSD(metrics.dayStartBal)}
-                </div>
-                <div className="text-xs font-mono text-zinc-400">
-                  Resets in {resetCountdown || "3h 31m 27s"}
+                <div className="text-[11px] font-mono text-zinc-500">
+                  Snapshot: {formatUSD(metrics.dayStartBal)}
                 </div>
               </div>
 
-              {/* Days Remaining & Rules Link */}
-              <div className="pt-4 border-t border-[var(--border-subtle)] space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-400">Days remaining</span>
-                  <span className="font-medium text-white">Unlimited</span>
-                </div>
-
-                <Link
-                  href="/rules"
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-md bg-zinc-800/80 hover:bg-zinc-750 text-xs font-medium text-zinc-200 border border-zinc-700/80 transition-colors"
-                >
-                  <BookOpen size={13} />
-                  <span>Read Full Rules</span>
-                </Link>
+              {/* Reset Time */}
+              <div className="pt-3 border-t border-[var(--border-subtle)] text-xs text-zinc-400 flex items-center justify-between font-mono">
+                <span>Reset in</span>
+                <span className="text-zinc-200">{resetCountdown || "3h 31m 27s"}</span>
               </div>
             </div>
           </div>

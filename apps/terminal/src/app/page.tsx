@@ -1,5 +1,5 @@
 import { fetchDashboardData } from "@/lib/propr-api";
-import { formatUSD, formatINR, formatAccountTag } from "@/lib/utils";
+import { formatUSD, formatINR } from "@/lib/utils";
 import { ArrowUpRight, TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
@@ -37,7 +37,6 @@ export default async function OverviewPage() {
   const totalSpentINR = Number(finance.totalActualCashCostINR || finance.totalInvestedINR || 0);
   const activeAtRiskINR = Number(finance.activeActualCashCostINR || finance.activeCapitalINR || 0);
   const totalPayoutsINR = Number(finance.totalPayoutsINR || 0);
-  const netOutflowINR = totalSpentINR - totalPayoutsINR;
 
   // Identify most critical account for attention alert
   const criticalAccount = rankedActiveAccounts.find((acc) => {
@@ -50,19 +49,13 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Attention Banner (Prompt §8: quiet state line when healthy) ─── */}
+      {/* ─── Attention: Quiet state line when healthy, real alert only when danger (Prompt §3) ─── */}
       {criticalAccount ? (
         <div className="p-4 rounded-lg border border-red-800/60 bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
-          <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-            <div>
-              <div className="text-xs font-semibold text-red-400">
-                1 account needs attention · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
-              </div>
-              <div className="text-xs text-zinc-300 mt-0.5 font-sans">
-                <span className="font-mono text-white font-medium">{formatUSD(criticalAccount.dailyLossRemaining)}</span> daily loss room (
-                {((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% used)
-              </div>
+          <div>
+            <div className="text-xs font-semibold text-red-400">1 account needs attention</div>
+            <div className="text-xs text-zinc-300 mt-1 font-sans">
+              {criticalAccount.challengeName || "Starter Turbo"} · <span className="font-mono text-white font-medium">{formatUSD(criticalAccount.dailyLossRemaining)}</span> daily room remaining
             </div>
           </div>
           <Link
@@ -74,29 +67,25 @@ export default async function OverviewPage() {
           </Link>
         </div>
       ) : (
-        <div className="flex items-center justify-between py-1 text-xs font-sans text-zinc-400">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-zinc-300 font-medium">All accounts healthy</span>
-            <span className="text-zinc-400">· no immediate breach risk</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-zinc-400">{rankedActiveAccounts.length} active</span>
+        <div className="flex items-center justify-between py-1 text-xs font-sans">
+          <span className="text-zinc-300 font-medium">All accounts healthy</span>
+          <div className="flex items-center gap-4">
+            <span className="text-zinc-500">{rankedActiveAccounts.length} active</span>
             <Link href="/live" className="text-[var(--cyan)] hover:text-white transition-colors">
-              Risk monitor →
+              View risk →
             </Link>
           </div>
         </div>
       )}
 
-      {/* ─── 1. Cash (Prompt §7 & §19: simple title, 3 clean numbers) ─── */}
+      {/* ─── 1. Cash: 3 clean metrics, no secondary breakdown (Prompt §4) ─── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
           <h2 className="text-sm font-semibold text-zinc-200 font-sans">
             Cash
           </h2>
           <Link href="/finance" className="text-xs font-sans text-zinc-400 hover:text-zinc-200 transition-colors">
-            Finance ledger →
+            View finance →
           </Link>
         </div>
 
@@ -115,7 +104,7 @@ export default async function OverviewPage() {
               {formatINR(activeAtRiskINR)}
             </div>
             <div className="text-xs text-zinc-400 font-sans mt-1">
-              Cash at risk ({activeAccounts.length} accounts)
+              Cash at risk
             </div>
           </div>
           <div>
@@ -127,31 +116,16 @@ export default async function OverviewPage() {
             </div>
           </div>
         </div>
-
-        {/* Muted supporting cash details */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 border-t border-[var(--border-subtle)] text-xs font-sans text-zinc-400">
-          <div>
-            Net cash outflow: <span className="font-mono text-zinc-200 font-medium">−{formatINR(netOutflowINR)}</span>
-          </div>
-          <span className="text-zinc-700 hidden sm:inline">·</span>
-          <div>
-            Propr: <span className="font-mono text-zinc-300">{formatINR(finance.proprActualCashCostINR)}</span>
-          </div>
-          <span className="text-zinc-700 hidden sm:inline">·</span>
-          <div>
-            Breakout: <span className="font-mono text-zinc-300">{formatINR(finance.breakoutActualCashCostINR)}</span>
-          </div>
-        </div>
       </div>
 
-      {/* ─── 2. Active Accounts Grid ─── */}
+      {/* ─── 2. Active Accounts Grid (Prompt §5: "2 active", no table-header sentences) ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-zinc-200 font-sans">
             Active accounts
           </h2>
-          <span className="text-xs font-sans text-zinc-400">
-            {rankedActiveAccounts.length} sorted by nearest limit
+          <span className="text-xs font-sans text-zinc-500">
+            {rankedActiveAccounts.length} active
           </span>
         </div>
 
@@ -172,7 +146,7 @@ export default async function OverviewPage() {
         )}
       </div>
 
-      {/* ─── 3. Exposure (Prompt §6 & §7: No telemetry label, clean columns) ─── */}
+      {/* ─── 3. Exposure (Prompt §6: No telemetry descriptor, clean two columns) ─── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
           <h2 className="text-sm font-semibold text-zinc-200 font-sans">
@@ -184,7 +158,7 @@ export default async function OverviewPage() {
             <div>
               <div className="text-xs text-zinc-400 font-sans">Open positions</div>
               <div className="text-2xl font-mono font-bold text-white mt-0.5">{allPositions.length}</div>
-              <div className="text-xs text-zinc-400 font-sans mt-0.5">
+              <div className="text-xs text-zinc-500 font-sans mt-0.5">
                 {allPositions.length === 0 ? "Flat across 2 active accounts" : `${allPositions.length} active perpetuals`}
               </div>
             </div>
@@ -199,7 +173,7 @@ export default async function OverviewPage() {
             <div>
               <div className="text-xs text-zinc-400 font-sans">Resting orders</div>
               <div className="text-2xl font-mono font-bold text-white mt-0.5">{allOrders.length}</div>
-              <div className="text-xs text-zinc-400 font-sans mt-0.5">
+              <div className="text-xs text-zinc-500 font-sans mt-0.5">
                 {allOrders.length === 0 ? "No pending orders or stops" : `${allOrders.length} resting limit orders`}
               </div>
             </div>

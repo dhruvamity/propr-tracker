@@ -1,1289 +1,1456 @@
-I agree with the direction, but I would take one more step back: the current UI has removed some of the obvious “AI dashboard” artifacts, yet it still **looks designed by assembling dashboard components rather than by designing a trading workspace**.
+Yes. The yellow-circled areas are exactly where the current interface still reads like an AI-assembled dashboard: too many small labels, duplicated context, pill-like states, decorative separators, and repeated "explanation" text.
 
-The main remaining problem is now **visual language + hierarchy**, not missing information.
+I reviewed the annotated Overview and Risk screens plus the latest Analytics, Positions, Orders, Accounts, Finance, and System screenshots. The bigger issue is that the UI is now **cleaner than before, but still over-explains itself**.
 
-The repository is fundamentally a read-only monitoring product for breach limits, positions, and cash reconciliation, so the UI should behave like a focused trading workstation rather than an analytics/admin dashboard. ([GitHub][1])
+## The core rule for this pass
 
-## What still feels AI-slop
+> **Remove UI that explains what the surrounding UI already makes obvious.**
 
-Looking at the latest screenshots, these are the biggest offenders.
+The terminal should feel authored, not generated.
 
-### 1. Everything is a card
+That means:
 
-You currently have:
-
-```text
-attention card
-capital card
-account card
-account card
-market exposure card
-```
-
-and inside the account card:
-
-```text
-hero
-progress bar
-metric row
-```
-
-and inside Finance:
-
-```text
-4 cards
-2 cards
-table
-```
-
-That repetition is the strongest “generated dashboard” fingerprint.
-
-### 2. Everything is monospace
-
-This is a major readability problem.
-
-The latest screenshots still use monospace for:
-
-* page labels
-* navigation metadata
-* section headings
-* descriptive text
-* status text
-* financial values
-* table values
-
-Monospace should be reserved for **numbers, IDs, prices, percentages, timestamps, and code-like telemetry**.
-
-Normal UI copy should be sans-serif.
-
-Your current `sidebar.tsx` still uses tracked 11px navigation labels, while `TopBar` uses monospace for freshness state. 
+* fewer subtitles
+* fewer section descriptors
+* fewer pills
+* fewer helper sentences
+* fewer repeated numbers
+* fewer labels around obvious things
+* larger type for important data
+* more whitespace between concepts
+* stronger alignment
+* no ornamental "terminal" language
 
 ---
 
-# The visual reset I recommend
+# 1. Overview: title + subtitle
 
-Don't redesign the brand.
-
-Redesign the **relationship between content and chrome**.
-
-Think:
-
-```text
-TradingView / Bloomberg / Linear
-```
-
-not:
-
-```text
-Dark-mode SaaS admin template
-```
-
-The terminal should feel **quiet until something needs attention**.
-
----
-
-# 1. Kill the fake “terminal language”
-
-Current:
-
-```text
-CAPITAL LEDGER
-ACTIVE ACCOUNTS
-MARKET EXPOSURE
-TELEMETRY
-RISK MONITOR
-POSITION EXPOSURE
-MARKET TICK FEED
-```
-
-These aren't terrible individually.
-
-The problem is that every section sounds like a system diagnostic.
-
-Change them to normal product language:
-
-```text
-Cash
-Active accounts
-Exposure
-Risk
-Open positions
-Markets
-```
-
-Likewise:
-
-```text
-Portfolio status & capital allocation
-```
-
-can become:
-
-```text
-Cash, account health, and exposure
-```
-
-And:
-
-```text
-Breach proximity monitor
-```
-
-becomes:
-
-```text
-Account risk
-```
-
-The user already knows this is a trading terminal.
-
-Don't keep reminding them through wording.
-
----
-
-# 2. Stop using monospace for interface copy
-
-Use:
-
-### Inter / system sans
-
-```text
-Overview
-Active accounts
-Cash
-Risk
-Safe
-Critical
-View account
-No open positions
-```
-
-### JetBrains Mono
-
-```text
-₹25,394.83
-$152.35
-$10,173.67
-#fjU6
-1.57%
-14:32:10
-```
-
-That single change will make the interface feel much more like a serious financial product.
-
-### Typography target
-
-```text
-Page title       20px sans 600
-Section title    14px sans 600
-Body             13px sans 400
-Secondary        12px sans 400
-
-Money            28–32px mono 600
-Table values     13px mono 500
-IDs              11–12px mono 500
-```
-
-No important UI information at 9–10px.
-
----
-
-# 3. Remove the gradient risk bars
-
-This is one of the most obvious remaining AI-generated patterns.
-
-Your account cards currently show:
-
-```text
-red → orange → yellow → green
-```
-
-for the floor/equity/target line.
-
-That looks decorative rather than analytical.
-
-A risk meter should communicate **one thing**.
-
-Use:
-
-```text
-SAFE
-██████████░░░░░░
-```
-
-or:
-
-```text
-CRITICAL
-██████████████████░░
-```
-
-with a single semantic color.
-
-### Better
-
-```text
-Daily loss room
-
-$152.35
-
-████████████░░░░  24% used
-```
-
-### Critical
-
-```text
-Daily loss room
-
-$22.40
-
-██████████████████░  86% used
-```
-
-No rainbow.
-
-No dual meaning.
-
----
-
-# 4. Stop showing the same number three times
-
-Your current account card has:
-
-```text
-$152.35
-```
-
-then:
-
-```text
-$152.35 room to daily-loss threshold
-```
-
-then:
-
-```text
-Room $152.35
-```
-
-This is exactly the sort of repetition that makes a screen feel AI-generated.
-
-The rule should be:
-
-> **One metric gets one primary representation.**
-
-For example:
-
-```text
-DAILY LOSS ROOM
-
-$152.35
-
-86% of today's allowance used
-```
-
-Then:
-
-```text
-Threshold     $4,926.11
-Equity        $5,078.47
-Drawdown room $228.47
-```
-
-That's enough.
-
-The actual data model remains unchanged. The repository treats daily-loss proximity and drawdown as distinct risk calculations, so the UI should preserve both without duplicating them. ([GitHub][1])
-
----
-
-# 5. Redesign the account card around a single visual question
-
-Current card:
-
-```text
-name
-safe
-daily room
-equity
-DD floor
-floor/equity/target bar
-balance
-peak
-PnL
-reset
-```
-
-Too much.
-
-Use:
-
-```text
-Starter 1-Step Turbo                  ● SAFE
-#fjU6 · Evaluation
-
-Daily loss room
-
-$152.35
-86% of daily allowance used
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Threshold       $4,926.11
-Equity          $5,078.47
-Drawdown room     $228.47
-
-Net P&L           +$78.47
-Target progress     1.57%
-```
-
-That is the whole card.
-
-Remove:
-
-* separate balance
-* today's peak
-* duplicate equity
-* DD floor label
-* second daily-room label
-* second risk bar
-* "Telemetry"
-* excessive footer metadata
-
-Put secondary details in the account drawer.
-
----
-
-# 6. Remove the `Telemetry` labels
-
-These are pure decoration.
-
-You currently have:
-
-```text
-MARKET EXPOSURE                           Telemetry
-```
-
-and similar right-aligned descriptors.
-
-They look like generated section chrome.
-
-Remove them.
-
-If there is actually a useful state, display that state:
-
-```text
-Market exposure                           Updated 4s ago
-```
-
-Otherwise:
-
-```text
-Market exposure
-```
-
-Nothing on the right.
-
----
-
-# 7. Make the Overview much flatter
-
-I'd turn Overview into:
-
-```text
-Overview
-
-[ attention ]
-
-Cash
-₹25,394.83       ₹7,336.19       ₹0.00
-Spent            At risk         Payouts
-
-Active accounts
-
-┌────────────────────────┐ ┌────────────────────────┐
-│ Starter                │ │ Explorer               │
-│ $152.35 room           │ │ $305.21 room           │
-│ 86% used               │ │ 24% used               │
-│ $5,078 equity          │ │ $10,173 equity         │
-│ CRITICAL / SAFE        │ │ SAFE                   │
-└────────────────────────┘ └────────────────────────┘
-
-Exposure
-Positions 0                     Orders 0
-```
-
-No nested card inside card.
-
-No separate "Capital Ledger" title if the section is simply `Cash`.
-
-No table underneath.
-
-No duplicate account information.
-
----
-
-# 8. Improve the attention banner
-
-The current:
-
-```text
-● ALL ACCOUNTS HEALTHY • 2 active • no immediate breach risk
-                                        Risk monitor →
-```
-
-is okay structurally, but it looks like a green notification bar.
-
-Instead make it a **state line**:
-
-```text
-● All accounts healthy                         2 active
-```
-
-or when attention exists:
-
-```text
-● 1 account needs attention                    View risk →
-```
-
-No border-heavy banner unless there is actually an alert.
-
-### Healthy state
-
-Use a quiet line.
-
-### Critical state
-
-Then give it the full-width attention treatment.
-
-This lets the UI become visually louder only when required.
-
----
-
-# 9. The header should be almost invisible
-
-Current:
-
-```text
-Overview
-Portfolio status & capital allocation
-                           ● Updated just now ↻
-```
-
-This is close.
-
-I'd reduce it further:
-
-```text
-Overview
-Cash, risk, and exposure                         Updated just now  ↻
-```
-
-No container.
-
-No background.
-
-No border except the subtle divider underneath.
-
-`TopBar` already has the right basic concept now, using a shared health state and plain dot/text freshness instead of the old bordered badge. 
-
-The remaining improvement is **typography**, not functionality.
-
----
-
-# 10. Simplify the sidebar aggressively
-
-The latest sidebar is better, but still looks like an app template because every group and item gets equal visual treatment.
-
-Use:
-
-```text
-PROPR
-Trading Terminal
-
-Overview
-
-RISK
-Monitor
-
-TRADING
-Positions
-Orders
-
-ACCOUNTS
-Active
-Archived
-
-FINANCE
-Finance
-
-SYSTEM
-System
-```
-
-But:
-
-* group headings: 11px sans, muted
-* nav: 13px sans
-* icons: 14–16px
-* selected row: left 2px cyan rail + subtle background
-* no tracking-heavy uppercase navigation
-* no glow
-* no card-like selected state
-
-The current implementation still uses 11px tracked navigation labels and a cyan inset shadow on the active route. 
-
-That shadow should go.
-
----
-
-# 11. Change the active navigation treatment
-
-Current:
-
-```text
-┌─────────────────┐
-│ ▦ Overview      │
-└─────────────────┘
-```
-
-Use:
-
-```text
-┃ Overview
-```
-
-with a very subtle surface.
-
-That makes the sidebar look more like a professional workstation.
-
----
-
-# 12. Accounts is currently the strongest screen
-
-I would **keep most of its structure**.
-
-The latest Accounts screenshot is substantially more readable because the table has a clear purpose:
-
-```text
-Stage
-Account
-Starting capital
-Equity
-Net P&L
-Failure / Target
-Action
-```
-
-The important improvement is to remove the redundant visual weight.
-
-### Don't use:
-
-```text
-[FAILED]
-[FAILED]
-[FAILED]
-```
-
-with large red capsules on every row.
-
-Use:
-
-```text
-● Failed
-```
-
-in red.
-
-Likewise:
-
-```text
-● Evaluation
-```
-
-or just:
-
-```text
-Evaluation
-```
-
-for neutral states.
-
-The table should feel like **data**, not a grid of status badges.
-
----
-
-# 13. Accounts should be the only intentionally dense page
-
-This is important.
-
-Don't try to make every page equally sparse.
-
-Use a density hierarchy:
-
-```text
-Overview      low density
-Risk          medium density
-Positions     low/medium
-Orders        low/medium
-Accounts      high density
-Finance       medium/high
-System        high density
-```
-
-That creates visual rhythm across the application.
-
-Accounts is where I would allow 8–12 rows with 6–7 columns.
-
----
-
-# 14. Finance still feels like a dashboard
-
-The Finance screenshot has:
-
-```text
-4 summary cards
-+
-Spending by prop firm
-+
-large ledger
-```
-
-The information is correct, but it still has too many boxes.
-
-Make the top section a **single cash summary**:
-
-```text
-Cash
-
-Total spent          ₹25,394.83
-Active at risk        ₹7,336.19
-Payouts received          ₹0
-Net cash outflow    -₹25,394.83
-```
-
-Then:
-
-```text
-Spent by firm
-
-Propr       ₹21,559.58      85%
-Breakout     ₹3,835.25      15%
-```
-
-Then the ledger.
-
-The top summary does not need four individual floating cards.
-
----
-
-# 15. Make the Finance ledger more readable
-
-Current rows contain:
-
-```text
-date
-firm badge
-challenge
-account ID
-USD
-INR
-bank ref capsule
-verified icon
-```
-
-That's a lot.
-
-Default row:
-
-```text
-24 Aug   Propr   Starter Turbo   ₹1,734.40   ✓
-```
-
-Click row:
-
-```text
-Bank debit
-₹1,734.40
-
-USD cost
-$17.50
-
-Challenge
-Starter 1-Step Turbo
-
-Account
-#1AQi
-
-Bank reference
-PRCR/.../24-08-2026
-
-Verified
-Yes
-```
-
-Use a drawer, not a wider table.
-
----
-
-# 16. Your interface should use fewer borders
-
-Current screenshots still have:
-
-```text
-outer card border
-inner card border
-row border
-bar border
-badge border
-```
-
-Use three levels:
-
-### Level 1
-
-No border.
-
-### Level 2
-
-Subtle divider.
-
-### Level 3
-
-Card/container border only when the boundary matters.
-
-That will remove a huge amount of visual noise.
-
----
-
-# 17. Reduce corner radius
-
-The current rounded rectangles contribute to the SaaS-template feel.
-
-Use:
-
-```text
-cards: 8px
-inputs: 6px
-buttons: 6px
-status indicators: 0
-tables: 8px outer only
-```
-
-Avoid the very rounded “pill everywhere” appearance.
-
----
-
-# 18. Use color only when it communicates something
-
-This is important.
-
-Current:
-
-* cyan links
-* green safe
-* green P&L
-* green status
-* amber metrics
-* yellow bars
-* red bars
-* etc.
-
-Use:
-
-```text
-White       main data
-Gray        secondary data
-Green       positive / safe
-Amber       approaching limit / stale
-Red         critical / failed
-Cyan        links / selected / navigation
-```
-
-A **normal number should not be colorful**.
-
-For example:
-
-```text
-₹25,394.83   white
-₹7,336.19    amber because it means active capital at risk
--₹25,394.83  white or red only if you want negative cash position emphasized
-```
-
-The number's meaning should determine the color.
-
----
-
-# 19. Kill decorative labels like "INR Base"
-
-Your:
-
-```text
-CAPITAL LEDGER [INR Base]
-```
-
-reads like generated metadata.
-
-Just write:
-
-```text
-Cash
-```
-
-and show:
-
-```text
-₹25,394.83
-INR
-```
-
-The user's eyes already tell them this is INR.
-
----
-
-# 20. Use fewer subtitles
-
-You have:
-
-```text
-Overview
-Portfolio status & capital allocation
-```
-
-then:
-
-```text
-Capital Ledger
-Total Cash Spent
-Active Cash at Risk
-```
-
-That's too many layers.
-
-Use:
+### Circled
 
 ```text
 Overview
 Cash, risk, and exposure
 ```
 
-then sections:
+### Problem
+
+The subtitle is generic product-copy filler.
+
+`Overview` already tells me what the page is.
+
+And "Cash, risk, and exposure" isn't helping me decide anything.
+
+### Replace with
 
 ```text
-Cash
-Active accounts
-Exposure
+Overview
 ```
 
-Simple.
+That's it.
+
+Then let the first section communicate the page's purpose.
+
+If you really need context:
+
+```text
+Portfolio
+```
+
+But I'd remove the subtitle entirely.
+
+### Rule
+
+Every page should use:
+
+```text
+Page title
+```
+
+not:
+
+```text
+Page title
+Generic description of page
+```
+
+Unless the description gives concrete information.
 
 ---
 
-# 21. One terminology rule
+# 2. Top-right "Updated just now"
 
-Avoid switching between:
+### Circled
 
 ```text
-Active capital
-Active cash
-Capital at risk
-Cash at risk
+● Updated just now     ↻
 ```
 
-Pick one.
+This is much better than the old polling pill, but it is still slightly UI-heavy.
 
-I'd use:
+### Problem
 
-**Cash at risk**
+The green dot + text + refresh icon is functioning like another small widget.
 
-because you're explicitly talking about actual bank cash, and the repo's financial model separates actual cash from challenge face value and trading metrics. ([GitHub][1])
+The user mainly cares about freshness.
 
-Likewise:
-
-**Daily loss room**
-
-instead of cycling through:
+### Better
 
 ```text
-Daily allowance
-Daily budget
-Daily room
-Daily-loss threshold
-Binding limit
+Updated now   ↻
 ```
 
-Use one primary term and one technical term where needed.
-
----
-
-# 22. The current Live Risk page needs one major change
-
-This:
+or:
 
 ```text
-Risk Monitor
-LIVE FEED
-Real-time breach monitor ranked by binding failure threshold
+● Updated 4s ago   ↻
 ```
 
-is too much introductory UI.
-
-Make:
+Use the dot only when state matters:
 
 ```text
-Risk
-
-2 active accounts
-Sorted by nearest limit
+● Live
+● Stale
+● Offline
 ```
 
-Then immediately show the accounts.
+For ordinary freshness, don't need the dot.
 
-Also, the `LIVE FEED` pill is another unnecessary badge. The top bar already tells you freshness.
+### Also
 
-Delete it.
-
----
-
-# 23. Live Risk card should be one card per account, but much flatter
-
-Current:
+Do not say:
 
 ```text
-number
-name
-ID
-stage
-safe
-hero box
-binding pill
-progress
-4 metrics
+Updated just now
 ```
 
-Instead:
+when you have exact relative time available.
+
+Prefer:
 
 ```text
-#1  Starter 1-Step Turbo          ● SAFE
-
-Daily loss room
-
-$152.35
-86% used
-
-Equity           $5,078.47
-Threshold        $4,926.11
-Drawdown room      $228.47
-Target progress      1.57%
+Updated 4s ago
 ```
 
-That is enough.
-
-The account-detail drawer contains the rest.
-
----
-
-# 24. Don't show “binding limit” as a badge
-
-This:
+Once it crosses a threshold:
 
 ```text
-BINDING LIMIT: Daily-loss threshold
-```
-
-is over-designed.
-
-Just write:
-
-```text
-Daily loss
-$152.35 remaining
-```
-
-The fact that this is the binding constraint can be a subtle label:
-
-```text
-Daily loss       binding
-```
-
-But it does not need a capsule.
-
----
-
-# 25. Remove explanatory phrases wherever the UI already demonstrates them
-
-Current:
-
-```text
-$152.35 room to daily-loss threshold ($4,926.11)
-```
-
-This is an information sentence.
-
-Use:
-
-```text
-Daily loss room
-
-$152.35
-
-Threshold $4,926.11
-```
-
-The user can parse this faster.
-
-This follows the no-slop principle of replacing generic explanatory prose with concrete UI information instead. 
-
----
-
-# 26. The product needs a stronger "quiet by default" rule
-
-This is the rule I would give your coding agent:
-
-> **Normal data should be visually quiet. Risk should create visual noise only when it deserves attention.**
-
-Therefore:
-
-### SAFE
-
-```text
-● SAFE
-```
-
-### CAUTION
-
-```text
-● CAUTION
-```
-
-### CRITICAL
-
-```text
-● CRITICAL
-```
-
-and then the entire account row/card gets stronger color.
-
-Do not make the entire interface colorful.
-
----
-
-# 27. Exact design system I would lock
-
-```text
-FONT
-
-UI:
-Inter / system sans
-
-Numbers:
-JetBrains Mono
-
-
-TYPE
-
-Page title       20px / 600
-Section          14px / 600
-Body             13px / 400
-Secondary        12px / 400
-Metadata         11px / 400
-
-Hero number      30px / 600
-Metric           20px / 600
-
-
-SPACING
-
-4
-8
-12
-16
-24
-32
-
-
-RADIUS
-
-6px
-8px
-
-
-BORDERS
-
-1px subtle only
-
-No glowing borders.
-
-
-COLORS
-
-Background        near-black
-Surface           slightly lighter
-Primary text      zinc-100
-Secondary         zinc-400
-Muted             zinc-500
-
-Cyan              navigation / links
-Green             safe / positive
-Amber             caution / stale
-Red               critical / failure
-```
-
----
-
-# 28. Component rules
-
-I would simplify your component vocabulary too.
-
-Instead of dozens of card-like components:
-
-```text
-MetricCard
-RiskCard
-StatusBadge
-HealthPill
-...
-```
-
-build around:
-
-```text
-PageHeader
-Section
-Metric
-AccountRow
-AccountCard
-StatusDot
-DataTable
-Drawer
-EmptyState
-Freshness
-```
-
-The less decorative component API you have, the harder it becomes for the coding agent to keep generating card-on-card layouts.
-
-The repository is already a Next.js App Router monorepo with a shared terminal component layer, so this can be done without changing the product architecture. ([GitHub][1])
-
----
-
-# 29. Most important code-level changes
-
-Your current `Sidebar` is still explicitly using:
-
-* 11px tracked nav
-* cyan inset shadow
-* uppercase labels
-* cyan logo square
-* `PROPR API` footer block
-
-all in the same component. 
-
-Your `TopBar` is already better, but still has page subtitles and a fairly dense right-side freshness/refresh cluster. 
-
-So I would refactor those first:
-
-```text
-Sidebar
-  → typography hierarchy
-  → grouped nav
-  → simple active state
-  → no footer health
-  → no decorative brand square
-
-TopBar
-  → shorter page subtitle
-  → single freshness component
-  → refresh button
+Updated 2m ago
 ```
 
 Then:
 
 ```text
-Risk
-  → one risk metric
-  → one progress bar
-  → 4 supporting values
-
-Overview
-  → attention
-  → cash
-  → active accounts
-  → exposure
-
-Finance
-  → cash summary
-  → spending breakdown
-  → ledger
+Stale · 2m ago
 ```
 
 ---
 
-# 30. The acceptance test I would use
+# 3. Overview attention banner
 
-Don't judge this redesign by:
-
-> “Does it look modern?”
-
-Judge it by whether you can answer these without consciously reading the screen.
-
-### Overview
-
-In 3 seconds:
+### Circled
 
 ```text
-Is anything dangerous?
-How much cash is at risk?
-Which account?
+● All accounts healthy · no immediate breach risk
+```
+
+and:
+
+```text
+2 active     Risk monitor →
+```
+
+### Problem
+
+This is trying to be both:
+
+* a status message
+* a navigation element
+* a count summary
+* an explanation
+
+That is why it feels like an AI-generated "smart banner".
+
+### Redesign
+
+For healthy state:
+
+```text
+All accounts healthy
+```
+
+Small muted text:
+
+```text
+2 active
+```
+
+And put the navigation separately:
+
+```text
+View risk →
+```
+
+Example:
+
+```text
+All accounts healthy                         2 active    View risk →
+```
+
+No bordered banner.
+
+No colored background.
+
+No paragraph.
+
+### When there is actual danger
+
+Then it becomes a real alert:
+
+```text
+1 account needs attention
+
+Starter 1-Step Turbo · $22.40 daily room remaining
+
+View risk →
+```
+
+The banner should visually exist **because something needs attention**, not because the design system requires a banner.
+
+---
+
+# 4. Cash footer breakdown
+
+### Circled
+
+```text
+Net cash outflow: -₹25,394.83
+Propr: ₹21,559.58
+Breakout: ₹3,835.25
+```
+
+### Problem
+
+This is a second mini-summary underneath the three primary figures.
+
+The same numbers are already available from the three main metrics.
+
+It creates:
+
+```text
+summary
+summary
+summary
+```
+
+### Remove it from Overview entirely.
+
+Overview should only show:
+
+```text
+Total spent       ₹25,394.83
+Cash at risk       ₹7,336.19
+Payouts                ₹0
+```
+
+Then:
+
+```text
+View finance →
+```
+
+The firm breakdown belongs on Finance.
+
+This is one of the clearest cases of unnecessary repetition.
+
+---
+
+# 5. "2 sorted by nearest limit"
+
+### Circled
+
+```text
+2 sorted by nearest limit
+```
+
+### Problem
+
+This is a table-header style sentence masquerading as useful information.
+
+The user can see:
+
+1.
+2.
+
+and the ordering.
+
+They don't need:
+
+```text
+2 sorted by nearest limit
+```
+
+### Replace with
+
+```text
+2 active
+```
+
+That's enough.
+
+Or:
+
+```text
+Nearest limit first
+```
+
+as a tiny sort control if sorting is interactive.
+
+Better:
+
+```text
+Active accounts                            2
+```
+
+No explanatory sentence.
+
+---
+
+# 6. SAFE badge
+
+### Circled
+
+```text
+● SAFE
+```
+
+This is actually close.
+
+The problem isn't the text.
+
+The problem is the repetition and the visual treatment.
+
+Currently every account has:
+
+```text
+name
+ID
+Evaluation
+daily binding
+SAFE
+```
+
+### Use
+
+```text
+Starter 1-Step Turbo                    ● Safe
+```
+
+That's fine.
+
+But:
+
+* no pill
+* no border
+* no icon inside a circle
+* no uppercase
+* no glowing green
+
+Use a small dot + `Safe`.
+
+For critical:
+
+```text
+● Critical
+```
+
+For failed:
+
+```text
+● Failed
+```
+
+Use normal sentence case.
+
+---
+
+# 7. Yellow rectangles around the account metrics
+
+These are not necessarily "bad components"; the problem is their **layout density**.
+
+Current:
+
+```text
+Threshold                  Equity
+$4,926.11                  $5,078.47
+
+Drawdown room              Target progress
+$253.88                    2.08% (+$102.91)
+```
+
+### Problem
+
+Four secondary metrics are crammed into a little matrix below the hero metric.
+
+They all have the same visual weight.
+
+So the user doesn't know what matters.
+
+### New hierarchy
+
+```text
+Daily loss room
+
+$177.77
+0% used
+
+────────────────────────────
+
+Equity           $5,103.88
+Threshold        $4,926.11
+Drawdown room      $253.88
+
+Target            2.08%
+```
+
+That is much easier to scan.
+
+### Important
+
+Do **not** make these four values into mini-cards.
+
+Just use aligned rows.
+
+---
+
+# 8. "Daily binding" is too technical
+
+Current:
+
+```text
+#fjU6 · Evaluation · daily binding
+```
+
+### Problem
+
+"daily binding" sounds like an implementation term.
+
+The user doesn't need to know your risk engine's terminology.
+
+Replace with:
+
+```text
+#fjU6 · Evaluation
+```
+
+The actual binding limit is shown below:
+
+```text
+Daily loss room
+$177.77
+```
+
+This is another example of removing hidden implementation language from visible product UI.
+
+---
+
+# 9. Risk page has duplicated page context
+
+### Circled
+
+You have:
+
+```text
+Risk
+2 active accounts · Sorted by nearest limit
+```
+
+then again:
+
+```text
+Risk
+2 active accounts · Sorted by nearest limit
+```
+
+This is a genuine UX issue, not just aesthetics.
+
+### Fix
+
+The top shell should say:
+
+```text
+Risk
+```
+
+Then page body should start directly with the risk content:
+
+```text
+2 active accounts
+Nearest limit first
+```
+
+But don't repeat `Risk`.
+
+Even better:
+
+```text
+Risk                                    2 active
+```
+
+Then the cards.
+
+---
+
+# 10. Risk page should not repeat account context more than once
+
+Each card currently contains:
+
+```text
+#1 Starter 1-Step Turbo
+#fjU6
+Evaluation
+Safe
+
+Daily loss room
+$176.79
+
+0% used
+
+Threshold
+Equity
+Drawdown room
+Target progress
+```
+
+That's already close to the maximum.
+
+Do not add another explanatory line such as:
+
+```text
+Ranked by binding failure threshold
+```
+
+at the top.
+
+The ordering itself tells the story.
+
+---
+
+# 11. The Risk page's "LIVE FEED" pill should be gone
+
+In the earlier version there was:
+
+```text
+LIVE FEED
+```
+
+That has no value now that the top-right freshness indicator exists.
+
+Use one source of truth:
+
+```text
+Updated 4s ago
+```
+
+System can expose:
+
+```text
+WebSocket connected
+```
+
+Don't advertise "Live feed" on the Risk page.
+
+---
+
+# 12. Position exposure section
+
+Current:
+
+```text
+Open positions
+
+HYPE
+LONG
+
+Size
+Entry
+Mark
+Unrealized P&L
+Margin
+Liquidation
+```
+
+This is actually decent now.
+
+But there is a remaining hierarchy problem.
+
+### Current
+
+```text
+HYPE LONG
+#fjU6
+```
+
+followed by six metrics.
+
+### Better
+
+```text
+HYPE / LONG                              #fjU6
+
+108.2323 HYPE
+Entry        $78.78
+Mark         $79.02
+uPnL         +$25.78
+Liq.         $31.68
+```
+
+Make **position size** the prominent value.
+
+The current version makes all numbers look like equal-weight table cells.
+
+---
+
+# 13. The Markets table is too broad for Risk
+
+On the Risk page:
+
+```text
+Market
+Mark Price
+24h Change
+8h Funding
+Max Leverage
+Tick Size
+```
+
+That's not inherently bad, but it competes with the risk content.
+
+### Move to a secondary section
+
+```text
+Markets
+BTC   $68,432.50   +2.45%
+ETH    $3,542.80   +1.82%
+SOL      $178.45   +4.12%
+SUI        $1.84   -0.65%
+
+View market specs →
+```
+
+`Max leverage` and `tick size` can live in the details drawer.
+
+This follows the progressive disclosure model without losing the underlying data.
+
+---
+
+# 14. Analytics is currently the most "dashboard" screen
+
+This screen is much more AI-template-like than Overview.
+
+You have:
+
+```text
+account selector
+tabs
+time filters
+export button
+6 KPI cards
+chart
+status panel
+3 gauges
+rules button
+```
+
+That's a lot of chrome before reaching the actual analysis.
+
+## Main issue
+
+The screen is trying to be:
+
+* account selector
+* reporting dashboard
+* performance dashboard
+* risk dashboard
+* rulebook viewer
+
+simultaneously.
+
+That is too much.
+
+### Redesign
+
+Header:
+
+```text
+Explorer 1-Step Turbo                          All time
+```
+
+Then:
+
+```text
+Net P&L       Win rate       Profit factor       Sharpe
++$173.67      52.4%          1.47                3.91
+```
+
+Then **large chart**.
+
+Then:
+
+```text
+Risk
+Profit target     1.74%
+Drawdown used     0%
+Daily loss        0%
+```
+
+Everything else goes into:
+
+```text
+Trade history
+Rules
+Export
+```
+
+as tabs/actions.
+
+### Kill the decorative circular gauges
+
+The little semicircle gauges for:
+
+* Profit target
+* Drawdown
+* Daily loss
+
+are classic dashboard decoration.
+
+They don't add much beyond:
+
+```text
+Profit target 1.74%
+Drawdown      0%
+Daily loss    0%
+```
+
+Replace them with numbers and one compact progress indicator where useful.
+
+---
+
+# 15. Analytics chart readability
+
+The chart itself is good.
+
+But:
+
+```text
+Equity
+Drawdown
+24H
+7D
+30D
+All Time
+```
+
+creates too many controls around the plot.
+
+Use one range control:
+
+```text
+1D   7D   30D   ALL
+```
+
+and one metric switch:
+
+```text
+Equity | Drawdown
+```
+
+That's enough.
+
+Also don't put a `Read Full Rules` button directly inside the analytics status panel.
+
+That is a contextual mismatch.
+
+---
+
+# 16. Positions page is now very close
+
+This screenshot is one of the strongest.
+
+The table works.
+
+But:
+
+### Column widths are excessive
+
+There is a massive amount of horizontal whitespace.
+
+You can make the table much more compact:
+
+```text
+Account   Asset   Side   Size   Entry   Mark   Liq   Margin   P&L   ROE
+```
+
+Right-align all numeric columns.
+
+Set fixed widths.
+
+Don't let every column expand equally.
+
+### Also
+
+`0.006046% ROE` looks suspiciously precise.
+
+For normal display:
+
+```text
+ROE +0.01%
+```
+
+Use full precision only in row details.
+
+Precision should follow usefulness.
+
+---
+
+# 17. Orders is also structurally good
+
+The Orders page is clear now.
+
+Two remaining issues:
+
+### `pending`
+
+For read-only monitoring, use:
+
+```text
+Pending
+```
+
+with a tiny amber dot.
+
+Not a bare lowercase value.
+
+### Type names
+
+```text
+Take_profit_market
+Stop_market
+```
+
+look like API enum values.
+
+Use human-readable labels:
+
+```text
+Take profit
+Stop loss
+```
+
+Keep the raw enum in a detail drawer if required.
+
+This is a significant readability improvement.
+
+---
+
+# 18. Accounts page: strong structure, but still too many visual statuses
+
+The Accounts page is probably the best data page now.
+
+But:
+
+```text
+● Failed
+Evaluation
+```
+
+creates inconsistency because some states are dots and some are plain text.
+
+Standardize:
+
+```text
+● Failed
+● Evaluation
+● Funded
+● Archived
+```
+
+with only risk/problem states colored.
+
+Neutral lifecycle states:
+
+```text
+Evaluation
+Funded
+Archived
+```
+
+should remain gray.
+
+---
+
+# 19. Accounts table needs more breathing room
+
+The account table is readable, but:
+
+```text
+#fjU6 (4D8Xw...)
+Starter 1-Step Turbo
+```
+
+contains too much identity information in the same cell.
+
+Use:
+
+```text
+#fjU6
+Starter 1-Step Turbo
+```
+
+and make the raw ID copy action appear on hover.
+
+Don't display both short and full IDs simultaneously.
+
+That is unnecessary text density.
+
+---
+
+# 20. Finance page has one remaining AI-slop pattern
+
+This:
+
+```text
+Cash
+Bank settled capital & cash flows
+```
+
+is classic generated section decoration.
+
+Remove the right-side explanatory phrase.
+
+Just:
+
+```text
+Cash
+```
+
+Then the four metrics.
+
+Same with:
+
+```text
+Spent by firm                    Settled INR allocation
+```
+
+Remove:
+
+```text
+Settled INR allocation
+```
+
+It's obvious from the numbers.
+
+---
+
+# 21. Finance summary needs stronger alignment
+
+The four top values:
+
+```text
+₹25,394.83
+₹7,336.19
+₹0.00
+-₹25,394.83
+```
+
+are good.
+
+But their subtitles have slightly different lengths and visual weights.
+
+Standardize:
+
+```text
+Total spent
+₹25,394.83
+
+Cash at risk
+₹7,336.19
+
+Payouts
+₹0
+
+Net cash outflow
+-₹25,394.83
+```
+
+The number first.
+
+Label second.
+
+No extra explanatory sentence.
+
+---
+
+# 22. Finance "Spent by firm" bars are good, but remove redundant percentage text
+
+Current:
+
+```text
+Propr                     ₹21,559.58 (85%)
+██████████████████████
+```
+
+The bar already conveys the ratio.
+
+Keep the percentage, but make it secondary:
+
+```text
+Propr                              ₹21,559.58
+85%
+██████████████████████████
+```
+
+or:
+
+```text
+Propr           ₹21,559.58     85%
+████████████████████████████████
+```
+
+Don't make `85%` visually compete with the amount.
+
+---
+
+# 23. System page is now much more mature
+
+The new System screen is significantly better than the earlier raw-terminal version.
+
+But this header:
+
+```text
+Engine: Propr Core · ● Read-Only Active
+```
+
+is unnecessary.
+
+The user already knows the app is read-only.
+
+Put that information under Security:
+
+```text
+Read-only
+No mutation endpoints
+```
+
+System should answer:
+
+```text
+Is the data healthy?
+```
+
+not:
+
+```text
+How did the engineering team build this?
+```
+
+---
+
+# 24. System health cards are too decorative
+
+These:
+
+```text
+REST API
+HEALTHY
+
+WebSocket
+DISCONNECTED
+
+Data Pipeline
+SYNCED
+
+Security
+ACTIVE
+```
+
+are useful.
+
+But the giant status words are a little excessive.
+
+Use:
+
+```text
+REST API
+● Healthy
+38ms
+
+WebSocket
+● Disconnected
+Polling every 15s
+
+Data
+● Synced
+8 accounts
+
+Security
+● Read-only
+0 mutations
+```
+
+This is much quieter.
+
+---
+
+# 25. Recent events should look like events, not a database table
+
+Current:
+
+```text
+Time | Channel | Event Detail
+```
+
+This is okay, but it still feels like a generic admin table.
+
+Use an event stream:
+
+```text
+23:58:32   Risk Engine    Drawdown check passed
+23:58:28   REST Sync      8 accounts synchronized
+23:58:24   Market         SOL mark updated
+23:58:20   Gateway        Heartbeat 14ms
+```
+
+No giant table headers.
+
+No box around every row.
+
+Subtle separators only.
+
+---
+
+# 26. The biggest cross-app UX problem now: inconsistent language
+
+You currently use all of these:
+
+```text
+Cash at risk
+Active capital
+Active cash
+Daily loss room
+Daily allowance
+Daily binding
+Daily threshold
+Binding limit
+Drawdown room
+DD floor
+Target progress
+Profit target
+```
+
+That is too many terms for the same underlying concepts.
+
+Lock vocabulary.
+
+### Cash
+
+```text
+Total spent
+Cash at risk
+Payouts
+Net cash outflow
 ```
 
 ### Risk
 
-In 2 seconds:
-
 ```text
-Which account is closest to breach?
-By how much?
+Daily loss room
+Drawdown room
+Equity
+Threshold
+Target progress
 ```
 
-### Accounts
-
-In 5 seconds:
+### State
 
 ```text
-Which accounts are active?
-Which failed?
-Why?
+Safe
+Caution
+Critical
+Failed
 ```
 
-### Finance
-
-In 5 seconds:
+### Freshness
 
 ```text
-How much have I spent?
-How much is currently at risk?
+Live
+Updated 4s ago
+Stale
+Offline
 ```
 
-### System
+No cycling synonyms.
 
-In 3 seconds:
-
-```text
-Can I trust the data?
-```
-
-If the user has to read more than one or two lines to answer those questions, the page is still too dense.
+The no-slop guidance explicitly calls out synonym cycling as a source of artificial writing. 
 
 ---
 
-## The direction I would give the coding agent
+# 27. The biggest typography problem
 
-Use this as the core instruction:
+Your current UI has improved, but still uses too much:
 
-> **Refactor for hierarchy, not decoration.**
+```text
+uppercase + letter spacing + monospace
+```
+
+for headings.
+
+That is the "terminal cosplay" effect.
+
+Use:
+
+```text
+Overview
+Risk
+Markets
+Cash
+Active accounts
+Positions
+Orders
+Accounts
+System
+```
+
+in normal sans-serif.
+
+Use monospace only for:
+
+```text
+₹25,394.83
+$173.67
+#fjU6
+23:58:32
++1.74%
+```
+
+This single rule will make the application feel much more intentional.
+
+---
+
+# 28. Remove "generated explanatory labels"
+
+I would aggressively delete phrases such as:
+
+```text
+Cash, risk, and exposure
+Sorted by nearest limit
+Perpetual contract specs & 8h funding
+Bank settled capital & cash flows
+Account performance and trade analytics
+Gateway health and sync status
+Active perpetual market exposures across monitored accounts
+```
+
+Some of them are harmless individually.
+
+Collectively, they make every screen talk too much.
+
+Replace with concise page titles and let the data communicate the context.
+
+---
+
+# 29. One new rule I strongly recommend
+
+### Every section gets either a title OR a descriptor, never both.
+
+Bad:
+
+```text
+Markets
+Perpetual contract specs & 8h funding
+```
+
+Good:
+
+```text
+Markets
+```
+
+Bad:
+
+```text
+Finance
+Capital ledger and cash flow
+```
+
+Good:
+
+```text
+Cash
+```
+
+Bad:
+
+```text
+System
+Gateway health and sync status
+```
+
+Good:
+
+```text
+System
+```
+
+This will remove a surprising amount of visual noise.
+
+---
+
+# 30. Your page hierarchy should now be
+
+## Overview
+
+```text
+Overview
+
+Attention
+Cash
+Active accounts
+Exposure
+```
+
+## Risk
+
+```text
+Risk
+
+Active accounts
+Open positions
+Markets
+```
+
+## Analytics
+
+```text
+Analytics
+
+Performance
+Equity chart
+Risk
+Trades
+```
+
+## Positions
+
+```text
+Positions
+
+Open positions
+```
+
+## Orders
+
+```text
+Orders
+
+Open orders
+```
+
+## Accounts
+
+```text
+Accounts
+
+Filters
+Account table
+```
+
+## Finance
+
+```text
+Finance
+
+Cash
+Spent by firm
+Ledger
+```
+
+## System
+
+```text
+System
+
+Health
+Data flow
+Recent events
+```
+
+That's the vocabulary.
+
+---
+
+# 31. One important thing you should NOT do
+
+Don't try to make the UI "less AI" by adding more personality, gradients, glass effects, huge typography, custom illustrations, or decorative charts.
+
+That will create a different kind of AI slop.
+
+The fix is **restraint**.
+
+The supplied no-slop guidance emphasizes keeping concrete information while removing decorative formatting, repetition, generic framing, and robotic structure. 
+
+---
+
+# Priority order
+
+### P0 — remove now
+
+| Area                        | Change                      |
+| --------------------------- | --------------------------- |
+| Page subtitles              | Remove generic descriptions |
+| Attention banner            | Make quiet by default       |
+| Cash footer                 | Delete from Overview        |
+| "2 sorted by nearest limit" | Replace with `2 active`     |
+| Status pills                | Dot + text                  |
+| "daily binding"             | Remove                      |
+| Repeated daily-room numbers | Show once                   |
+| Section descriptors         | Remove                      |
+| API enum labels             | Human-readable              |
+| System engine label         | Remove                      |
+| Synonym cycling             | Standardize terminology     |
+
+### P1 — readability
+
+| Area           | Change                       |
+| -------------- | ---------------------------- |
+| Typography     | Sans for UI, mono for data   |
+| Section titles | 14px sans                    |
+| Metadata       | 11–12px minimum              |
+| Money          | 28–32px                      |
+| Risk bars      | Single semantic color        |
+| Tables         | Fixed numeric alignment      |
+| IDs            | Short ID + hover copy        |
+| Rows           | More vertical breathing room |
+
+### P2 — deeper UX
+
+| Area            | Change                              |
+| --------------- | ----------------------------------- |
+| Account details | Drawer                              |
+| Finance ledger  | Row detail drawer                   |
+| Analytics       | Remove gauges, simplify controls    |
+| Markets         | Move specs into detail              |
+| Orders          | Human-readable order types          |
+| System          | Event stream instead of admin table |
+| Risk            | Remove duplicate header/context     |
+
+---
+
+# Final design rule for the coding agent
+
+Use this as the governing instruction:
+
+> **Design the terminal as a financial workstation, not a dashboard template.**
 >
-> Remove redundant metrics before reducing font size. Use sans-serif for interface text and monospace only for financial values, IDs, timestamps, and telemetry. Replace repeated cards, pills, labels, gradients, and explanatory text with fewer purposeful structures. Every screen should have one primary question and one dominant visual answer. Default state should be quiet; color and visual weight should increase only when risk increases. Put secondary information behind drawers or expandable rows rather than displaying it everywhere. Do not change any calculations, API behavior, accounting semantics, risk logic, or read-only constraints.
+> Remove any UI element whose only purpose is to explain, decorate, classify, or repeat information already obvious from nearby content. Prefer one strong metric over three representations of the same metric. Prefer one clean row over a card containing smaller cards. Use normal sans-serif for interface language and monospace only for financial/technical values. Keep status colors semantic and quiet. Use progressive disclosure for secondary information. Default screens should feel calm; only real risk should create visual urgency.
 
-The repository's documented purpose supports this approach directly: it is a read-only personal monitor for breach limits, positions, and bank cash reconciliation, not an execution interface or generic analytics dashboard. ([GitHub][1])
-
-The current screenshots are already moving in the right direction. The next step is **not another visual redesign**. It is a deliberate reduction pass: fewer components, fewer words, fewer repeated metrics, larger type, stronger hierarchy, and more information revealed only when requested.
-
-[1]: https://github.com/dhruvamity/propr-tracker "GitHub - dhruvamity/propr-tracker · GitHub"
+The current state is finally close enough that I would **not add more components**. The next pass should be a subtraction pass. That is what will make it feel genuinely designed rather than progressively more polished but still AI-generated.

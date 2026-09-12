@@ -26,15 +26,15 @@ export function EquityCurveChart({
   height = 320,
 }: EquityCurveChartProps) {
   const [chartMode, setChartMode] = useState<"EQUITY" | "DRAWDOWN">("EQUITY");
-  const [timeFilter, setTimeFilter] = useState<"24H" | "7D" | "30D" | "ALL">("ALL");
+  const [timeFilter, setTimeFilter] = useState<"1D" | "7D" | "30D" | "ALL">("ALL");
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  // Filter data by time range
+  // Filter data by time range (Prompt §15: 1D, 7D, 30D, ALL)
   const filteredData = useMemo(() => {
     if (dataPoints.length <= 1) return dataPoints;
     const now = Date.now();
     let cutoff = 0;
-    if (timeFilter === "24H") cutoff = now - 24 * 60 * 60 * 1000;
+    if (timeFilter === "1D") cutoff = now - 24 * 60 * 60 * 1000;
     else if (timeFilter === "7D") cutoff = now - 7 * 24 * 60 * 60 * 1000;
     else if (timeFilter === "30D") cutoff = now - 30 * 24 * 60 * 60 * 1000;
 
@@ -142,9 +142,9 @@ export function EquityCurveChart({
           </button>
         </div>
 
-        {/* Time filters */}
+        {/* Time filters (Prompt §15: 1D 7D 30D ALL) */}
         <div className="flex items-center gap-1 text-xs font-sans text-zinc-400">
-          {(["24H", "7D", "30D", "ALL"] as const).map((range) => (
+          {(["1D", "7D", "30D", "ALL"] as const).map((range) => (
             <button
               key={range}
               type="button"
@@ -155,7 +155,7 @@ export function EquityCurveChart({
                   : "hover:text-zinc-200"
               }`}
             >
-              {range === "ALL" ? "All Time" : range}
+              {range}
             </button>
           ))}
         </div>
