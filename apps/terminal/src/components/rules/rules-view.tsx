@@ -615,7 +615,7 @@ export function RulesView({ data }: RulesViewProps) {
 
       {/* ─── Detailed 7 Rules Operational Matrix ────────────────────────────── */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-zinc-200 tracking-wide uppercase font-mono text-xs">
+        <h3 className="text-sm font-semibold text-zinc-200">
           The 7 Personal Trading Rules — Operational Diagnostics
         </h3>
 

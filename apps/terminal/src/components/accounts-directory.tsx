@@ -278,12 +278,10 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                         </span>
                       ) : acc.stage === "FUNDED" ? (
                         <span className="inline-flex items-center gap-1.5 text-zinc-300 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                           <span>Funded</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 text-zinc-400 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 shrink-0" />
                           <span>Evaluation</span>
                         </span>
                       )}

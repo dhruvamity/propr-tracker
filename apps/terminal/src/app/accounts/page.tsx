@@ -11,14 +11,9 @@ export default async function AccountsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-sm md:text-base font-semibold text-zinc-100 font-sans">
-            Accounts
-          </h1>
-          <p className="text-xs text-zinc-400 font-sans mt-0.5">
-            Active evaluations and archive
-          </p>
-        </div>
+        <h1 className="text-sm md:text-base font-semibold text-zinc-100 font-sans">
+          Accounts
+        </h1>
         <div className="text-xs font-sans text-zinc-400">
           <span className="font-mono font-medium text-zinc-200">{summary.totalAccounts}</span> total ·{" "}
           <span className="font-mono font-medium text-zinc-200">{summary.activeEvals + summary.funded}</span> active ·{" "}

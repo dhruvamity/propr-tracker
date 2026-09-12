@@ -39,7 +39,7 @@ const navSections: NavSection[] = [
     title: "Risk",
     items: [
       { href: "/live", label: "Monitor", icon: Radio },
-      { href: "/rules", label: "Rules & Gate", icon: ShieldCheck },
+      { href: "/rules", label: "Rules", icon: ShieldCheck },
     ],
   },
   {
@@ -83,10 +83,7 @@ export function Sidebar() {
           {collapsed && !isMobile ? (
             <span className="font-semibold text-base text-zinc-100 pl-0.5">P</span>
           ) : (
-            <div className="flex flex-col">
-              <span className="font-semibold text-sm tracking-wide text-zinc-100">PROPR</span>
-              <span className="text-[11px] text-zinc-500 font-sans">Trading Terminal</span>
-            </div>
+            <span className="font-semibold text-sm text-zinc-100">Propr</span>
           )}
         </Link>
         {isMobile && (
@@ -105,7 +102,7 @@ export function Sidebar() {
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1">
             {section.title && (!collapsed || isMobile) && (
-              <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+              <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500">
                 {section.title}
               </div>
             )}

@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
-  FileDown,
 } from "lucide-react";
 import { EquityCurveChart, type DataPoint } from "./equity-curve-chart";
 import {
@@ -444,15 +443,6 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
             <span className="font-mono text-xs text-zinc-400">
               {formatAccountTag(currentAccount?.accountId || "")}
             </span>
-            {isFailed ? (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-red-950/80 text-red-400 border border-red-800/60 uppercase">
-                BREACHED
-              </span>
-            ) : (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/50 uppercase">
-                PAPER
-              </span>
-            )}
             <ChevronDown size={14} className="text-zinc-400 group-hover:text-white transition-colors ml-1" />
           </button>
         </div>
@@ -486,9 +476,9 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
           <div className="flex items-center p-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
             {(
               [
-                { id: "7D", label: "Last 7 days" },
-                { id: "30D", label: "Last 30 days" },
-                { id: "ALL", label: "All Time" },
+                { id: "7D", label: "7D" },
+                { id: "30D", label: "30D" },
+                { id: "ALL", label: "All" },
               ] as const
             ).map((filter) => (
               <button
@@ -515,15 +505,6 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
             <span>Export CSV</span>
           </button>
 
-          <a
-            href="/api/export-markdown"
-            download
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors"
-            title="Download full markdown dossier with all 8 accounts, breached trade histories, and financial ledger"
-          >
-            <FileDown size={13} />
-            <span>Export All (.md)</span>
-          </a>
         </div>
       </div>
 

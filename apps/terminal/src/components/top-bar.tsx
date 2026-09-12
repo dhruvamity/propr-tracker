@@ -16,7 +16,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/finance": "Finance",
   "/history": "History",
   "/system": "System",
-  "/rules": "Trading Rules & Gate",
+  "/rules": "Rules",
 };
 
 export function TopBar() {
@@ -51,7 +51,7 @@ export function TopBar() {
 
       setIsStale(diffSec > 60);
 
-      if (diffSec < 5) setRelativeTime("now");
+      if (diffSec < 5) setRelativeTime("<1s ago");
       else if (diffSec < 60) setRelativeTime(`${diffSec}s ago`);
       else if (diffSec < 3600) setRelativeTime(`${Math.floor(diffSec / 60)}m ago`);
       else
@@ -136,8 +136,9 @@ export function TopBar() {
     freshnessText = `Stale · ${relativeTime}`;
   } else if (health.wsStatus === "CONNECTED") {
     statusDot = <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />;
-    freshnessText = `Live · ${relativeTime}`;
+    freshnessText = `Live`;
   }
+  // Normal state: no dot, just "Updated Xs ago" — dot only for semantic states
 
   const kMod = isMac ? "⌘" : "Ctrl+";
 
@@ -153,7 +154,7 @@ export function TopBar() {
           <Menu size={18} />
         </button>
 
-        <h1 className="text-sm md:text-base font-semibold text-white tracking-wide font-sans">
+        <h1 className="text-sm md:text-base font-semibold text-white font-sans">
           {pageTitle}
         </h1>
       </div>

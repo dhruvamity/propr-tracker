@@ -39,7 +39,7 @@ export function EmptyState({
       </div>
 
       {/* Title */}
-      <h3 className="text-sm font-semibold text-white tracking-wide">
+      <h3 className="text-sm font-semibold text-white">
         {title}
       </h3>
 

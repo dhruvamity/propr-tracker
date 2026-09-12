@@ -158,9 +158,6 @@ export default async function OverviewPage() {
             <div>
               <div className="text-xs text-zinc-400 font-sans">Open positions</div>
               <div className="text-2xl font-mono font-bold text-white mt-0.5">{allPositions.length}</div>
-              <div className="text-xs text-zinc-500 font-sans mt-0.5">
-                {allPositions.length === 0 ? "Flat across 2 active accounts" : `${allPositions.length} active perpetuals`}
-              </div>
             </div>
             <Link
               href="/positions"
@@ -173,9 +170,6 @@ export default async function OverviewPage() {
             <div>
               <div className="text-xs text-zinc-400 font-sans">Resting orders</div>
               <div className="text-2xl font-mono font-bold text-white mt-0.5">{allOrders.length}</div>
-              <div className="text-xs text-zinc-500 font-sans mt-0.5">
-                {allOrders.length === 0 ? "No pending orders or stops" : `${allOrders.length} resting limit orders`}
-              </div>
             </div>
             <Link
               href="/orders"

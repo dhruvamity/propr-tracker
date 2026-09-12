@@ -274,7 +274,7 @@ export function SystemTerminalStream() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
             <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
           </div>
-          <div className="flex items-center gap-2 text-zinc-200 font-semibold text-xs tracking-wider uppercase">
+          <div className="flex items-center gap-2 text-zinc-200 font-semibold text-xs font-mono">
             <Terminal size={14} className="text-zinc-400" />
             <span>propr-ws-gateway / event-stream.log</span>
           </div>

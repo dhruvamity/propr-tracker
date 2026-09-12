@@ -127,20 +127,12 @@ export default async function LiveMonitorPage() {
                 </div>
                 <div>
                   <div className="font-semibold text-zinc-200">
-                    Flat · Zero open positions
+                    Flat
                   </div>
-                  <p className="text-zinc-400 mt-0.5">
-                    No active positions across accounts. Capital held in margin balance.
+                  <p className="text-zinc-500 mt-0.5">
+                    {liveAccounts.length} active accounts
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 font-sans text-zinc-400">
-                <span className="px-2.5 py-1 rounded bg-zinc-900/60 border border-zinc-800">
-                  Exposure: <strong className="font-mono text-zinc-200">$0.00</strong>
-                </span>
-                <span className="px-2.5 py-1 rounded bg-zinc-900/60 border border-zinc-800">
-                  Liquidation: <strong className="text-emerald-400 font-medium">None</strong>
-                </span>
               </div>
             </div>
           </div>
@@ -227,7 +219,6 @@ export default async function LiveMonitorPage() {
               >
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-zinc-100 font-sans">{spec.symbol}</span>
-                  <span className="text-zinc-400 text-xs">{spec.name}</span>
                 </div>
                 <div className="flex items-center gap-6">
                   <span className="font-mono font-semibold text-zinc-100">{spec.markPrice}</span>
