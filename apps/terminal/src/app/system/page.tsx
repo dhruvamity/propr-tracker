@@ -11,19 +11,19 @@ export default async function SystemPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-base sm:text-lg font-semibold text-white tracking-wide">
-            System Health
+          <h1 className="text-sm md:text-base font-semibold text-zinc-100 font-sans">
+            System
           </h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Connection health, pipeline synchronization, and telemetry state
+          <p className="text-xs text-zinc-400 font-sans mt-0.5">
+            Gateway health and sync status
           </p>
         </div>
-        <div className="flex items-center gap-3 font-mono text-xs text-zinc-400">
+        <div className="flex items-center gap-3 font-sans text-xs text-zinc-400">
           <span>Engine: <strong className="text-zinc-200">Propr Core</strong></span>
-          <span>•</span>
+          <span className="text-zinc-700">•</span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="text-emerald-400">Read-Only Active</span>
+            <span className="text-emerald-400 font-medium">Read-Only Active</span>
           </span>
         </div>
       </div>
