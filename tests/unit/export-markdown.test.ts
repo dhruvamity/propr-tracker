@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { generateMarkdownExport } from "../../apps/terminal/src/lib/export-markdown";
 import type { DashboardData, AccountSnapshot, TradeData } from "../../apps/terminal/src/lib/propr-api";
 
-describe("Trader Memory & Capital Audit Markdown Export Generator", () => {
+describe("Trader Memory & Dynamic Capital Audit Markdown Export Generator", () => {
   const mockTrades: TradeData[] = [
     {
       tradeId: "urn:prp-trade:tr-001-abc",
@@ -154,22 +154,20 @@ describe("Trader Memory & Capital Audit Markdown Export Generator", () => {
     },
   };
 
-  it("generates markdown containing trader-centric analysis sections", () => {
+  it("generates markdown containing dynamic trader analysis sections", () => {
     const md = generateMarkdownExport(mockData);
 
-    expect(md).toContain("# Prop Firm Trading Portfolio — Comprehensive Performance & Capital Audit Dossier");
-    expect(md).toContain("## 1. Capital Budget, Runway & Prop Firm Allocation");
-    expect(md).toContain("## 2. Progression & Learning Curve Analysis");
-    expect(md).toContain("## 3. Active Accounts Live Status & Target Proximity");
-    expect(md).toContain("## 4. Realistic Funded Account Withdrawal & Payout Projections");
-    expect(md).toContain("## 5. Strategic Capital Allocation & 20% Discount Recommendation");
-    expect(md).toContain("## 6. Current Market Exposures & Resting Orders");
-    expect(md).toContain("## 7. Master Accounts Directory & Performance Summary");
-    expect(md).toContain("## 8. Account-by-Account Granular Dossiers & Trade Histories");
-    expect(md).toContain("## 9. Bank-Verified Purchase Ledger & Invoice Audit");
+    expect(md).toContain("# Prop Firm Portfolio & Trade History — Master Performance Dossier");
+    expect(md).toContain("## 1. Executive Capital Allocation & Financial Ledger Summary");
+    expect(md).toContain("## 2. Chronological Performance & Progression Matrix");
+    expect(md).toContain("## 3. Active Accounts Live Status & Distance to Target");
+    expect(md).toContain("## 4. Current Market Exposures & Resting Orders");
+    expect(md).toContain("## 5. Master Accounts Directory & Performance Summary");
+    expect(md).toContain("## 6. Account-by-Account Granular Dossiers & Trade Histories");
+    expect(md).toContain("## 7. Bank-Verified Purchase Ledger & Invoice Audit");
   });
 
-  it("does not include terminal software jargon or mock diagnostic event streams", () => {
+  it("does not include terminal software architecture noise or mock event logs", () => {
     const md = generateMarkdownExport(mockData);
 
     expect(md).not.toContain("Recent Diagnostic Events");
@@ -177,41 +175,32 @@ describe("Trader Memory & Capital Audit Markdown Export Generator", () => {
     expect(md).not.toContain("System Architecture & Event Stream");
   });
 
-  it("includes capital runway and 20% discount analysis", () => {
+  it("dynamically calculates near-pass metrics for accounts within 3.5% of target", () => {
     const md = generateMarkdownExport(mockData);
 
-    expect(md).toContain("Total Allocated Capital Budget");
-    expect(md).toContain("Remaining Dry Powder / Runway");
-    expect(md).toContain("Evaluation Unit Economics & 20% Discount Opportunity");
-    expect(md).toContain("Starter 1-Step Turbo");
-    expect(md).toContain("Explorer 1-Step Turbo");
-    expect(md).toContain("**$20.00**");
-    expect(md).toContain("**$40.00**");
-  });
-
-  it("documents near-pass performance and breach cause on #5gMw", () => {
-    const md = generateMarkdownExport(mockData);
-
-    expect(md).toContain("Near-Pass Account (`#5gMw`)");
-    expect(md).toContain("$5,266.62 (+5.33% net gain)");
-    expect(md).toContain("0.67% to 2.67% max");
+    expect(md).toContain("Near-Pass Account Audit (Accounts within 1%–3.5% of Passing at Peak)");
+    expect(md).toContain("`#5gMw`");
+    expect(md).toContain("$5,266.62 (+5.33%)");
+    expect(md).toContain("Left by 2.67%");
     expect(md).toContain("max_daily_loss_exceeded");
   });
 
-  it("includes realistic withdrawal projection calculations", () => {
+  it("computes active account profit needed to pass dynamically", () => {
     const md = generateMarkdownExport(mockData);
 
-    expect(md).toContain("Payout Modeling (80% Trader Profit Split)");
-    expect(md).toContain("Combined $15,000 Allocation");
-    expect(md).toContain("Payback of Total Spent");
+    expect(md).toContain("`#3XGK`");
+    expect(md).toContain("Profit Needed to Pass");
+    expect(md).toContain("$10,173.67");
   });
 
-  it("includes complete trade execution history and bank settlement audit", () => {
+  it("includes complete trade execution tables and bank references", () => {
     const md = generateMarkdownExport(mockData);
 
     expect(md).toContain("Complete Trade Execution History (2 Orders / Fills)");
     expect(md).toContain("**SOL**");
     expect(md).toContain("`BUY`");
+    expect(md).toContain("**BTC**");
+    expect(md).toContain("`SELL`");
     expect(md).toContain("`WIN`");
     expect(md).toContain("`LOSS`");
     expect(md).toContain("`tr-002-xyz`");
