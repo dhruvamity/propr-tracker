@@ -9,17 +9,13 @@ interface RiskCardProps {
 
 export function RiskCard({ account, rank }: RiskCardProps) {
   const equityNum = Number(account.equity || 0);
-  const balanceNum = Number(account.balance || 0);
   const startBalNum = Number(account.initialBalance || account.startingBalance || 10000);
-  const breachFloorNum = Number(account.breachFloor || (equityNum - Number(account.drawdownRemaining || 0)));
   const drawdownBufferNum = Number(account.drawdownRemaining || 0);
   const dailyRoomNum = Number(account.dailyLossRemaining || 0);
   const dailyLimitNum = Number(account.dailyLossLimitAmount || 0);
   const dailyUsedNum = Number(account.dailyLossUsedAmount || 0);
   const ddConsumedPct = Number(account.drawdownLimitConsumedPercent || 0);
   const actualProfitPct = Number(account.profitTargetPct || 0);
-  const targetPct = Number(account.profitTargetPercent || 9);
-  const targetEquity = startBalNum * (1 + targetPct / 100);
   const netPnl = equityNum - startBalNum;
 
   // Daily loss budget consumption & room
@@ -28,7 +24,7 @@ export function RiskCard({ account, rank }: RiskCardProps) {
   const maxDdAmount = Number(account.maxDrawdownAmount || (startBalNum * 0.03));
   const bufferRemainingPct = maxDdAmount > 0 ? (drawdownBufferNum / maxDdAmount) * 100 : 100;
 
-  // Semantic Risk State Determination (Graduated: CRITICAL / WATCH / SAFE)
+  // Semantic Risk State Determination (SAFE / WATCH / CRITICAL / BREACHED)
   let riskStatus: "SAFE" | "WATCH" | "CRITICAL" | "BREACHED" = "SAFE";
   if (account.stage === "BREACHED" || account.stage === "FAILED") {
     riskStatus = "BREACHED";
@@ -40,65 +36,77 @@ export function RiskCard({ account, rank }: RiskCardProps) {
     riskStatus = "SAFE";
   }
 
-  // Dynamic closest failure threshold
+  // Closest failure point & binding constraint
   const dailyLossFloorNum = Number(account.dailyLossFloor || (equityNum - dailyRoomNum));
+  const breachFloorNum = Number(account.breachFloor || (equityNum - drawdownBufferNum));
   const isDailyConstrained = dailyConsumedPct >= 70 || (dailyRoomNum > 0 && dailyRoomNum < drawdownBufferNum);
-  const effectiveBuffer = isDailyConstrained ? dailyRoomNum : drawdownBufferNum;
-  const activeBreachFloor = isDailyConstrained ? dailyLossFloorNum : breachFloorNum;
+  const bindingRoom = isDailyConstrained ? dailyRoomNum : drawdownBufferNum;
+  const activeThreshold = isDailyConstrained ? dailyLossFloorNum : breachFloorNum;
+  const usedPct = isDailyConstrained ? dailyConsumedPct : ddConsumedPct;
 
-  // Single dual-indicator bar: current equity positioned between Breach Floor (left) and Profit Target (right)
-  const totalSpan = Math.max(1, targetEquity - breachFloorNum);
-  const dualBarPct = Math.max(0, Math.min(100, ((equityNum - breachFloorNum) / totalSpan) * 100));
-
-  // Status rail color
+  // Semantic styles based on state
   const railColor =
+    riskStatus === "SAFE"
+      ? "border-l-2 border-emerald-500"
+      : riskStatus === "WATCH"
+      ? "border-l-2 border-amber-500"
+      : "border-l-2 border-red-500";
+
+  const barColor =
     riskStatus === "SAFE"
       ? "bg-emerald-500"
       : riskStatus === "WATCH"
       ? "bg-amber-500"
       : "bg-red-500";
 
-  // Dominant number color
-  const dominantColor =
+  const dominantTextColor =
     riskStatus === "SAFE"
       ? "text-white"
       : riskStatus === "WATCH"
       ? "text-amber-400"
       : "text-red-400";
 
-  // Account identifier tag
   const shortAccCode = formatShortId(account.accountId);
   const cleanBadgeTag = `#${shortAccCode.slice(-4)}`;
 
   return (
-    <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4 relative overflow-hidden transition-all hover:border-zinc-700/80">
-      {/* Left semantic status rail */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${railColor}`} />
-
-      {/* ─── Zone 1: Header (Challenge Name, Tag, Stage Badge, Risk Status) ─── */}
-      <div className="flex items-start justify-between pb-3 pl-1 border-b border-[var(--border-subtle)]">
+    <div
+      className={cn(
+        "rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4 transition-colors",
+        railColor
+      )}
+    >
+      {/* ─── 1. Header: Name, Tag, Stage, Risk Status Dot ─── */}
+      <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm sm:text-base text-white tracking-wide">
+            {rank !== undefined && (
+              <span className="text-zinc-500 font-sans text-xs font-semibold">
+                #{rank}
+              </span>
+            )}
+            <h3 className="font-semibold text-sm sm:text-base text-zinc-100 font-sans">
               {account.challengeName || "Starter Turbo"}
             </h3>
-            <span className="text-xs font-mono text-zinc-400 font-semibold">
-              {cleanBadgeTag}
-            </span>
-            <span className="text-[11px] font-mono text-zinc-500 uppercase">
-              {account.stage}
-            </span>
           </div>
-          <p className="text-xs font-mono text-zinc-500 mt-1">
-            {shortAccCode}
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-sans mt-0.5">
+            <span className="font-mono text-zinc-300 font-medium">{cleanBadgeTag}</span>
+            <span>·</span>
+            <span className="capitalize">{account.stage?.toLowerCase() || "evaluation"}</span>
+            {isDailyConstrained && (
+              <>
+                <span>·</span>
+                <span className="text-zinc-400 text-[11px]">daily binding</span>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Status Indicator (Prompt §4: text + dot only, no border, no background) */}
-        <div className="flex items-center gap-1.5 text-xs font-mono font-semibold">
+        {/* Status Dot + Text (No pill, no background) */}
+        <div className="flex items-center gap-1.5 text-xs font-sans font-medium">
           <span
             className={cn(
-              "w-1.5 h-1.5 rounded-full",
+              "w-1.5 h-1.5 rounded-full shrink-0",
               riskStatus === "SAFE"
                 ? "bg-emerald-400"
                 : riskStatus === "WATCH"
@@ -120,70 +128,58 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </div>
       </div>
 
-      {/* ─── Zone 2: Hero Stat (Single Closest Failure Point) ─── */}
-      <div className="pl-1 space-y-1">
-        <div className="text-xs font-mono font-medium text-zinc-400 uppercase tracking-wider">
-          {isDailyConstrained ? "Daily Loss Room" : "Drawdown Room"}
+      {/* ─── 2. Hero Metric: Single Primary Question (Prompt §5) ─── */}
+      <div className="space-y-1.5">
+        <div className="text-xs font-sans text-zinc-400">
+          {isDailyConstrained ? "Daily loss room" : "Drawdown room"}
         </div>
-        <div className="flex items-baseline justify-between">
-          <div className={`text-3xl sm:text-4xl font-mono font-bold tracking-tight ${dominantColor}`}>
-            {formatUSD(effectiveBuffer)}
-          </div>
-          <div className="text-sm font-mono text-zinc-400">
-            Equity <span className="text-white font-semibold">{formatUSD(equityNum)}</span>
-          </div>
+        <div className={cn("text-3xl font-mono font-bold tracking-tight", dominantTextColor)}>
+          {formatUSD(bindingRoom)}
         </div>
-        <div className="text-xs font-mono text-zinc-400 flex items-center justify-between pt-0.5">
-          <span>
-            {isDailyConstrained
-              ? `${formatUSD(effectiveBuffer)} room to daily-loss threshold (${formatUSD(activeBreachFloor)})`
-              : `${formatUSD(effectiveBuffer)} room to drawdown floor (${formatUSD(activeBreachFloor)})`}
-          </span>
-          {isDailyConstrained && (
-            <span className="text-zinc-500 text-[11px]">
-              DD floor: {formatUSD(breachFloorNum)}
-            </span>
-          )}
+        <div className="text-xs font-sans text-zinc-400">
+          {usedPct.toFixed(0)}% of {isDailyConstrained ? "daily allowance" : "drawdown limit"} used
         </div>
-      </div>
 
-      {/* ─── Zone 3: Single Risk Bar (Equity between Breach Floor and Profit Target) ─── */}
-      <div className="pl-1 space-y-2 pt-1">
-        <div className="flex justify-between text-xs font-mono text-zinc-400">
-          <span className="text-red-400 font-medium">Floor {formatUSD(breachFloorNum)}</span>
-          <span className="text-zinc-200 font-semibold">Equity {formatUSD(equityNum)}</span>
-          <span className="text-emerald-400 font-medium">Target {formatUSD(targetEquity)}</span>
-        </div>
-        <div className="relative h-2 w-full bg-zinc-900 rounded-full border border-zinc-800 overflow-hidden">
+        {/* Single Semantic Progress Bar (NO rainbow gradient) */}
+        <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden mt-2">
           <div
-            className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 rounded-full transition-all duration-500"
-            style={{ width: `${Math.max(4, Math.min(100, dualBarPct))}%` }}
+            className={cn("h-full rounded-full transition-all duration-300", barColor)}
+            style={{ width: `${Math.min(100, Math.max(2, usedPct))}%` }}
           />
         </div>
       </div>
 
-      {/* ─── Zone 4: Footer Grid (Balance, Today's Peak, Net P&L, Daily Reset) ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pl-1 pt-3 border-t border-[var(--border-subtle)] text-xs font-mono">
-        <div>
-          <div className="text-zinc-500 text-[11px] uppercase tracking-wider">Balance</div>
-          <div className="text-sm font-semibold text-zinc-200 mt-0.5">{formatUSD(balanceNum)}</div>
+      {/* ─── 3. Divider & 4 Clean Supporting Values ─── */}
+      <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 pt-3 border-t border-[var(--border-subtle)] text-xs">
+        <div className="flex justify-between items-baseline">
+          <span className="text-zinc-400 font-sans">Threshold</span>
+          <span className="font-mono text-zinc-200 font-medium">{formatUSD(activeThreshold)}</span>
         </div>
-        <div>
-          <div className="text-zinc-500 text-[11px] uppercase tracking-wider">Today's Peak</div>
-          <div className="text-sm font-semibold text-zinc-200 mt-0.5">
-            {formatUSD(account.startingBalance || equityNum)}
-          </div>
+        <div className="flex justify-between items-baseline">
+          <span className="text-zinc-400 font-sans">Equity</span>
+          <span className="font-mono text-zinc-100 font-medium">{formatUSD(equityNum)}</span>
         </div>
-        <div>
-          <div className="text-zinc-500 text-[11px] uppercase tracking-wider">Net P&L</div>
-          <div className={`text-sm font-semibold mt-0.5 ${netPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            {netPnl >= 0 ? `+${formatUSD(netPnl)}` : `-${formatUSD(Math.abs(netPnl))}`}
-            <span className="text-[11px] font-normal text-zinc-400 ml-1">({formatPercent(actualProfitPct, 2)})</span>
-          </div>
+        <div className="flex justify-between items-baseline">
+          <span className="text-zinc-400 font-sans">
+            {isDailyConstrained ? "Drawdown room" : "Daily loss room"}
+          </span>
+          <span className="font-mono text-zinc-200 font-medium">
+            {formatUSD(isDailyConstrained ? drawdownBufferNum : dailyRoomNum)}
+          </span>
         </div>
-        <div>
-          <div className="text-zinc-500 text-[11px] uppercase tracking-wider">Daily Reset</div>
-          <div className="text-sm font-semibold text-zinc-300 mt-0.5">00:00 UTC</div>
+        <div className="flex justify-between items-baseline">
+          <span className="text-zinc-400 font-sans">Target progress</span>
+          <span className="font-mono text-zinc-200 font-medium">
+            {formatPercent(actualProfitPct, 2)}
+            <span
+              className={cn(
+                "ml-1 font-mono text-[11px]",
+                netPnl >= 0 ? "text-emerald-400" : "text-red-400"
+              )}
+            >
+              ({netPnl >= 0 ? "+" : ""}{formatUSD(netPnl)})
+            </span>
+          </span>
         </div>
       </div>
     </div>

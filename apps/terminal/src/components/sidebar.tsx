@@ -77,11 +77,11 @@ export function Sidebar() {
           className="flex items-center gap-2"
         >
           {collapsed && !isMobile ? (
-            <span className="font-semibold text-base tracking-wider text-zinc-100 pl-0.5">P</span>
+            <span className="font-semibold text-base text-zinc-100 pl-0.5">P</span>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-base tracking-wider text-zinc-100">PROPR</span>
-              <span className="text-[11px] font-mono text-zinc-500">// TERMINAL</span>
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm tracking-wide text-zinc-100">PROPR</span>
+              <span className="text-[11px] text-zinc-500 font-sans">Trading Terminal</span>
             </div>
           )}
         </Link>
@@ -97,11 +97,11 @@ export function Sidebar() {
       </div>
 
       {/* ─── 2. Grouped Nav Sections ─── */}
-      <nav className="flex-1 py-3 px-2 space-y-4 overflow-y-auto">
+      <nav className="flex-1 py-3 px-2 space-y-4 overflow-y-auto font-sans">
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1">
             {section.title && (!collapsed || isMobile) && (
-              <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500">
+              <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
                 {section.title}
               </div>
             )}
@@ -122,9 +122,9 @@ export function Sidebar() {
                   href={href}
                   onClick={() => isMobile && setMobileNavOpen(false)}
                   className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs transition-colors",
+                    "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors",
                     isActive
-                      ? "border-l-[3px] border-[var(--cyan)] bg-white/[0.04] text-white font-medium pl-2"
+                      ? "border-l-2 border-[var(--cyan)] bg-white/[0.04] text-white font-medium pl-2 rounded-r-md"
                       : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.02]"
                   )}
                   title={collapsed && !isMobile ? label : undefined}

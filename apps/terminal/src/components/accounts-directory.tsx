@@ -153,14 +153,14 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
     <div className="space-y-4">
       {/* ─── Control Strip: Tabs & Search ───────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)]">
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 font-mono text-xs">
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1.5 font-sans text-xs">
           <button
             type="button"
             onClick={() => setFilter("ALL")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "ALL"
-                ? "bg-zinc-800 text-white font-semibold"
+                ? "bg-zinc-800 text-white font-medium"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -171,7 +171,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("ACTIVE")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "ACTIVE"
-                ? "bg-zinc-800 text-white font-semibold"
+                ? "bg-zinc-800 text-white font-medium"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -182,7 +182,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("FUNDED")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "FUNDED"
-                ? "bg-zinc-800 text-white font-semibold"
+                ? "bg-zinc-800 text-white font-medium"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -193,16 +193,16 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("ARCHIVED")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "ARCHIVED"
-                ? "bg-zinc-800 text-white font-semibold"
+                ? "bg-zinc-800 text-white font-medium"
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            Archived / Breached ({failedCount})
+            Archived ({failedCount})
           </button>
         </div>
 
         {/* Search & Sort Controls */}
-        <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-2.5 text-xs font-sans">
           <div className="relative flex-1 md:w-56">
             <Search
               size={13}
@@ -213,16 +213,16 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
               placeholder="Search account / ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-md pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-700"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-md pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-700 font-sans"
             />
           </div>
 
-          <div className="flex items-center gap-1 text-zinc-400">
+          <div className="flex items-center gap-1 text-zinc-400 font-sans">
             <span>Sort:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700"
+              className="bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700 font-sans"
             >
               <option value="RISK">Risk (Breach Proximity) ▼</option>
               <option value="EQUITY_DESC">Equity (High to Low)</option>
@@ -233,24 +233,24 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
         </div>
       </div>
 
-      {/* ─── Consolidated Accounts Table (Prompt Requirement §5) ───────────── */}
+      {/* ─── Consolidated Accounts Table (Prompt §12 & §13) ───────────── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono">
+        <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
-              <th className="py-2.5 px-3 text-center">Stage</th>
-              <th className="py-2.5 px-3 text-left">Account</th>
-              <th className="py-2.5 px-3 text-right">Starting Capital</th>
-              <th className="py-2.5 px-3 text-right">Equity</th>
-              <th className="py-2.5 px-3 text-right">Net P&L</th>
-              <th className="py-2.5 px-3 text-left">Failure Trigger / Target</th>
-              <th className="py-2.5 px-3 text-center">Action</th>
+            <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans">
+              <th className="py-2.5 px-3 text-left font-normal">Stage</th>
+              <th className="py-2.5 px-3 text-left font-normal">Account</th>
+              <th className="py-2.5 px-3 text-right font-normal">Starting Capital</th>
+              <th className="py-2.5 px-3 text-right font-normal">Equity</th>
+              <th className="py-2.5 px-3 text-right font-normal">Net P&L</th>
+              <th className="py-2.5 px-3 text-left font-normal">Failure / Target</th>
+              <th className="py-2.5 px-3 text-center font-normal">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
+          <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">
             {filteredAndSortedAccounts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-zinc-500">
+                <td colSpan={7} className="py-8 text-center text-zinc-500 font-sans">
                   No accounts match the selected filter.
                 </td>
               </tr>
@@ -269,26 +269,29 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     key={acc.accountId}
                     className="hover:bg-white/[0.02] transition-colors"
                   >
-                    {/* Column 1: Stage Badge */}
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                          isActive
-                            ? "bg-zinc-800 text-white border-zinc-700"
-                            : isFailed
-                            ? "bg-red-950/60 text-red-400 border-red-800/50"
-                            : "bg-zinc-900 text-zinc-400 border-zinc-800"
-                        }`}
-                      >
-                        {acc.stage}
-                      </span>
+                    {/* Column 1: Stage (Prompt §12: dot + text, no capsules) */}
+                    <td className="py-2.5 px-3 text-left whitespace-nowrap font-sans">
+                      {isFailed ? (
+                        <span className="inline-flex items-center gap-1.5 text-red-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                          <span>Failed</span>
+                        </span>
+                      ) : isActive ? (
+                        <span className="text-zinc-300 font-medium">
+                          Evaluation
+                        </span>
+                      ) : (
+                        <span className="text-zinc-400">
+                          {acc.stage}
+                        </span>
+                      )}
                     </td>
 
                     {/* Column 2: Account Identifier + Challenge Tier */}
-                    <td className="py-2.5 px-3 text-left font-medium text-white">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-white">{formatAccountTag(acc.accountId)}</span>
-                        <span className="text-zinc-500 text-[11px] font-normal">({formatShortId(acc.accountId)})</span>
+                    <td className="py-2.5 px-3 text-left">
+                      <div className="flex items-center gap-1.5 font-sans">
+                        <span className="font-semibold text-zinc-100">{formatAccountTag(acc.accountId)}</span>
+                        <span className="text-zinc-400 text-[11px] font-mono font-normal">({formatShortId(acc.accountId)})</span>
                         <button
                           type="button"
                           onClick={(e) => copyToClipboard(acc.accountId, e)}
@@ -302,7 +305,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                           )}
                         </button>
                       </div>
-                      <span className="text-[11px] text-zinc-400 block font-normal">
+                      <span className="text-[11px] text-zinc-400 block font-sans font-normal mt-0.5">
                         {acc.challengeName || "Starter Turbo"}
                       </span>
                     </td>
@@ -313,7 +316,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     </td>
 
                     {/* Column 4: Current / Ending Equity (Right-aligned) */}
-                    <td className="py-2.5 px-3 text-right font-semibold text-white whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right font-semibold text-zinc-100 whitespace-nowrap">
                       {formatUSD(currentEq)}
                     </td>
 
@@ -328,23 +331,23 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     </td>
 
                     {/* Column 6: Failure Trigger / Target Progress (Left-aligned) */}
-                    <td className="py-2.5 px-3 text-left">
+                    <td className="py-2.5 px-3 text-left font-sans">
                       {acc.failureReason ? (
-                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/50 text-red-400 border border-red-800/40">
+                        <span className="text-xs text-zinc-400">
                           {acc.failureReason.replace(/_/g, " ")}
                         </span>
                       ) : isActive ? (
-                        <div className="text-zinc-300 text-[11px]">
-                          <span className="font-medium text-white">{formatPercent(acc.profitTargetPct, 2)}</span>
+                        <div className="text-zinc-300 text-xs">
+                          <span className="font-mono font-medium text-zinc-100">{formatPercent(acc.profitTargetPct, 2)}</span>
                           <span className="text-zinc-500 ml-1">/ {acc.profitTargetPercent || "9"}% target</span>
                           {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 && (
-                            <span className="text-zinc-400 block text-[10px]">
+                            <span className="text-zinc-400 block text-[11px] font-mono">
                               ({formatUSD(acc.toTargetAmount)} left)
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-500 text-[10px]">Archived</span>
+                        <span className="text-zinc-500 text-xs">Archived</span>
                       )}
                     </td>
 
@@ -353,9 +356,9 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                       <button
                         type="button"
                         onClick={() => setDrawerAccount(acc)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono font-medium text-[var(--cyan)] hover:text-white hover:bg-zinc-800 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-sans font-medium text-[var(--cyan)] hover:text-white hover:bg-zinc-800 transition-colors"
                       >
-                        <span>View Trades</span>
+                        <span>View trades</span>
                         <ExternalLink size={11} />
                       </button>
                     </td>
@@ -376,17 +379,17 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
           />
           <div className="relative w-full max-w-2xl bg-zinc-950 border-l border-zinc-800 h-full overflow-y-auto p-6 space-y-6 shadow-2xl z-10 animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-zinc-800">
+            <div className="flex items-start justify-between pb-4 border-b border-zinc-800 font-sans">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-semibold text-white">
                     {drawerAccount.challengeName || "Account Details"}
                   </h3>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-bold">
+                  <span className="text-xs font-mono text-zinc-300 font-medium">
                     {formatAccountTag(drawerAccount.accountId)}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 uppercase">
-                    {drawerAccount.stage}
+                  <span className="text-xs text-zinc-400 capitalize">
+                    {drawerAccount.stage?.toLowerCase()}
                   </span>
                 </div>
                 <p className="text-xs font-mono text-zinc-500 mt-1">
@@ -404,55 +407,55 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800 text-xs font-mono">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800">
               <div>
-                <span className="text-zinc-500 text-[10px] block uppercase">Equity</span>
-                <span className="text-sm font-bold text-white">{formatUSD(drawerAccount.equity || drawerAccount.balance)}</span>
+                <span className="text-zinc-400 text-xs font-sans block">Equity</span>
+                <span className="text-base font-mono font-bold text-white mt-0.5 block">{formatUSD(drawerAccount.equity || drawerAccount.balance)}</span>
               </div>
               <div>
-                <span className="text-zinc-500 text-[10px] block uppercase">Starting</span>
-                <span className="text-sm font-bold text-zinc-300">{formatUSD(drawerAccount.initialBalance || drawerAccount.startingBalance)}</span>
+                <span className="text-zinc-400 text-xs font-sans block">Starting</span>
+                <span className="text-base font-mono font-bold text-zinc-300 mt-0.5 block">{formatUSD(drawerAccount.initialBalance || drawerAccount.startingBalance)}</span>
               </div>
               <div>
-                <span className="text-zinc-500 text-[10px] block uppercase">Drawdown Buffer</span>
-                <span className="text-sm font-bold text-zinc-200">{formatUSD(drawerAccount.drawdownRemaining)}</span>
+                <span className="text-zinc-400 text-xs font-sans block">Drawdown Buffer</span>
+                <span className="text-base font-mono font-bold text-zinc-200 mt-0.5 block">{formatUSD(drawerAccount.drawdownRemaining)}</span>
               </div>
               <div>
-                <span className="text-zinc-500 text-[10px] block uppercase">Daily Room</span>
-                <span className="text-sm font-bold text-emerald-400">{formatUSD(drawerAccount.dailyLossRemaining)}</span>
+                <span className="text-zinc-400 text-xs font-sans block">Daily Room</span>
+                <span className="text-base font-mono font-bold text-emerald-400 mt-0.5 block">{formatUSD(drawerAccount.dailyLossRemaining)}</span>
               </div>
             </div>
 
             {/* Account Trade History */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="font-semibold text-white uppercase tracking-wider">
-                  Order Execution History ({drawerAccount.closedTradesCount || drawerAccount.trades?.length || 0} trades)
+            <div className="space-y-3 font-sans">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-zinc-200 text-sm">
+                  Order execution history ({drawerAccount.closedTradesCount || drawerAccount.trades?.length || 0} trades)
                 </span>
                 {drawerAccount.winLossRatio && (
-                  <span className="text-zinc-400">{drawerAccount.winLossRatio}</span>
+                  <span className="text-zinc-400 font-mono">{drawerAccount.winLossRatio}</span>
                 )}
               </div>
 
               {!drawerAccount.trades || drawerAccount.trades.length === 0 ? (
-                <div className="p-8 text-center text-zinc-500 text-xs font-mono rounded border border-zinc-800">
+                <div className="p-8 text-center text-zinc-500 text-xs rounded border border-zinc-800">
                   No trade history recorded for this account.
                 </div>
               ) : (
                 <div className="rounded border border-zinc-800 overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono">
+                  <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 text-[10px] uppercase">
-                        <th className="py-2 px-3">Time</th>
-                        <th className="py-2 px-3">Asset</th>
-                        <th className="py-2 px-3">Side</th>
-                        <th className="py-2 px-3 text-right">Price</th>
-                        <th className="py-2 px-3 text-right">Size</th>
-                        <th className="py-2 px-3 text-right">Fee</th>
-                        <th className="py-2 px-3 text-right">Net PnL</th>
+                      <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 font-sans">
+                        <th className="py-2 px-3 font-normal">Time</th>
+                        <th className="py-2 px-3 font-normal">Asset</th>
+                        <th className="py-2 px-3 font-normal">Side</th>
+                        <th className="py-2 px-3 text-right font-normal">Price</th>
+                        <th className="py-2 px-3 text-right font-normal">Size</th>
+                        <th className="py-2 px-3 text-right font-normal">Fee</th>
+                        <th className="py-2 px-3 text-right font-normal">Net PnL</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/60 text-[11px]">
+                    <tbody className="divide-y divide-zinc-800/60 font-mono text-xs">
                       {drawerAccount.trades.map((t, idx) => {
                         const pnl = Number(t.realizedPnl || 0);
                         const isPnlPos = pnl >= 0;

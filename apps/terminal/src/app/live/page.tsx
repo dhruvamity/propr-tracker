@@ -1,7 +1,8 @@
 import { fetchDashboardData } from "@/lib/propr-api";
-import { ShieldCheck, Activity, Radio, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Activity } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
-import { formatUSD, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
+import { RiskCard } from "@/components/risk-card";
+import { formatUSD, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
@@ -79,28 +80,19 @@ export default async function LiveMonitorPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── 1. Header ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ─── 1. Header (Prompt §22: Risk · 2 active accounts · Sorted by nearest limit) ─── */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-sm md:text-base font-semibold text-white tracking-wide flex items-center gap-2">
-            <span>Risk Monitor</span>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-[11px] font-mono text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE FEED
-            </span>
+          <h1 className="text-sm md:text-base font-semibold text-zinc-100 font-sans">
+            Risk
           </h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Real-time breach monitor ranked by binding failure threshold
+          <p className="text-xs text-zinc-400 font-sans mt-0.5">
+            {liveAccounts.length} active accounts · Sorted by nearest limit
           </p>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-            {liveAccounts.length} active evaluations
-          </span>
         </div>
       </div>
 
-      {/* ─── 2. Binding-Limit Risk Cards (Rule of One) ─────────── */}
+      {/* ─── 2. Risk Cards (Prompt §23: Unified card design) ─── */}
       {rankedAccounts.length === 0 ? (
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8">
           <EmptyState
@@ -111,182 +103,45 @@ export default async function LiveMonitorPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {rankedAccounts.map((acc, idx) => {
-            const ddBuffer = Number(acc.drawdownRemaining || 0);
-            const dailyRoom = Number(acc.dailyLossRemaining || 0);
-            const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
-            const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
-            const dailyBurn = dailyLimit > 0 ? Math.min(100, Math.max(0, (dailyUsed / dailyLimit) * 100)) : 0;
-            const ddConsumed = Number(acc.drawdownLimitConsumedPercent || 0);
-
-            const isDailyConstrained = dailyBurn >= 70 || (dailyRoom > 0 && dailyRoom < ddBuffer);
-            const bindingRoom = isDailyConstrained ? dailyRoom : ddBuffer;
-            const bindingLimitName = isDailyConstrained ? "daily-loss floor" : "drawdown floor";
-            const pctUsed = isDailyConstrained ? dailyBurn : ddConsumed;
-            const consumedAmount = isDailyConstrained ? dailyUsed : Number(acc.drawdownUsedAmount || 0);
-            const totalBudget = isDailyConstrained ? dailyLimit : Number(acc.maxDrawdownAmount || 0);
-
-            // Semantic Color & Status Logic
-            let statusText = "SAFE";
-            let dotColor = "bg-emerald-400";
-            let textColor = "text-emerald-400";
-            let barColor = "bg-emerald-500";
-
-            if (acc.stage === "BREACHED" || acc.stage === "FAILED" || pctUsed >= 100) {
-              statusText = "BREACHED";
-              dotColor = "bg-red-500 animate-pulse";
-              textColor = "text-red-400";
-              barColor = "bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.7)]";
-            } else if (pctUsed >= 75) {
-              statusText = "CRITICAL";
-              dotColor = "bg-red-500 animate-pulse";
-              textColor = "text-red-400";
-              barColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]";
-            } else if (pctUsed >= 50) {
-              statusText = "CAUTION";
-              dotColor = "bg-amber-400";
-              textColor = "text-amber-400";
-              barColor = "bg-amber-500";
-            }
-
-            return (
-              <div
-                key={acc.accountId}
-                className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4"
-              >
-                {/* Zone 1: Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 text-[11px] font-mono font-bold text-zinc-400 flex items-center justify-center">
-                      {idx + 1}
-                    </span>
-                    <span className="font-semibold text-white text-sm">
-                      {acc.challengeName || "Starter Turbo"}
-                    </span>
-                    <span className="text-zinc-400 font-mono text-xs">
-                      {formatAccountTag(acc.accountId)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-mono text-zinc-500 uppercase">
-                      {acc.stage}
-                    </span>
-                    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold">
-                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                      <span className={textColor}>{statusText}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Zone 2: Hero Stat: Binding Limit Failure Room (24px+) */}
-                <div className="p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-zinc-400 uppercase tracking-wider font-semibold">
-                      {isDailyConstrained ? "Daily-Loss Room" : "Drawdown Room"}
-                    </span>
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-                      BINDING LIMIT: <strong className="text-amber-300">{isDailyConstrained ? "Daily-loss threshold" : "Drawdown floor"}</strong>
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-2 font-mono">
-                    <span className={`text-3xl font-bold tracking-tight ${
-                      pctUsed >= 75 ? "text-red-400" : pctUsed >= 50 ? "text-amber-400" : "text-white"
-                    }`}>
-                      {formatUSD(bindingRoom)}
-                    </span>
-                    <span className="text-xs text-zinc-400 font-normal">
-                      remaining before breach
-                    </span>
-                  </div>
-                </div>
-
-                {/* Zone 3: Single Consumed Loss Budget Bar */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-zinc-400">
-                      Consumed Loss Budget
-                    </span>
-                    <span className="text-zinc-200 font-semibold">
-                      {formatUSD(consumedAmount)} of {formatUSD(totalBudget)}{" "}
-                      <span className="text-zinc-400 font-normal">({pctUsed.toFixed(0)}% used)</span>
-                    </span>
-                  </div>
-                  <div className="h-2.5 w-full bg-zinc-900 rounded-full border border-zinc-800 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                      style={{ width: `${Math.min(100, Math.max(2, pctUsed))}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Zone 4: Key Financial Stats Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs font-mono">
-                  <div>
-                    <span className="text-zinc-400 block text-xs">Equity</span>
-                    <span className="font-semibold text-white">{formatUSD(acc.equity || acc.balance)}</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-400 block text-xs">Daily-loss threshold</span>
-                    <span className="text-zinc-200 font-medium">
-                      {acc.dailyLossFloor ? formatUSD(acc.dailyLossFloor) : "—"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-400 block text-xs">Drawdown Room</span>
-                    <span className="text-zinc-200 font-medium">{formatUSD(ddBuffer)}</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-400 block text-xs">Profit Target</span>
-                    <span className="text-emerald-400 font-semibold">
-                      +{formatPercent(acc.profitTargetPct, 2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {rankedAccounts.map((acc, idx) => (
+            <RiskCard key={acc.accountId} account={acc} rank={idx + 1} />
+          ))}
         </div>
       )}
 
-      {/* ─── 3. Active Position Exposure ───────────────────────── */}
+      {/* ─── 3. Open Positions (Prompt §1: Clean terminology) ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase flex items-center gap-2">
-            <Activity size={14} className="text-zinc-400" />
-            <span>Position Exposure</span>
+          <h2 className="text-sm font-semibold text-zinc-200 font-sans">
+            Open positions
           </h2>
-          <span className="text-xs font-mono text-zinc-500">
+          <span className="text-xs font-sans text-zinc-400">
             {allPositions.length} open position{allPositions.length === 1 ? "" : "s"}
           </span>
         </div>
 
         {allPositions.length === 0 ? (
-          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
-                  <Activity size={20} className="text-zinc-400" />
+                <div className="w-9 h-9 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 shrink-0">
+                  <Activity size={18} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono font-semibold text-white">
-                      Flat · Zero Open Positions
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-900 text-zinc-400 border border-zinc-800">
-                      0.00x LEVERAGE
-                    </span>
+                  <div className="font-semibold text-zinc-200">
+                    Flat · Zero open positions
                   </div>
-                  <p className="text-xs text-zinc-400 mt-0.5">
+                  <p className="text-zinc-400 mt-0.5">
                     No active positions across accounts. Capital held in margin balance.
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 font-mono text-xs text-zinc-400">
-                <span className="px-2.5 py-1 rounded bg-zinc-900/80 border border-zinc-800">
-                  Exposure: <strong className="text-white">$0.00</strong>
+              <div className="flex items-center gap-3 font-sans text-zinc-400">
+                <span className="px-2.5 py-1 rounded bg-zinc-900/60 border border-zinc-800">
+                  Exposure: <strong className="font-mono text-zinc-200">$0.00</strong>
                 </span>
-                <span className="px-2.5 py-1 rounded bg-zinc-900/80 border border-zinc-800">
-                  Liquidation Risk: <strong className="text-emerald-400">None</strong>
+                <span className="px-2.5 py-1 rounded bg-zinc-900/60 border border-zinc-800">
+                  Liquidation: <strong className="text-emerald-400 font-medium">None</strong>
                 </span>
               </div>
             </div>
@@ -296,7 +151,6 @@ export default async function LiveMonitorPage() {
             {allPositions.map((pos) => {
               const uPnlNum = Number(pos.unrealizedPnl || 0);
               const isPos = uPnlNum >= 0;
-              const entry = Number(pos.entryPrice || 0);
               const mark = Number(pos.markPrice || 0);
               const liq = Number(pos.liquidationPrice || 0);
               const liqDistance = liq > 0 ? Math.abs(mark - liq) : 0;
@@ -304,13 +158,13 @@ export default async function LiveMonitorPage() {
               return (
                 <div
                   key={pos.positionId}
-                  className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 font-mono space-y-3"
+                  className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white text-sm">{pos.asset}</span>
+                      <span className="font-semibold text-zinc-100 text-sm font-sans">{pos.asset}</span>
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded text-[11px] font-sans font-semibold ${
                           pos.positionSide === "long"
                             ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/40"
                             : "bg-red-950/60 text-red-400 border border-red-800/40"
@@ -319,43 +173,43 @@ export default async function LiveMonitorPage() {
                         {pos.positionSide.toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-zinc-400 text-xs">
+                    <span className="text-zinc-400 font-mono text-xs">
                       {formatAccountTag(pos.accountId)}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Size</span>
-                      <span className="text-zinc-200 font-medium">{pos.quantity}</span>
+                      <span className="text-zinc-400 font-sans block text-[11px]">Size</span>
+                      <span className="font-mono text-zinc-200 font-medium">{pos.quantity}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Entry Price</span>
-                      <span className="text-zinc-300">{formatUSD(pos.entryPrice)}</span>
+                      <span className="text-zinc-400 font-sans block text-[11px]">Entry</span>
+                      <span className="font-mono text-zinc-300">{formatUSD(pos.entryPrice)}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Mark Price</span>
-                      <span className="text-white font-semibold">{formatUSD(pos.markPrice)}</span>
+                      <span className="text-zinc-400 font-sans block text-[11px]">Mark</span>
+                      <span className="font-mono text-zinc-100 font-medium">{formatUSD(pos.markPrice)}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Unrealized P&L</span>
-                      <span className={`font-semibold ${isPos ? "text-emerald-400" : "text-red-400"}`}>
+                      <span className="text-zinc-400 font-sans block text-[11px]">Unrealized P&L</span>
+                      <span className={`font-mono font-medium ${isPos ? "text-emerald-400" : "text-red-400"}`}>
                         {isPos ? `+${formatUSD(uPnlNum)}` : `-${formatUSD(Math.abs(uPnlNum))}`}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80 text-xs text-zinc-400">
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80 text-xs font-sans text-zinc-400">
                     <span>
-                      Margin: <strong className="text-zinc-200">{formatUSD(pos.marginUsed)}</strong>
+                      Margin: <span className="font-mono text-zinc-200 font-medium">{formatUSD(pos.marginUsed)}</span>
                     </span>
                     <span>
-                      Liq Price:{" "}
-                      <strong className="text-amber-400">
+                      Liquidation:{" "}
+                      <span className="font-mono text-amber-400 font-medium">
                         {pos.liquidationPrice ? formatUSD(pos.liquidationPrice) : "—"}
-                      </strong>
+                      </span>
                       {liqDistance > 0 && (
-                        <span className="text-zinc-500 ml-1">({formatUSD(liqDistance)} room)</span>
+                        <span className="text-zinc-400 font-sans ml-1">({formatUSD(liqDistance)} room)</span>
                       )}
                     </span>
                   </div>
@@ -366,38 +220,37 @@ export default async function LiveMonitorPage() {
         )}
       </div>
 
-      {/* ─── 4. Live Market Reference Feed ─────────────────────── */}
+      {/* ─── 4. Markets (Prompt §1: Clean terminology) ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            <Radio size={14} className="text-emerald-400 animate-pulse" />
-            <span>Market Tick Feed</span>
-          </div>
-          <span className="text-xs font-mono text-zinc-500">
-            Perpetual Contract Specs & 8h Funding
+          <h2 className="text-sm font-semibold text-zinc-200 font-sans">
+            Markets
+          </h2>
+          <span className="text-xs font-sans text-zinc-400">
+            Perpetual contract specs & 8h funding
           </span>
         </div>
 
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
+          <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
-                <th className="py-2.5 px-3 text-left">Market</th>
-                <th className="py-2.5 px-3 text-right">Mark Price</th>
-                <th className="py-2.5 px-3 text-right">24h Change</th>
-                <th className="py-2.5 px-3 text-right">8h Funding</th>
-                <th className="py-2.5 px-3 text-right">Max Leverage</th>
-                <th className="py-2.5 px-3 text-right">Tick Size</th>
+              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans text-xs">
+                <th className="py-2.5 px-3 text-left font-normal">Market</th>
+                <th className="py-2.5 px-3 text-right font-normal">Mark Price</th>
+                <th className="py-2.5 px-3 text-right font-normal">24h Change</th>
+                <th className="py-2.5 px-3 text-right font-normal">8h Funding</th>
+                <th className="py-2.5 px-3 text-right font-normal">Max Leverage</th>
+                <th className="py-2.5 px-3 text-right font-normal">Tick Size</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)] text-xs">
+            <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">
               {MARKET_SPECS.map((spec) => (
                 <tr key={spec.symbol} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 px-3 text-white font-medium">
+                  <td className="py-2.5 px-3 font-sans text-zinc-100 font-medium">
                     {spec.symbol}
                     <span className="text-zinc-400 ml-1.5 font-normal">{spec.name}</span>
                   </td>
-                  <td className="py-2.5 px-3 text-right font-semibold text-white">{spec.markPrice}</td>
+                  <td className="py-2.5 px-3 text-right font-semibold text-zinc-100">{spec.markPrice}</td>
                   <td className={`py-2.5 px-3 text-right font-semibold ${
                     spec.isPositive ? "text-emerald-400" : "text-red-400"
                   }`}>
@@ -408,7 +261,7 @@ export default async function LiveMonitorPage() {
                   }`}>
                     {spec.funding8h}
                   </td>
-                  <td className="py-2.5 px-3 text-right text-zinc-300 font-medium">
+                  <td className="py-2.5 px-3 text-right text-zinc-300">
                     {spec.maxLeverage}
                   </td>
                   <td className="py-2.5 px-3 text-right text-zinc-400">

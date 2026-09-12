@@ -9,15 +9,15 @@ import { cn } from "@/lib/utils";
 const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
   "/": {
     title: "Overview",
-    subtitle: "Portfolio status & capital allocation",
+    subtitle: "Cash, risk, and exposure",
   },
   "/live": {
-    title: "Live Risk",
-    subtitle: "Breach proximity monitor",
+    title: "Risk",
+    subtitle: "2 active accounts · Sorted by nearest limit",
   },
   "/accounts": {
     title: "Accounts",
-    subtitle: "Active evaluations & history",
+    subtitle: "Active evaluations and archive",
   },
   "/positions": {
     title: "Positions",
@@ -25,19 +25,19 @@ const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
   },
   "/orders": {
     title: "Orders",
-    subtitle: "Resting limit & stop orders",
+    subtitle: "Resting limit and stop orders",
   },
   "/finance": {
     title: "Finance",
-    subtitle: "Capital ledger & cash flow",
+    subtitle: "Capital ledger and cash flow",
   },
   "/history": {
     title: "History",
-    subtitle: "Closed accounts & archives",
+    subtitle: "Closed accounts",
   },
   "/system": {
     title: "System",
-    subtitle: "Telemetry & gateway health",
+    subtitle: "Gateway health and sync status",
   },
 };
 
@@ -135,7 +135,7 @@ export function TopBar() {
 
       {/* Right: Freshness state (dot + text) + plain 32px refresh button */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-400">
+        <div className="flex items-center gap-1.5 font-sans text-xs text-zinc-400">
           <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor)} />
           <span className="text-zinc-300">{freshnessText}</span>
         </div>

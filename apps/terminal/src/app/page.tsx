@@ -1,21 +1,18 @@
 import { fetchDashboardData } from "@/lib/propr-api";
-import { formatUSD, formatINR, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
-import { TrendingUp, ListOrdered, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { formatUSD, formatINR, formatAccountTag } from "@/lib/utils";
+import { ArrowUpRight, TrendingUp } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
 import Link from "next/link";
 
-export const revalidate = 15; // Revalidate data every 15 seconds
+export const revalidate = 15;
 
 export default async function OverviewPage() {
   const data = await fetchDashboardData();
-  const { summary, finance, accounts, allPositions, allOrders } = data;
+  const { finance, accounts, allPositions, allOrders } = data;
 
   const activeAccounts = accounts.filter(
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  );
-  const archivedAccounts = accounts.filter(
-    (a) => a.stage !== "EVALUATION" && a.stage !== "FUNDED"
   );
 
   // Sort active accounts by active breach proximity (lowest effective buffer first)
@@ -53,110 +50,108 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Attention Banner (Prompt §9.1 & §27) ─── */}
+      {/* ─── Attention Banner (Prompt §8: quiet state line when healthy) ─── */}
       {criticalAccount ? (
-        <div className="p-4 rounded-lg border border-red-800/60 bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono">
+        <div className="p-4 rounded-lg border border-red-800/60 bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
           <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
             <div>
-              <div className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                Needs Attention · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
+              <div className="text-xs font-semibold text-red-400">
+                1 account needs attention · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
               </div>
-              <div className="text-xs text-zinc-300 mt-0.5">
-                {formatUSD(criticalAccount.dailyLossRemaining)} daily loss room ({((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% consumed)
+              <div className="text-xs text-zinc-300 mt-0.5 font-sans">
+                <span className="font-mono text-white font-medium">{formatUSD(criticalAccount.dailyLossRemaining)}</span> daily loss room (
+                {((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% used)
               </div>
             </div>
           </div>
           <Link
             href="/live"
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-red-900/50 hover:bg-red-800/60 border border-red-700/60 text-xs text-red-200 font-semibold transition-colors self-start sm:self-center"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-900/50 hover:bg-red-800/60 border border-red-700/60 text-xs text-red-200 font-medium transition-colors self-start sm:self-center"
           >
             <span>View risk →</span>
             <ArrowUpRight size={13} />
           </Link>
         </div>
       ) : (
-        <div className="p-3.5 rounded-lg border border-emerald-800/50 bg-emerald-950/20 flex items-center justify-between font-mono text-xs">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="font-bold text-emerald-400 uppercase tracking-wider">
-              All Accounts Healthy
-            </span>
-            <span className="text-zinc-400">
-              • {rankedActiveAccounts.length} active · no immediate breach risk
-            </span>
+        <div className="flex items-center justify-between py-1 text-xs font-sans text-zinc-400">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <span className="text-zinc-300 font-medium">All accounts healthy</span>
+            <span className="text-zinc-400">· no immediate breach risk</span>
           </div>
-          <Link href="/live" className="text-xs text-[var(--cyan)] hover:text-white transition-colors">
-            Risk monitor →
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400">{rankedActiveAccounts.length} active</span>
+            <Link href="/live" className="text-[var(--cyan)] hover:text-white transition-colors">
+              Risk monitor →
+            </Link>
+          </div>
         </div>
       )}
 
-      {/* ─── 1. Capital Ledger (Baseline-aligned 24px+ figures) ─── */}
-      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 transition-all">
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-              Capital Ledger
-            </h2>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-              INR Base
-            </span>
-          </div>
+      {/* ─── 1. Cash (Prompt §7 & §19: simple title, 3 clean numbers) ─── */}
+      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+          <h2 className="text-sm font-semibold text-zinc-200 font-sans">
+            Cash
+          </h2>
+          <Link href="/finance" className="text-xs font-sans text-zinc-400 hover:text-zinc-200 transition-colors">
+            Finance ledger →
+          </Link>
         </div>
 
-        {/* Primary Cash Figures (24px-30px bold numbers) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-4">
+        {/* 3 Numbers: Total Spent, Cash at Risk, Payouts */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <div className="text-2xl sm:text-3xl font-mono font-bold text-white tracking-tight">
-              {formatINR(totalSpentINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+              {formatINR(totalSpentINR)}
             </div>
-            <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Total Cash Spent
+            <div className="text-xs text-zinc-400 font-sans mt-1">
+              Total spent
             </div>
           </div>
           <div>
             <div className="text-2xl sm:text-3xl font-mono font-bold text-amber-300 tracking-tight">
-              {formatINR(activeAtRiskINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+              {formatINR(activeAtRiskINR)}
             </div>
-            <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Active Cash at Risk (2 evals)
+            <div className="text-xs text-zinc-400 font-sans mt-1">
+              Cash at risk ({activeAccounts.length} accounts)
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-200 tracking-tight">
-              −{formatINR(netOutflowINR)}{" "}
-              <span className="text-xs font-normal text-zinc-500 font-sans">INR</span>
+            <div className={`text-2xl sm:text-3xl font-mono font-bold tracking-tight ${totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-400"}`}>
+              {formatINR(totalPayoutsINR)}
             </div>
-            <div className="text-xs text-zinc-400 mt-1 font-medium">
-              Net Cash Outflow
+            <div className="text-xs text-zinc-400 font-sans mt-1">
+              Payouts
             </div>
           </div>
         </div>
 
-        {/* Breakdown Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border-subtle)] text-xs font-mono text-zinc-400">
-          <div className="flex items-center gap-4">
-            <span>Propr: <strong className="text-zinc-200">{formatINR(finance.proprActualCashCostINR)}</strong></span>
-            <span>Breakout: <strong className="text-zinc-200">{formatINR(finance.breakoutActualCashCostINR)}</strong></span>
-            <span>Payouts: <strong className={totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-400"}>{formatINR(totalPayoutsINR)}</strong></span>
+        {/* Muted supporting cash details */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 border-t border-[var(--border-subtle)] text-xs font-sans text-zinc-400">
+          <div>
+            Net cash outflow: <span className="font-mono text-zinc-200 font-medium">−{formatINR(netOutflowINR)}</span>
           </div>
-          <Link href="/finance" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-4">
-            Finance ledger →
-          </Link>
+          <span className="text-zinc-700 hidden sm:inline">·</span>
+          <div>
+            Propr: <span className="font-mono text-zinc-300">{formatINR(finance.proprActualCashCostINR)}</span>
+          </div>
+          <span className="text-zinc-700 hidden sm:inline">·</span>
+          <div>
+            Breakout: <span className="font-mono text-zinc-300">{formatINR(finance.breakoutActualCashCostINR)}</span>
+          </div>
         </div>
       </div>
 
-      {/* ─── 2. Active Accounts Risk Cards ─── */}
+      {/* ─── 2. Active Accounts Grid ─── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase">
-            Active Accounts
+          <h2 className="text-sm font-semibold text-zinc-200 font-sans">
+            Active accounts
           </h2>
-          <span className="text-xs font-mono text-zinc-500">
-            {rankedActiveAccounts.length} monitored by breach proximity
+          <span className="text-xs font-sans text-zinc-400">
+            {rankedActiveAccounts.length} sorted by nearest limit
           </span>
         </div>
 
@@ -177,43 +172,40 @@ export default async function OverviewPage() {
         )}
       </div>
 
-      {/* ─── 3. Market Exposure & Order Summary (Prompt Requirement §7 & §14) ─── */}
-      <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] font-mono text-xs">
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5 mb-3">
-          <span className="text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
-            Market Exposure
-          </span>
-          <span className="text-zinc-500 text-[11px]">
-            Telemetry
-          </span>
+      {/* ─── 3. Exposure (Prompt §6 & §7: No telemetry label, clean columns) ─── */}
+      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
+          <h2 className="text-sm font-semibold text-zinc-200 font-sans">
+            Exposure
+          </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between p-3.5 rounded bg-zinc-900/60 border border-zinc-800">
+          <div className="flex items-center justify-between p-3.5 rounded-md bg-zinc-900/40 border border-zinc-800/80">
             <div>
-              <div className="text-zinc-400 text-xs">Open Positions</div>
-              <div className="text-xl font-bold text-white mt-0.5">{allPositions.length}</div>
-              <div className="text-zinc-400 text-xs mt-0.5">
+              <div className="text-xs text-zinc-400 font-sans">Open positions</div>
+              <div className="text-2xl font-mono font-bold text-white mt-0.5">{allPositions.length}</div>
+              <div className="text-xs text-zinc-400 font-sans mt-0.5">
                 {allPositions.length === 0 ? "Flat across 2 active accounts" : `${allPositions.length} active perpetuals`}
               </div>
             </div>
             <Link
               href="/positions"
-              className="text-xs text-[var(--cyan)] hover:text-white transition-colors"
+              className="text-xs font-sans text-[var(--cyan)] hover:text-white transition-colors"
             >
               View positions →
             </Link>
           </div>
-          <div className="flex items-center justify-between p-3.5 rounded bg-zinc-900/60 border border-zinc-800">
+          <div className="flex items-center justify-between p-3.5 rounded-md bg-zinc-900/40 border border-zinc-800/80">
             <div>
-              <div className="text-zinc-400 text-xs">Resting Orders</div>
-              <div className="text-xl font-bold text-white mt-0.5">{allOrders.length}</div>
-              <div className="text-zinc-400 text-xs mt-0.5">
+              <div className="text-xs text-zinc-400 font-sans">Resting orders</div>
+              <div className="text-2xl font-mono font-bold text-white mt-0.5">{allOrders.length}</div>
+              <div className="text-xs text-zinc-400 font-sans mt-0.5">
                 {allOrders.length === 0 ? "No pending orders or stops" : `${allOrders.length} resting limit orders`}
               </div>
             </div>
             <Link
               href="/orders"
-              className="text-xs text-[var(--cyan)] hover:text-white transition-colors"
+              className="text-xs font-sans text-[var(--cyan)] hover:text-white transition-colors"
             >
               View orders →
             </Link>
