@@ -1,1123 +1,140 @@
-# PROPR Terminal UI/UX Revamp
+# No AI slop eval
 
-## Status
+Use this after the rewrite. Answer each check with pass or fail. If any check fails, fix the draft before returning it.
 
-This is the implementation brief for the coding agent. Treat this document as the authoritative UI/UX direction for the revamp.
+For detect requests, make sure the response names each pattern found with a quoted line and a short fix, without rewriting the draft.
 
-The existing terminal is functionally useful but visually overloaded. The primary problem is information architecture, not branding: too many fields are visible at once, the same metrics are repeated across cards/tables, typography is too small, and static rulebook/diagnostic information competes with live operational state.
+## Editing principles
 
-The redesign must keep the existing business logic, risk calculations, cash accounting, read-only behavior, and truthful data freshness semantics. Change the presentation layer and component structure aggressively.
+1. Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?
+2. Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?
+3. Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?
+4. Is the amount of cutting proportional to the actual slop, with no aggressive compression that strips out character?
+5. Does the draft lead with what the reader needs while keeping personal setup that adds context, tension, or character?
+6. Are points front-loaded where that improves clarity without forcing every unit into the same structure?
+7. Do sentences earn their place, with concrete facts, protected details, and direct verbs where the draft supports them?
+8. Does every generic sentence pass the portability test, or was it cut or made specific to this subject?
+9. Does the draft use active voice with human subjects where possible?
+10. Does the edit keep useful edge and preserve structure unless the structure was hurting the piece?
+11. Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?
 
+## Words to cut
+
+1. Are banned words, filler phrases, often-empty adverbs, and inflated claims removed unless quoted as examples?
+
+## Patterns to cut
+
+1. Are binary contrasts, negative listings, rhetorical setups, and throat-clearing openers removed?
+2. Are faux-insight setups, colon reveals, superficial analysis, fake-strong verbs, synonym cycling, dramatic fragments, and robotic rhythm fixed?
+3. Are importance puffery and weasel attribution replaced with plain facts and named sources, or flagged for the user when no source exists?
+4. Is interpretive metadiscourse removed, including authorial metacommentary, reader guidance, emphasis markers, and redundant glossing?
+5. Are fake-profound kicker lines deleted instead of rewritten into better metaphors?
+6. Are summary-recap endings cut so the piece ends on a concrete point, takeaway, or next action?
+7. Is formatting slop removed: Emoji headings, decorative bold, bullets that should be prose, headers over tiny sections?
+8. Are colons sentence case unless grammar, a proper noun, a title, or code requires otherwise?
+9. Are em dashes used sparingly: Usually none in short copy, and only 1-2 in longer drafts when they clearly help?
+
+## Final read
+
+1. Does the draft avoid robotic symmetry, repeated sentence shapes, and stacked punchy fragments?
+2. Would the writer recognize the edited draft as their own voice?
+3. Would the edited draft sound natural if read to a sharp colleague?
+4. Does the final output include the full edited draft and a short **What changed** section?
+5. For detect requests, does the response name each pattern with a quoted line and a short fix, without rewriting, scoring, or claiming AI authorship?
+---
+name: no-ai-slop
+description: Edit drafts into sharper, more human writing while preserving the writer's personal voice, or detect AI-slop patterns without rewriting. Use when the user wants a draft clearer, more direct, more opinionated, or less AI-sounding, or asks whether writing reads as AI.
 ---
 
-## 1. Product goal
+# No AI slop
 
-PROPR is a personal prop-trading monitoring terminal.
+You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.
 
-The default experience must let the user answer these questions almost immediately:
+## Two jobs
 
-1. Which account needs attention?
-2. How much room remains before the binding risk limit?
-3. What exposure do I currently have?
-4. How much real INR cash have I spent and how much is still at risk?
-5. Can I trust the freshness of the displayed data?
+**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below and return the edited draft plus a What changed section.
 
-The UI should feel like a calm financial monitoring workspace, not a developer console or documentation site.
+**Detect.** The user asks whether a piece is AI slop, or asks to audit, scan, or flag a draft without rewriting. Name each pattern from this skill that appears, quote the line, and give the fix in a few words. Do not rewrite, score the draft, or guess whether AI wrote it. AI detectors guess. Named patterns are evidence the user can check. Offer to edit the draft after.
 
----
+## What to ask for
 
-## 2. Core UX model: progressive disclosure
+If the user has not provided a draft, ask them to paste it.
 
-The current UI exposes three information levels simultaneously. Replace that with:
+If the audience or format is unclear, ask one question: Who is this for and where will it be published?
 
-### Level 1: Glance
-Show only the information needed to understand the current state.
+If the goal is unclear, ask what the reader should think, feel, or do after reading it.
 
-### Level 2: Compare
-Show compact comparisons across accounts, positions, orders, expenses, or failures.
+## Editing principles
 
-### Level 3: Inspect
-Expose detailed calculations, IDs, trade history, bank references, challenge configuration, and raw telemetry only when the user opens a detail drawer, row, modal, or dedicated inspection view.
+- **Preserve the writer's real voice.** First notice the draft's vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish. Keep the traits that feel personal to the writer. Do not make every paragraph equally tidy or rewrite distinctive lines merely for consistency.
+- **Make the minimum effective edit.** Fix AI patterns, errors, repetition, and unclear passages. Leave strong human sentences alone. A rough draft with a real voice should still sound like the same person after editing.
+- **Lead with the point when the setup adds nothing.** Cut generic throat-clearing. Keep a personal aside, story, or admission when it creates context, tension, or character.
+- **Front-load only when it improves clarity.** Put conclusions early when that helps the reader. Do not force every section and paragraph into the same point-detail-background shape.
+- **Keep the user's meaning.** Don't invent claims, examples, stats, or opinions. If something is unclear, ask.
+- **Open it up, don't dumb it down.** Keep the substance, nuance, and precision. Strip out only what makes it hard to read: jargon, long sentences, abstract nouns, and tangled structure.
+- **Use active voice.** "The team shipped it Tuesday" beats "the decision emerged." Never let inanimate things do human verbs.
+- **Make every sentence earn its place.** Cut empty qualifiers and throat-clearing. Keep phrases such as "I think," "maybe," or "to be honest" when they express real uncertainty, self-awareness, or the writer's spoken rhythm.
+- **Untangle sentences without flattening the cadence.** Split sentences and paragraphs when they are genuinely hard to follow. Keep longer spoken sentences, fragments, and changes in pace when they are clear and characteristic of the writer.
+- **Be concrete and specific.** Abstraction is where writing goes to die. "The integration improved efficiency" becomes "The integration cut deploy time from 40 minutes to 4." Names, numbers, dates, mechanisms, and examples beat abstractions.
+- **Use the portability test.** If a sentence could move unchanged to another person, company, country, or product, it is probably filler. Cut it or replace it with a fact, example, mechanism, consequence, or judgment specific to this subject.
+- **Always show, don't tell the reader what to think.** Make facts, actions, examples, and consequences carry the emphasis. Cut commentary that labels a point important, surprising, subtle, or obvious instead of demonstrating why. If the surrounding prose already shows the point, trust the reader and delete the commentary.
+- **Protect the specific fact.** Don't smooth a useful detail into generic importance. "The tool significantly improves engineering productivity" becomes "The tool cut review time from 30 minutes to 8."
+- **Make verbs do the work.** Replace weak verb phrases with direct verbs. "Made a decision" becomes "decided." "Has the ability to" becomes "can."
+- **Know the job.** Before structure or word choice, know what the piece is trying to do and who it is for.
+- **Preserve useful edge and character.** Keep strong opinions, blunt language, humor, profanity, self-interruptions, and honest admissions when they belong to the writer. Don't replace them with safer or more professional wording.
+- **Keep structure unless it's hurting the piece.** Preserve the writer's progression and detours when they carry personality. If you reorganize, say why in the What changed section.
 
-### Rule
-Do not shrink text to fit more information. Remove or defer secondary information instead.
+## Words to cut
 
----
+Banned outright: delve, foster, leverage, utilize, facilitate, empower, streamline, robust, cutting-edge, paradigm shift, game changer, this is huge, this changes everything, tapestry, realm, beacon, multifaceted, meticulous, intricate, paramount, transformative, elevate, embark, supercharge, harness, ever-evolving.
 
-## 3. Non-negotiable product invariants
+Often-empty adverbs: just, literally, honestly, simply, actually, truly, fundamentally, importantly, crucially, inherently, inevitably. Cut them when they add nothing. Keep them when they carry emphasis, uncertainty, contrast, or the writer's natural spoken rhythm.
 
-Do not change the underlying calculations or semantics while redesigning the UI.
+Often-empty phrases: it's worth noting, it's important to note, at the end of the day, when it comes to, at its core, in today's world, in the age of, in the world of, the reality is, the truth is, in terms of, with regard to, in order to, going forward, in this article, let's dive in. Cut them when they delay the point. Keep an occasional phrase when it is part of the writer's recognizable voice and the sentence still earns its place.
 
-- Actual INR bank cash is the authoritative cash layer.
-- USD face value is a separate nominal layer.
-- Trading metrics are a separate layer from actual bank cash.
-- Drawdown and daily-loss calculations must remain exactly as implemented.
-- The application remains read-only.
-- Do not add order placement, cancellation, modification, or market-close actions.
-- Do not imply that the terminal can execute trades.
-- Never synthesize or guess upstream data.
-- Never display cached/polled data as realtime.
-- When WebSocket is unavailable, explicitly show the polling/fallback state.
-- Preserve existing account/risk business logic and server-side calculation boundaries.
+## Patterns to cut
 
----
+**Binary contrasts.** "This is not X. It's Y." / "The question isn't X, it's Y." / "It's not just X but Y." State Y directly. "The question isn't the model. It's the eval." becomes "The eval matters more than the model."
 
-## 4. Global visual direction
+**Throat-clearing openers.** "Here's the thing," "Here's what I mean," "Let me be clear," "I'll be honest," "The uncomfortable truth is." Cut them and state the point.
 
-### Keep
+**Faux-insight setups.** "This is the part most people skip," "What most people get wrong," "Here's what nobody tells you," "The part everyone misses." These flatter the writer as the lone expert. Cut the setup and make the claim stand on its own. "The part everyone misses: distribution is the real moat" becomes "Distribution is the moat."
 
-- Dark UI.
-- Inter for interface text.
-- JetBrains Mono for monetary values, percentages, account IDs, timestamps, and dense numeric data.
-- Green / amber / red semantic risk states.
-- Cyan for selected/navigation/system information.
-- Dense desktop information architecture where density is useful.
+**Colon reveals.** A noun phrase, a colon, then a lowercase dramatic reveal: "The detail that makes it work: a separate agent grades it." "The best part: it learns." Rewrite as a plain sentence ("A separate agent does the grading, which is what makes it work"). Use colons for lists, labels, and quotes, not fake drama. Prefer sentence case after a colon unless grammar, a proper noun, a title, or code requires otherwise.
 
-### Remove
+**Superficial analysis.** Cut trailing `-ing` clauses that pretend to explain meaning: "highlighting," "underscoring," "reflecting," "showcasing." "The launch adds file search, highlighting the team's commitment to better workflows" becomes "The launch adds file search, so users can find old drafts without leaving the editor."
 
-- Tiny text used to force more content onto the screen.
-- Repeated progress bars for the same metric.
-- Heavy nested card-on-card layouts.
-- Excessive uppercase headings.
-- Long descriptive paragraphs inside operational screens.
-- Static rulebook text embedded in live screens.
-- Decorative terminal/cyberpunk language.
-- Large empty panels around empty states.
-- Duplicate account information shown in both cards and full tables.
+**Importance puffery.** "Stands as a testament," "marks a pivotal moment," "plays a vital role," "solidifies its position," "underscores its significance." State the fact and let the reader judge whether it matters. "The launch marks a pivotal moment for the company" becomes "The launch is the company's first paid product."
 
-### Typography floor
+**Interpretive metadiscourse.** Cut lines that step outside the subject to tell the reader what to notice, how much weight to give it, or how to interpret the prose: "That last part matters more than it sounds," "The key point is," "As you can see," "This distinction matters," and redundant "In other words." If the point is clear, delete the aside. Otherwise, replace it with support or facts already in the content.
 
-Use these as defaults:
+**Weasel attribution.** "Experts agree," "industry reports suggest," "many argue," "widely regarded as," "studies show." Name the source or cut the claim. If the user has no source, ask instead of inventing one.
 
-| Element | Size |
-|---|---:|
-| Page title | 20px |
-| Page subtitle | 13px |
-| Section title | 13px |
-| Body | 13px |
-| Secondary text | 12px |
-| Metadata minimum | 11px |
-| Table rows | 13–14px |
-| Primary financial metric | 28–34px |
-| Secondary financial metric | 18–24px |
+**Fake-strong verbs.** Prefer "is" and "has" when they are clearer. "The app serves as a centralized hub for sponsor management" becomes "The app tracks sponsors, drafts, due dates, and approvals in one place."
 
-No important information should use 10px text.
+**Synonym cycling.** If the clear word is right, repeat it. Don't rotate terms for style. "The agent reviews the draft. The assistant scores the piece. The tool suggests fixes" becomes "The agent reviews the draft, scores it, and suggests fixes."
 
-### Contrast
+**Negative listing.** "Not a X. Not a Y. A Z." Just say Z.
 
-Use clearly readable secondary text. Replace very dark grey metadata with approximately `text-zinc-400` / equivalent. Primary values should be `text-zinc-100` / equivalent.
+**Dramatic fragmentation.** "X. And Y. And Z." or "That's it. That's the whole thing." Use complete sentences.
 
-Do not use low contrast to create visual hierarchy. Use size, spacing, grouping, and color semantics instead.
+**Robotic rhythm.** Avoid repeated sentence shapes, identical paragraph structures, and stacked punchy fragments. Vary the shape only when it helps the point.
 
-### Color semantics
+**Rhetorical setups.** "What if I told you...", "Think about it:", "Plot twist:", and self-answered "Question? Answer." pairs. Drop them and make the point.
 
-- Green = safe / healthy / positive.
-- Amber = caution / stale / approaching a limit.
-- Red = critical / breached / loss.
-- Cyan = selected / navigation / informational.
-- White = primary content.
-- Gray = secondary content.
+**Fake-profound kickers.** Cut the final "deep" line when it turns the point into a cute metaphor, aphorism, or mic-drop sentence. Do not rewrite it into a better metaphor. Do not preserve the rhythm. Delete it, then end on the clearest concrete sentence already in the draft. If the ending needs more closure, add a plain takeaway or next action.
 
-One color must have one meaning throughout the application.
+**Summary-recap endings.** "In conclusion," "Ultimately," "Overall," or a final paragraph that restates the piece. The reader was just there. End on the last concrete point, takeaway, or next action instead.
 
----
+**Formatting slop.** Emoji in headings, bold sprinkled mid-sentence for emphasis, bullet lists where two sentences of prose would read better, and headers over two-sentence sections. Format should follow the content, not decorate it.
 
-## 5. Layout system
+**Em dashes.** Do not use them as a default rhythm crutch. In short copy, use none. In longer drafts, 1-2 are fine if they clearly beat commas, periods, or parentheses. Remove clusters and decorative dashes.
 
-### Desktop targets
+## Workflow
 
-Design and validate against:
-
-- 2560×1440
-- 1920×1080
-- 1440×900
-- 1024×768
-- mobile layouts around 390×844
-
-### Wide desktop
-
-At 1440px and above:
-
-- Sidebar: approximately 220–232px expanded.
-- Main content uses the available horizontal space.
-- Page padding: approximately 28–36px.
-- Do not impose a narrow centered max-width that wastes 2K screen real estate.
-- Tables may use most of the available width.
-- Narrative/detail content may remain constrained where helpful.
-
-### Spacing scale
-
-Use a consistent spacing scale:
-
-- 4px micro
-- 8px compact
-- 12px row/field
-- 16px component
-- 24px section
-- 32px page
-
-### Page structure
-
-Prefer four visual bands over nested cards:
-
-1. Attention / current state.
-2. KPI summary.
-3. Main workspace.
-4. Supporting table or activity.
-
-Only one or two areas on a page should have strong visual elevation.
-
----
-
-## 6. Global shell
-
-### Navigation
-
-Use grouped navigation:
-
-```text
-PROPR
-TRADING TERMINAL
-
-OVERVIEW
-
-RISK
-  Monitor
-
-TRADING
-  Positions
-  Orders
-
-ACCOUNTS
-  Active
-  Archived
-
-FINANCE
-
-SYSTEM
-```
-
-Do not give every route equal visual weight.
-
-`History` should no longer be a primary sidebar destination. Preserve `/history` as a compatibility route that redirects to `/accounts?tab=archived` (or equivalent) so existing links do not break.
-
-### Sidebar
-
-- Desktop expanded state around 220–232px.
-- Collapsed state around 64px.
-- Mobile becomes a drawer.
-- Keep a compact footer with API and freshness state.
-
-Footer example:
-
-```text
-● REST API healthy
-● Data updated 12s ago
-```
-
-### Top bar
-
-The top bar must communicate freshness truthfully.
-
-Possible states:
-
-```text
-● LIVE · REALTIME
-Updated 2s ago   REST ●   WS ●
-```
-
-```text
-● POLLING · 15s
-Updated 12s ago   REST ●   WS ○
-```
-
-```text
-● STALE
-Updated 2m ago   REST ○   WS ○
-```
-
-Never show `LIVE` when the realtime stream is disconnected.
-
----
-
-## 7. Core component philosophy
-
-The current design effectively follows "every useful field gets a visible block".
-
-Replace that with:
-
-> Every screen answers one primary question. Secondary information is available on demand.
-
-### Recommended component structure
-
-```text
-components/
-  layout/
-    AppShell
-    Sidebar
-    TopBar
-    PageHeader
-
-  attention/
-    AttentionBanner
-    RiskAlert
-
-  metrics/
-    MetricStrip
-    Metric
-    ComparisonMetric
-
-  risk/
-    AccountRiskCard
-    AccountRiskRow
-    RiskMeter
-    BindingLimit
-    RiskStatus
-    AccountDrawer
-
-  trading/
-    PositionTable
-    OrderTable
-    ExposureSummary
-
-  accounts/
-    AccountTable
-    AccountDrawer
-    AccountStatus
-
-  finance/
-    CashSummary
-    CashFlowChart
-    FirmBreakdown
-    LedgerTable
-
-  system/
-    HealthGrid
-    DataPipeline
-    EventList
-    RawLogDrawer
-
-  shared/
-    EmptyState
-    Freshness
-    StatusBadge
-    CopyableId
-    FilterBar
-    DataTable
-```
-
-Consolidate existing primitives such as metric cards, risk bars, status badges, data tables, health pills, copyable IDs, and offline/freshness indicators into the shared system.
-
----
-
-## 8. Rule of one
-
-A metric should have one dominant visual occurrence per context.
-
-Do not show the same `$22.40 daily room` in:
-
-- hero stat
-- subtext
-- two progress bars
-- lower metric row
-- summary table
-- directory table
-
-on the same screen.
-
-One dominant appearance is enough. Other views can reference it compactly.
-
----
-
-# 9. Page specifications
-
-## 9.1 Overview `/`
-
-### Purpose
-
-Executive command center: what needs attention right now, how much cash is involved, and what the current active accounts look like.
-
-### Default layout
-
-```text
-OVERVIEW
-
-[ATTENTION]
-Critical account / or "All accounts healthy"
-
-[CASH]
-Total spent | Active cash at risk | Payouts
-
-[ACTIVE ACCOUNTS]
-Compact comparison of active accounts
-
-[EXPOSURE]
-Positions count | Orders count
-```
-
-### Attention section
-
-If any account is critical/caution:
-
-```text
-NEEDS ATTENTION
-Starter 1-Step Turbo
-$22.40 daily-loss room remaining
-86% consumed
-[View risk →]
-```
-
-If everything is healthy:
-
-```text
-ALL ACCOUNTS HEALTHY
-2 active · no immediate breach risk
-```
-
-### Cash summary
-
-Show:
-
-- Total actual cash spent.
-- Active actual cash at risk.
-- Payouts received.
-
-Optional compact breakdown:
-
-```text
-Propr      ₹21,559.58
-Breakout    ₹3,835.25
-```
-
-Do not turn this into four large competing cards.
-
-### Active accounts
-
-Show compact comparison rows/cards only. Do not repeat the complete Accounts table.
-
-```text
-Starter 1-Step Turbo      CRITICAL     $22.40 room
-Explorer 1-Step Turbo     SAFE        $233.31 room
-```
-
-Clicking an account opens the shared Account Drawer.
-
-### Remove
-
-- Full active-account table from Overview.
-- Repeated archived account information.
-- Repeated risk calculations already visible in the account card.
-
----
-
-## 9.2 Risk Monitor `/live`
-
-### Purpose
-
-Answer one question:
-
-> Which active account is closest to its binding risk limit?
-
-### Layout
-
-```text
-RISK MONITOR
-2 active accounts · sorted by nearest binding limit
-
-[Risk row/card 1]
-[Risk row/card 2]
-
-[small Market Reference strip]
-```
-
-### Risk card
-
-Show only:
-
-- Account name.
-- Stage/status.
-- Binding risk type.
-- Remaining room.
-- One dominant consumed-budget bar.
-- Equity.
-- Other relevant room metric.
-
-Example:
-
-```text
-Starter 1-Step Turbo                     CRITICAL
-
-$22.40
-DAILY LOSS ROOM
-
-██████████████████████░░  86% used
-
-Equity              $5,078.47
-Daily threshold     $5,056.07
-Drawdown room         $228.47
-```
-
-### Binding limit
-
-Explicitly label which rule is currently closest:
-
-```text
-BINDING LIMIT   Daily-loss threshold
-```
-
-Use `Daily-loss threshold`, not `Daily floor`, for the daily-loss rule to avoid confusion with the drawdown/breach floor.
-
-### Progress bars
-
-Use only one dominant risk-consumption bar.
-
-Do not simultaneously render separate bars for:
-
-- breach distance
-- daily loss
-- drawdown
-- target progress
-- radar
-
-Secondary metrics should be numeric.
-
-### Market reference
-
-Keep this secondary and compact. Show only useful live market fields such as:
-
-- Symbol/market.
-- Mark price.
-- 24h change.
-- Funding rate.
-
-Do not let the market table compete with account risk.
-
----
-
-## 9.3 Positions `/positions`
-
-### Purpose
-
-Answer:
-
-> Do I currently have exposure, and what is it?
-
-### When positions exist
-
-Use a table-first layout.
-
-Suggested columns:
-
-```text
-Account | Asset | Side | Size | Entry | Mark | Liquidation | uPnL | ROE
-```
-
-Right-align numeric values.
-
-Do not turn each position into a large card.
-
-### When flat
-
-Use a compact centered empty state:
-
-```text
-POSITIONS                         0
-
-No open positions
-2 active accounts · flat
-Checked 12s ago
-```
-
-Then optionally show a compact account-risk context row below.
-
-Do not create a huge empty card that consumes most of the viewport.
-
-### Remove
-
-- Static account sizing-gate cards from the default page.
-- Perpetual contract rulebook table from the default page.
-- Any trading mutation controls.
-
-Detailed sizing/risk constraints may be accessible through account/detail inspection if useful, but must not dominate the page.
-
----
-
-## 9.4 Orders `/orders`
-
-### Purpose
-
-Answer:
-
-> What orders or protective stops are currently active?
-
-### When orders exist
-
-Use a table:
-
-```text
-Asset | Account | Side | Type | Trigger/Limit | Size | Status | Time in Force
-```
-
-No order mutation actions should be added.
-
-### When empty
-
-```text
-ORDERS                         0 ACTIVE
-
-No active orders
-2 active accounts · no pending orders or protective stops
-Checked 12s ago
-```
-
-### Remove from default page
-
-- Static execution-rules cards.
-- Fee explanations.
-- Account-capacity instructional table.
-- "Ready for orders" language.
-
-If rulebook/reference content is useful, expose it through a secondary drawer/modal or documentation area, not the operational page.
-
----
-
-## 9.5 Accounts `/accounts`
-
-### Purpose
-
-The one intentionally data-dense screen. This is where the user can inspect the complete account universe.
-
-### Tabs
-
-```text
-All | Active | Funded | Archived / Breached
-```
-
-Keep search and sort controls visible.
-
-### Primary table
-
-Use these default columns:
-
-```text
-Stage | Account | Equity | Room | Status | Target / Failure
-```
-
-Keep the initial table readable. Do not expose every field by default.
-
-### Account row
-
-Compact row example:
-
-```text
-Starter 1-Step Turbo #fjU6
-$5,078.47 equity
-$22.40 room
-CRITICAL
-```
-
-### Expanded/detail drawer
-
-Expose deeper inspection here:
-
-- Full account ID.
-- Challenge/tier.
-- Starting capital.
-- Current/ending equity.
-- Breach floor.
-- Daily-loss threshold.
-- Drawdown room.
-- Target.
-- Failure reason.
-- Trade count/history.
-- Purchase/cash reference.
-- Other calculation inputs already available in the application.
-
-### History consolidation
-
-Do not maintain a separate primary History navigation item.
-
-Use `/accounts?tab=archived` (or equivalent).
-
-Keep `/history` as a redirect for compatibility.
-
----
-
-## 9.6 Finance `/finance`
-
-### Purpose
-
-Answer:
-
-> How much real money have I spent, how much is still at risk, and where did it go?
-
-### Summary
-
-Use a simple KPI strip:
-
-```text
-Total cash spent | Active cash at risk | Payouts | Net cash outflow
-```
-
-Primary values around 24px or larger.
-
-Do not use arrows between these KPIs as if they are sequential process steps. They are related accounting measures, not a workflow.
-
-### Visualization
-
-Add one lightweight cash-flow visualization if supported by existing data:
-
-- cumulative cash outflow
-- cumulative payouts
-
-Optionally show firm-level spend:
-
-```text
-Propr       ₹21,559.58
-Breakout     ₹3,835.25
-```
-
-### Ledger
-
-Default visible columns:
-
-```text
-Date | Firm | Challenge | Cash Debit (INR)
-```
-
-Use row expansion/detail drawer for:
-
-- USD cost/face value.
-- Account funded.
-- Invoice.
-- Bank reference.
-- Verification state.
-
-Truncate long bank references and provide copy-to-clipboard on interaction.
-
-Do not repeat a large `BANK VERIFIED` badge on every row. Use a compact status/icon and reserve the full verification detail for inspection.
-
----
-
-## 9.7 System `/system`
-
-### Purpose
-
-Answer:
-
-> Can I trust this data right now?
-
-### Health summary
-
-Three compact status areas:
-
-```text
-REST API        HEALTHY
-WebSocket       DISCONNECTED
-Data pipeline   FRESH
-```
-
-Each state must show the relevant fallback/freshness detail.
-
-### Pipeline
-
-Compact representation:
-
-```text
-REST → CACHE → UI
-       15s polling
-```
-
-Include monitored account count and last successful sync.
-
-### Security
-
-Keep only genuinely useful read-only/security invariants in a compact list.
-
-### Recent events
-
-Show a short, readable recent-event list by default.
-
-Do not let the raw WebSocket console dominate the initial viewport.
-
-Add:
-
-`View raw event stream`
-
-which opens a drawer/panel with the full telemetry console.
-
-### Important wording
-
-Use `Observed order event` / `Upstream fill event` terminology where necessary so event logs cannot be interpreted as the terminal executing trades.
-
----
-
-# 10. Empty-state rules
-
-Empty states must be small and useful.
-
-Every empty state should contain:
-
-- Current count.
-- One clear sentence.
-- Freshness/check time.
-- Minimal context if useful.
-
-Do not create a giant centered card simply because a table is empty.
-
-Examples:
-
-```text
-No open positions
-2 active accounts · flat
-Checked 12s ago
-```
-
-```text
-No active orders
-2 active accounts · no pending orders
-Checked 12s ago
-```
-
----
-
-# 11. Tables
-
-Tables are the correct place for dense information, but they must remain readable.
-
-Rules:
-
-- Use one outer surface/border.
-- Use subtle row dividers.
-- Avoid a card around every row.
-- Left-align text labels.
-- Right-align money, percentages, quantities, prices, and counts.
-- Use 13–14px row text.
-- Keep metadata at 11–12px.
-- Prefer fewer columns in the default state.
-- Use row expansion/drawers for secondary fields.
-
----
-
-# 12. Progressive disclosure rules
-
-### Visible by default
-
-- Risk status.
-- Binding limit.
-- Remaining room.
-- Equity/balance when relevant.
-- Cash summary.
-- Positions count/exposure.
-- Orders count.
-- Freshness.
-
-### Expandable / inspectable
-
-- Trade trajectory.
-- High-water mark.
-- Calculation inputs.
-- Detailed challenge rules.
-- Fees.
-- Bank references.
-- Failure details.
-- Raw telemetry.
-- Detailed trade history.
-
-Nothing should be deleted from the data model merely because it is hidden from the default view.
-
----
-
-# 13. Risk visual rules
-
-### One dominant risk visual
-
-Every account/risk screen should have one primary consumption bar representing the binding/current risk budget.
-
-Everything else stays numeric.
-
-### Severity thresholds
-
-Use one consistent severity mapping across the application. Derive it from the existing risk state/business logic rather than inventing a second risk model.
-
-The visual must agree with the status badge:
-
-- SAFE must not have a red danger bar.
-- CRITICAL must look critical.
-- BREACHED must look terminal/final.
-- STALE must be visually distinct from risk severity.
-
-Do not let freshness color and risk color become ambiguous.
-
----
-
-# 14. Content / wording rules
-
-Use short, operational labels.
-
-Prefer:
-
-- `Risk Monitor`
-- `Active accounts`
-- `Daily-loss room`
-- `Drawdown room`
-- `Market reference`
-- `System health`
-- `Recent events`
-- `No active orders`
-- `No open positions`
-
-Avoid unnecessarily formal labels such as:
-
-- `Perpetual Contract Constraints`
-- `Execution Rules & Fee Protocol`
-- `Active Breach Distance`
-- `System Diagnostics & Gateway Health`
-- `Data Pipeline Status`
-
-Use normal title case for major headings. Reserve uppercase for compact field labels such as `EQUITY`, `ROOM`, `TARGET`, `STATUS`.
-
----
-
-# 15. Avoid visual repetition
-
-Do not repeat the same information in multiple nearby components.
-
-Examples:
-
-- If Overview has compact active-account risk rows, do not repeat a full Active Accounts table below them.
-- If a risk card shows daily room, do not repeat the same daily room in three bars on that card.
-- If Finance shows firm totals, the ledger does not need to repeat a large firm summary block.
-- If System shows REST/WS/Data status at the top, do not repeat the same exact labels again in every subsection.
-
----
-
-# 16. Responsive behavior
-
-### Desktop
-
-Use the wide canvas and multi-column layouts.
-
-### Tablet
-
-Reduce the number of simultaneous columns. Keep the most important risk metrics visible first.
-
-### Mobile
-
-- Collapsible navigation drawer.
-- Single-column account cards.
-- Horizontal scrolling for genuinely tabular data only.
-- Sticky/visible key status and freshness state.
-- Avoid forcing tiny fonts to fit tables.
-
----
-
-# 17. Accessibility / readability
-
-Treat readability as a product requirement, not polish.
-
-Validate:
-
-- Text contrast.
-- Keyboard navigation.
-- Focus visibility.
-- Click/tap target sizes.
-- Tooltip accessibility.
-- Screen-reader labels for icon-only controls.
-- No state communicated by color alone.
-- Numeric alignment and scanability.
-
-Do not use font size below 11px for essential information.
-
----
-
-# 18. Implementation sequence
-
-Do not redesign the pages as unrelated one-off screens. Build the shared system first.
-
-## Phase 1 — Information architecture
-
-- Remove duplicate information from each page.
-- Decide default vs inspectable fields.
-- Consolidate History into Accounts with Archived/Breached tab.
-- Preserve `/history` compatibility via redirect.
-
-## Phase 2 — Global shell
-
-- Refactor Sidebar.
-- Refactor TopBar freshness/realtime semantics.
-- Add PageHeader.
-- Establish typography and spacing tokens.
-- Establish wide desktop container behavior.
-
-## Phase 3 — Shared risk system
-
-Build/refactor:
-
-- `AccountRiskCard`
-- `AccountRiskRow`
-- `BindingLimit`
-- `RiskMeter`
-- `RiskStatus`
-- `AccountDrawer`
-
-Use these across Overview, Risk, and Accounts.
-
-## Phase 4 — Overview + Risk
-
-- Build the new command-center Overview.
-- Build the simplified Risk Monitor.
-- Remove duplicate account table from Overview.
-
-## Phase 5 — Positions + Orders
-
-- Table-first operational layouts.
-- Small empty states.
-- Remove static rulebook blocks from default views.
-- Preserve read-only behavior.
-
-## Phase 6 — Accounts
-
-- Build dense but readable account table.
-- Add tabs, filters, search, sort.
-- Add account detail drawer.
-- Integrate archived/breached accounts.
-
-## Phase 7 — Finance
-
-- Simplify cash summary.
-- Add lightweight cash-flow visualization if data supports it.
-- Reduce ledger columns and move details to inspection.
-
-## Phase 8 — System
-
-- Health-first layout.
-- Compact pipeline/security summary.
-- Recent events list.
-- Raw log drawer.
-
-## Phase 9 — QA
-
-Validate at:
-
-- 2560×1440
-- 1920×1080
-- 1440×900
-- 1024×768
-- 390×844
-
-Also test:
-
-- REST healthy + WS connected.
-- REST healthy + WS disconnected.
-- Stale data.
-- API unavailable.
-- No active positions.
-- Active positions.
-- No active orders.
-- Active orders.
-- All accounts healthy.
-- Critical account.
-- Failed/breached accounts.
-- Empty Finance data if ever applicable.
-
----
-
-# 19. Acceptance criteria
-
-The redesign is complete only when these are true.
-
-### Overview
-
-Within ~3 seconds the user can identify:
-
-- Most dangerous account.
-- Daily room remaining.
-- Total actual cash spent.
-- Active cash at risk.
-
-### Risk Monitor
-
-Within ~2 seconds the user can identify:
-
-- #1 risk account.
-- Binding limit.
-- Remaining room.
-- Risk severity.
-
-### Positions
-
-Within ~2 seconds the user can tell:
-
-- Whether any position is open.
-- What exposure exists.
-
-### Orders
-
-Within ~2 seconds the user can tell:
-
-- Whether any active/protective order exists.
-
-### Accounts
-
-Within ~5 seconds the user can identify:
-
-- Active vs archived/funded accounts.
-- Current equity.
-- Risk room.
-- Failure reason for archived accounts.
-
-### Finance
-
-Within ~5 seconds the user can identify:
-
-- Total cash spent.
-- Active cash at risk.
-- Payouts.
-- Net cash outflow.
-- Major firm spending.
-
-### System
-
-Within ~3 seconds the user can answer:
-
-- Is the API healthy?
-- Is realtime connected?
-- Is the displayed data fresh?
-- What fallback mode is active?
-
----
-
-# 20. Non-goals
-
-Do not use this redesign to:
-
-- Change risk calculations.
-- Change challenge/account lifecycle logic.
-- Add trading execution capabilities.
-- Add fake/demo data.
-- Replace the dark financial-terminal identity with a generic SaaS admin theme.
-- Add decorative charts that do not help a decision.
-- Add static documentation blocks to operational screens.
-
----
-
-# 21. Final design test
-
-The terminal should feel:
-
-- Calm.
-- Precise.
-- Wide.
-- Readable.
-- Financial.
-- Minimal in default presentation.
-- Dense only where density improves comparison.
-
-The target is not "show less data". The target is:
-
-> **Show the right data at the right level of attention.**
-
-A user on a 27-inch 2K monitor should not have to squint, hunt through repeated metrics, or mentally decode multiple competing progress bars to understand the state of the trading accounts.
-
-The final UI should be judged by decision speed, readability, and state clarity, not by how many fields fit into a card.
+1. Read the full draft before editing.
+2. Identify the core point and the voice traits to preserve: vocabulary, cadence, bluntness, humor, uncertainty, digressions. If you cannot identify the core point, ask the user.
+3. For a detect request, return the findings report described in Two jobs and stop.
+4. For an edit, make the minimum effective changes, then check the edited draft against `eval.md` yourself.
+5. If any check fails, fix the draft and run the checks again.
+6. Output the full edited draft and a short **What changed** section.

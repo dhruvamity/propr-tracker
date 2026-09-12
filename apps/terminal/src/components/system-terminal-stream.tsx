@@ -92,7 +92,7 @@ const INITIAL_LOGS: LogEntry[] = [
     timestamp: "23:58:32.405",
     type: "RISK",
     channel: "RISK_ENGINE",
-    message: "Drawdown limit check passed: Equity safely above breach floor ($9,700.00). Buffer: $473.67.",
+    message: "Drawdown limit check passed: Equity above breach floor ($9,700.00). Buffer: $473.67.",
   },
 ];
 
@@ -138,7 +138,7 @@ const STREAM_TEMPLATES = [
   {
     type: "RISK" as const,
     channel: "RISK_ENGINE",
-    message: () => "Intraday Risk Engine cycle completed: Zero breach triggers. All margin rules satisfied.",
+    message: () => "Intraday risk check completed: 0 breach triggers. All margin rules satisfied.",
   },
   {
     type: "REST" as const,
@@ -276,7 +276,7 @@ export function SystemTerminalStream() {
           </div>
           <div className="flex items-center gap-2 text-zinc-200 font-semibold text-xs tracking-wider uppercase">
             <Terminal size={14} className="text-zinc-400" />
-            <span>propr-ws-gateway — event-stream.log</span>
+            <span>propr-ws-gateway / event-stream.log</span>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
             <Wifi size={11} className="text-emerald-400 animate-pulse" />

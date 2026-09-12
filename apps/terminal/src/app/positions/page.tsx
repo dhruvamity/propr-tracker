@@ -80,7 +80,7 @@ export default async function PositionsPage() {
                         href="/live"
                         className="text-[var(--cyan)] hover:text-white transition-colors"
                       >
-                        Risk radar →
+                        Risk monitor →
                       </Link>
                     </div>
                   </div>

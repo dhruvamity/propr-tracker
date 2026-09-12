@@ -83,10 +83,10 @@ export default async function LiveMonitorPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-sm md:text-base font-semibold text-white tracking-wide flex items-center gap-2">
-            <span>Risk Radar</span>
+            <span>Risk Monitor</span>
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-[11px] font-mono text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              LIVE RADAR
+              LIVE FEED
             </span>
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
@@ -95,7 +95,7 @@ export default async function LiveMonitorPage() {
         </div>
         <div className="flex items-center gap-2 font-mono text-xs">
           <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-            {liveAccounts.length} active evaluations monitored
+            {liveAccounts.length} active evaluations
           </span>
         </div>
       </div>
@@ -177,7 +177,7 @@ export default async function LiveMonitorPage() {
                   </div>
                 </div>
 
-                {/* Zone 2: Hero Stat — Binding Limit Failure Room (24px+) */}
+                {/* Zone 2: Hero Stat: Binding Limit Failure Room (24px+) */}
                 <div className="p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-mono">
                     <span className="text-zinc-400 uppercase tracking-wider font-semibold">
@@ -269,14 +269,14 @@ export default async function LiveMonitorPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-mono font-semibold text-white">
-                      Portfolio Flat · Zero Open Positions
+                      Flat · Zero Open Positions
                     </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-900 text-zinc-400 border border-zinc-800">
                       0.00x LEVERAGE
                     </span>
                   </div>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    No active positions across accounts. Capital resting safely in margin balance.
+                    No active positions across accounts. Capital held in margin balance.
                   </p>
                 </div>
               </div>
@@ -285,7 +285,7 @@ export default async function LiveMonitorPage() {
                   Exposure: <strong className="text-white">$0.00</strong>
                 </span>
                 <span className="px-2.5 py-1 rounded bg-zinc-900/80 border border-zinc-800">
-                  Liquidation Risk: <strong className="text-emerald-400">NONE</strong>
+                  Liquidation Risk: <strong className="text-emerald-400">None</strong>
                 </span>
               </div>
             </div>

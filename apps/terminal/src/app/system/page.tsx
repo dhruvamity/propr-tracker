@@ -20,10 +20,10 @@ export default async function SystemPage() {
         </div>
         <div className="flex items-center gap-2 font-mono text-xs">
           <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-            Engine: Propr OS
+            Engine: Propr Core
           </span>
           <span className="px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-800/40 text-emerald-400">
-            Read-Only Invariant: ACTIVE
+            Read-Only: Active
           </span>
         </div>
       </div>

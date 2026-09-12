@@ -23,11 +23,11 @@ interface RecentEvent {
 }
 
 const RECENT_EVENTS: RecentEvent[] = [
-  { time: "23:58:32", channel: "Risk Engine", type: "RISK", message: "Drawdown limit check passed: Equity safely above breach floor" },
+  { time: "23:58:32", channel: "Risk Engine", type: "RISK", message: "Drawdown limit check passed: Equity above breach floor" },
   { time: "23:58:28", channel: "REST Sync", type: "SYNC", message: "Challenge accounts synchronized via ISR (8 accounts active/archived)" },
   { time: "23:58:24", channel: "Market", type: "MARK", message: "SOL-USDT mark price updated: $178.45 (spread 0.4)" },
   { time: "23:58:20", channel: "Gateway", type: "SYS", message: "Heartbeat pong acknowledged (RTT: 14ms)" },
-  { time: "23:58:16", channel: "Execution", type: "ORDER", message: "Observed upstream fill event: xyz:BTC-USDT buy 0.05" },
+  { time: "23:58:16", channel: "Execution", type: "ORDER", message: "Observed fill: xyz:BTC-USDT buy 0.05" },
   { time: "23:58:14", channel: "Market", type: "MARK", message: "ETH-USDT mark price updated: $3,542.80 (funding +0.0085%)" },
   { time: "23:58:12", channel: "Market", type: "MARK", message: "BTC-USDT mark price updated: $68,432.50 (funding +0.0100%)" },
   { time: "23:58:10", channel: "Auth", type: "SYS", message: "Session authenticated with upstream gateway. Read-only enforced." },
@@ -95,7 +95,7 @@ export function SystemView({ health }: SystemViewProps) {
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
           </div>
           <div className="text-2xl font-bold text-white tracking-tight">
-            FRESH
+            SYNCED
           </div>
           <div className="text-xs text-zinc-400 pt-1 border-t border-zinc-800/60 flex justify-between">
             <span>{health.accountCount} accounts</span>
@@ -113,7 +113,7 @@ export function SystemView({ health }: SystemViewProps) {
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
           </div>
           <div className="text-2xl font-bold text-emerald-400 tracking-tight">
-            ENFORCED
+            ACTIVE
           </div>
           <div className="text-xs text-zinc-400 pt-1 border-t border-zinc-800/60 flex justify-between">
             <span>Read-only</span>
@@ -127,7 +127,7 @@ export function SystemView({ health }: SystemViewProps) {
         {/* Data Pipeline Flow */}
         <div className="md:col-span-2 p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-3">
           <div className="text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
-            Data Flow Pipeline
+            Data Pipeline
           </div>
           <div className="flex items-center justify-center gap-4 py-3 bg-zinc-950/60 rounded border border-zinc-800/60">
             <div className="text-center">
@@ -136,12 +136,12 @@ export function SystemView({ health }: SystemViewProps) {
             </div>
             <ArrowRight size={16} className="text-zinc-500" />
             <div className="text-center">
-              <span className="text-white font-bold text-sm block">CACHE LAYER</span>
+              <span className="text-white font-bold text-sm block">CACHE</span>
               <span className="text-[10px] text-zinc-400">15s ISR revalidation</span>
             </div>
             <ArrowRight size={16} className="text-zinc-500" />
             <div className="text-center">
-              <span className="text-emerald-400 font-bold text-sm block">UI VIEWPORT</span>
+              <span className="text-emerald-400 font-bold text-sm block">CLIENT</span>
               <span className="text-[10px] text-zinc-400">Decimal.js math</span>
             </div>
           </div>
@@ -164,7 +164,7 @@ export function SystemView({ health }: SystemViewProps) {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-              <span>Read-only observational state</span>
+              <span>Read-only state</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />

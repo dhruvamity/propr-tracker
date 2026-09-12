@@ -151,7 +151,7 @@ export function TopBar() {
     };
   } else if (health.restStatus === "HEALTHY" && health.wsStatus === "CONNECTED") {
     statusBadge = {
-      label: "LIVE · REALTIME",
+      label: "LIVE",
       dotClass: "bg-emerald-400 animate-pulse",
       textClass: "text-emerald-400",
       containerClass: "bg-emerald-950/40 border-emerald-800/50",

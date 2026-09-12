@@ -63,7 +63,7 @@ export default async function OverviewPage() {
                 Needs Attention · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
               </div>
               <div className="text-xs text-zinc-300 mt-0.5">
-                {formatUSD(criticalAccount.dailyLossRemaining)} daily-loss room remaining ({((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% consumed)
+                {formatUSD(criticalAccount.dailyLossRemaining)} daily loss room ({((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% consumed)
               </div>
             </div>
           </div>
@@ -87,7 +87,7 @@ export default async function OverviewPage() {
             </span>
           </div>
           <Link href="/live" className="text-xs text-[var(--cyan)] hover:text-white transition-colors">
-            Live radar →
+            Risk monitor →
           </Link>
         </div>
       )}
@@ -152,7 +152,7 @@ export default async function OverviewPage() {
             <span>Payouts: <strong className={totalPayoutsINR > 0 ? "text-emerald-400" : "text-zinc-400"}>{formatINR(totalPayoutsINR)}</strong></span>
           </div>
           <Link href="/finance" className="text-zinc-400 hover:text-white transition-colors underline underline-offset-4">
-            Audited ledger →
+            Finance ledger →
           </Link>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default async function OverviewPage() {
             Market Exposure
           </span>
           <span className="text-zinc-500 text-[11px]">
-            Live operational status
+            Telemetry
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
