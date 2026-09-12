@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronLeft,
   X,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShell } from "./shell-context";
@@ -42,6 +43,7 @@ const navSections: NavSection[] = [
   {
     title: "Trading",
     items: [
+      { href: "/analytics", label: "Analytics", icon: LineChart },
       { href: "/positions", label: "Positions", icon: TrendingUp },
       { href: "/orders", label: "Orders", icon: ListOrdered },
     ],

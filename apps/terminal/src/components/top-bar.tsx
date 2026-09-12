@@ -19,6 +19,10 @@ const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
     title: "Accounts",
     subtitle: "Active evaluations and archive",
   },
+  "/analytics": {
+    title: "Analytics",
+    subtitle: "Account performance and trade analytics",
+  },
   "/positions": {
     title: "Positions",
     subtitle: "Open perpetual exposures",
