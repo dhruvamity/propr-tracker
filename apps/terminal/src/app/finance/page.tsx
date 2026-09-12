@@ -128,7 +128,52 @@ export default async function FinancePage() {
         </div>
       </div>
 
-      {/* ─── 2. Prop Firm Expense Ledger ── */}
+      {/* ─── 2. Firm Spending Breakdown (Prompt §9.6) ─── */}
+      <div className="p-4 md:p-5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] font-mono text-xs space-y-3">
+        <div className="flex items-center justify-between text-zinc-400">
+          <span className="uppercase tracking-wider font-semibold text-[11px]">Spending by Prop Firm</span>
+          <span className="text-zinc-400">Settled INR capital allocation</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+          <div className="p-3 rounded bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="font-semibold text-white">PROPR</span>
+              <span className="text-zinc-200 font-bold">
+                {formatINR(finance.proprActualCashCostINR)}{" "}
+                <span className="text-zinc-400 font-normal">
+                  ({((Number(finance.proprActualCashCostINR) / Math.max(1, totalSpentINR)) * 100).toFixed(0)}%)
+                </span>
+              </span>
+            </div>
+            <div className="h-2 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+              <div
+                className="h-full bg-[var(--cyan)] rounded-full transition-all duration-500"
+                style={{ width: `${(Number(finance.proprActualCashCostINR) / Math.max(1, totalSpentINR)) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-3 rounded bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="font-semibold text-amber-400">BREAKOUT</span>
+              <span className="text-zinc-200 font-bold">
+                {formatINR(finance.breakoutActualCashCostINR)}{" "}
+                <span className="text-zinc-400 font-normal">
+                  ({((Number(finance.breakoutActualCashCostINR) / Math.max(1, totalSpentINR)) * 100).toFixed(0)}%)
+                </span>
+              </span>
+            </div>
+            <div className="h-2 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                style={{ width: `${(Number(finance.breakoutActualCashCostINR) / Math.max(1, totalSpentINR)) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 3. Prop Firm Expense Ledger ── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-mono font-semibold tracking-wider text-zinc-400 uppercase flex items-center gap-2">

@@ -53,17 +53,17 @@ export default async function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Attention Banner (Prompt Requirement §7 & §27) ─── */}
-      {criticalAccount && (
+      {/* ─── Attention Banner (Prompt §9.1 & §27) ─── */}
+      {criticalAccount ? (
         <div className="p-4 rounded-lg border border-red-800/60 bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono">
           <div className="flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
             <div>
               <div className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                Attention Required · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
+                Needs Attention · {criticalAccount.challengeName || "Starter Turbo"} {formatAccountTag(criticalAccount.accountId)}
               </div>
               <div className="text-xs text-zinc-300 mt-0.5">
-                {formatUSD(criticalAccount.dailyLossRemaining)} daily-loss room remaining ({((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% of daily budget consumed)
+                {formatUSD(criticalAccount.dailyLossRemaining)} daily-loss room remaining ({((Number(criticalAccount.dailyLossUsedAmount || 0) / Number(criticalAccount.dailyLossLimitAmount || 1)) * 100).toFixed(0)}% consumed)
               </div>
             </div>
           </div>
@@ -71,8 +71,23 @@ export default async function OverviewPage() {
             href="/live"
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-red-900/50 hover:bg-red-800/60 border border-red-700/60 text-xs text-red-200 font-semibold transition-colors self-start sm:self-center"
           >
-            <span>Monitor Risk</span>
+            <span>View risk →</span>
             <ArrowUpRight size={13} />
+          </Link>
+        </div>
+      ) : (
+        <div className="p-3.5 rounded-lg border border-emerald-800/50 bg-emerald-950/20 flex items-center justify-between font-mono text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="font-bold text-emerald-400 uppercase tracking-wider">
+              All Accounts Healthy
+            </span>
+            <span className="text-zinc-400">
+              • {rankedActiveAccounts.length} active · no immediate breach risk
+            </span>
+          </div>
+          <Link href="/live" className="text-xs text-[var(--cyan)] hover:text-white transition-colors">
+            Live radar →
           </Link>
         </div>
       )}

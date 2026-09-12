@@ -5,10 +5,10 @@ import { formatUSD, formatShortId, formatAccountTag } from "@/lib/utils";
 export const revalidate = 15;
 
 export default async function OrdersPage() {
-  const { allOrders, accounts } = await fetchDashboardData();
-  const activeCount = accounts.filter(
+  const { allOrders, accounts, allPositions } = await fetchDashboardData();
+  const activeAccounts = accounts.filter(
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  ).length;
+  );
 
   return (
     <div className="space-y-6">
@@ -16,33 +16,66 @@ export default async function OrdersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-base sm:text-lg font-semibold text-white tracking-wide">
-            Open Orders
+            Orders
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Resting limit orders & protective stops
+            Active limit, stop, and protective orders across monitored accounts
           </p>
         </div>
         <span className="text-xs font-mono px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-          {allOrders.length} Resting
+          {allOrders.length} Active
         </span>
       </div>
 
       {allOrders.length === 0 ? (
-        <div className="min-h-[50vh] flex flex-col items-center justify-center rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8 text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
-            <ListOrdered size={28} />
+        <div className="space-y-4">
+          {/* Compact Empty State */}
+          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6 md:p-8 text-center space-y-3">
+            <div className="w-10 h-10 mx-auto rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <ListOrdered size={20} />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-sm sm:text-base font-semibold text-white">
+                No Active Orders
+              </h2>
+              <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+                {activeAccounts.length} active accounts · no pending orders or protective stops
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-zinc-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Checked now · Upstream queue clear · Zero resting orders</span>
+            </div>
           </div>
-          <div className="space-y-1">
-            <h2 className="text-base sm:text-lg font-semibold text-white">
-              No Active Orders
-            </h2>
-            <p className="text-xs text-zinc-400 max-w-sm">
-              {activeCount} active accounts currently have zero resting orders or pending protective stops.
-            </p>
-          </div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-zinc-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Monitored · Upstream queue clear</span>
+
+          {/* Account Order & Stop Status */}
+          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 font-mono text-xs space-y-2.5">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-zinc-400 uppercase tracking-wider text-[11px] font-semibold">
+              <span>Account Status</span>
+              <span>Protective Stops</span>
+            </div>
+            <div className="divide-y divide-zinc-800/60">
+              {activeAccounts.map((acc) => {
+                const accPositions = allPositions.filter((p) => p.accountId === acc.accountId);
+                const accOrders = allOrders.filter((o) => o.accountId === acc.accountId);
+
+                return (
+                  <div key={acc.accountId} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white">{acc.challengeName}</span>
+                      <span className="text-zinc-400">{formatAccountTag(acc.accountId)}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-zinc-400">
+                      <span>{accPositions.length === 0 ? "no open positions" : `${accPositions.length} open positions`}</span>
+                      <span className="text-zinc-500">•</span>
+                      <span className="text-zinc-300 font-medium">
+                        {accOrders.length === 0 ? "no active stops" : `${accOrders.length} stops active`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : (
@@ -51,22 +84,25 @@ export default async function OrdersPage() {
             <thead>
               <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 text-[11px] uppercase">
                 <th className="py-2.5 px-3">Asset</th>
+                <th className="py-2.5 px-3">Account</th>
                 <th className="py-2.5 px-3">Side</th>
                 <th className="py-2.5 px-3">Type</th>
                 <th className="py-2.5 px-3 text-right">Size</th>
                 <th className="py-2.5 px-3 text-right">Price / Trigger</th>
-                <th className="py-2.5 px-3">Account</th>
                 <th className="py-2.5 px-3">Time in Force</th>
                 <th className="py-2.5 px-3 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)] text-[12px]">
+            <tbody className="divide-y divide-[var(--border-subtle)] text-xs">
               {allOrders.map((ord) => (
                 <tr
                   key={ord.orderId}
                   className="hover:bg-white/[0.02] transition-colors"
                 >
                   <td className="py-2.5 px-3 font-semibold text-white">{ord.asset}</td>
+                  <td className="py-2.5 px-3 text-zinc-300">
+                    {formatAccountTag(ord.accountId)}
+                  </td>
                   <td className="py-2.5 px-3">
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -81,10 +117,7 @@ export default async function OrdersPage() {
                     {ord.quantity}
                   </td>
                   <td className="py-2.5 px-3 text-right font-semibold text-white">
-                    {formatUSD(ord.price)}
-                  </td>
-                  <td className="py-2.5 px-3 text-zinc-300">
-                    {formatAccountTag(ord.accountId)}
+                    {formatUSD(ord.price || ord.triggerPrice)}
                   </td>
                   <td className="py-2.5 px-3 text-zinc-400">
                     GTC

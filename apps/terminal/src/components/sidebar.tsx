@@ -35,9 +35,14 @@ const navSections: NavSection[] = [
     items: [{ href: "/", label: "Overview", icon: LayoutDashboard }],
   },
   {
-    title: "MONITOR",
+    title: "RISK",
     items: [
-      { href: "/live", label: "Live Risk", icon: Radio },
+      { href: "/live", label: "Monitor", icon: Radio },
+    ],
+  },
+  {
+    title: "TRADING",
+    items: [
       { href: "/positions", label: "Positions", icon: TrendingUp },
       { href: "/orders", label: "Orders", icon: ListOrdered },
     ],
@@ -45,7 +50,8 @@ const navSections: NavSection[] = [
   {
     title: "ACCOUNTS",
     items: [
-      { href: "/accounts", label: "Accounts", icon: Layers },
+      { href: "/accounts", label: "Active", icon: Layers },
+      { href: "/accounts?tab=archived", label: "Archived", icon: History },
     ],
   },
   {
@@ -150,8 +156,15 @@ export function Sidebar() {
               </div>
             )}
             {section.items.map(({ href, label, icon: Icon }) => {
+              const isArchivedLink = href.includes("tab=archived");
               const isActive =
-                href === "/" ? pathname === "/" : pathname.startsWith(href);
+                href === "/"
+                  ? pathname === "/"
+                  : isArchivedLink
+                  ? pathname === "/accounts" && (typeof window !== "undefined" && window.location.search.includes("tab=archived"))
+                  : href === "/accounts"
+                  ? pathname === "/accounts" && (typeof window === "undefined" || !window.location.search.includes("tab=archived"))
+                  : pathname.startsWith(href);
 
               return (
                 <Link
@@ -225,7 +238,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "hidden md:flex flex-col transition-all duration-300 h-screen shrink-0",
-          collapsed ? "w-14" : "w-52"
+          collapsed ? "w-14" : "w-56"
         )}
       >
         {renderNavContent(false)}

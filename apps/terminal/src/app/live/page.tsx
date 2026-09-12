@@ -178,12 +178,17 @@ export default async function LiveMonitorPage() {
                 </div>
 
                 {/* Zone 2: Hero Stat — Binding Limit Failure Room (24px+) */}
-                <div className="p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 space-y-1">
-                  <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block">
-                    Binding Failure Room ({bindingLimitName})
-                  </span>
+                <div className="p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-zinc-400 uppercase tracking-wider font-semibold">
+                      {isDailyConstrained ? "Daily-Loss Room" : "Drawdown Room"}
+                    </span>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
+                      BINDING LIMIT: <strong className="text-amber-300">{isDailyConstrained ? "Daily-loss threshold" : "Drawdown floor"}</strong>
+                    </span>
+                  </div>
                   <div className="flex items-baseline gap-2 font-mono">
-                    <span className={`text-2xl font-bold tracking-tight ${
+                    <span className={`text-3xl font-bold tracking-tight ${
                       pctUsed >= 75 ? "text-red-400" : pctUsed >= 50 ? "text-amber-400" : "text-white"
                     }`}>
                       {formatUSD(bindingRoom)}
@@ -216,21 +221,21 @@ export default async function LiveMonitorPage() {
                 {/* Zone 4: Key Financial Stats Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--border-subtle)] text-xs font-mono">
                   <div>
-                    <span className="text-zinc-500 block text-[11px]">Equity</span>
+                    <span className="text-zinc-400 block text-xs">Equity</span>
                     <span className="font-semibold text-white">{formatUSD(acc.equity || acc.balance)}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-500 block text-[11px]">Daily Floor</span>
-                    <span className="text-zinc-300 font-medium">
+                    <span className="text-zinc-400 block text-xs">Daily-loss threshold</span>
+                    <span className="text-zinc-200 font-medium">
                       {acc.dailyLossFloor ? formatUSD(acc.dailyLossFloor) : "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-zinc-500 block text-[11px]">Drawdown Room</span>
-                    <span className="text-zinc-300 font-medium">{formatUSD(ddBuffer)}</span>
+                    <span className="text-zinc-400 block text-xs">Drawdown Room</span>
+                    <span className="text-zinc-200 font-medium">{formatUSD(ddBuffer)}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-500 block text-[11px]">Profit Target</span>
+                    <span className="text-zinc-400 block text-xs">Profit Target</span>
                     <span className="text-emerald-400 font-semibold">
                       +{formatPercent(acc.profitTargetPct, 2)}
                     </span>
