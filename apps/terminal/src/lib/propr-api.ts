@@ -302,14 +302,17 @@ function dsFixed(v: Decimal, decimals = 2): string { return v.toFixed(decimals);
 let inFlightDashboardPromise: Promise<DashboardData> | null = null;
 let cachedDashboardResult: { data: DashboardData; timestamp: number } | null = null;
 
-export async function fetchDashboardData(): Promise<DashboardData> {
+export async function fetchDashboardData(forceRefresh = false): Promise<DashboardData> {
   const now = Date.now();
   // Cache for 10 seconds during server-side static rendering & rapid page generation
-  if (cachedDashboardResult && now - cachedDashboardResult.timestamp < 10000) {
+  if (!forceRefresh && cachedDashboardResult && now - cachedDashboardResult.timestamp < 10000) {
     return cachedDashboardResult.data;
   }
 
-  if (inFlightDashboardPromise) {
+  if (forceRefresh) {
+    cachedDashboardResult = null;
+    inFlightDashboardPromise = null;
+  } else if (inFlightDashboardPromise) {
     return inFlightDashboardPromise;
   }
 

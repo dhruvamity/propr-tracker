@@ -1,7 +1,7 @@
 "use client";
 
-import { RefreshCw, Menu } from "lucide-react";
-import { useState, useEffect } from "react";
+import { RefreshCw, Menu, FileDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useShell } from "./shell-context";
 import { cn } from "@/lib/utils";
@@ -25,8 +25,17 @@ export function TopBar() {
   const [relativeTime, setRelativeTime] = useState("now");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStale, setIsStale] = useState(false);
+  const [isMac, setIsMac] = useState(true);
 
   const pageTitle = ROUTE_TITLES[pathname] || "Trading Terminal";
+
+  // Check platform for shortcut badge (⌘K vs Ctrl+K)
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      const platform = navigator.platform || "";
+      setIsMac(/Mac|iPhone|iPad|iPod/.test(platform));
+    }
+  }, []);
 
   useEffect(() => {
     const updateRelative = () => {
@@ -58,17 +67,63 @@ export function TopBar() {
     return () => clearInterval(ticker);
   }, [health.lastSyncAt]);
 
-  const handleRefresh = async () => {
+  // Instant refresh handler (bypasses in-memory & HTTP cache via /api/refresh)
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
     setIsRefreshing(true);
-    await refreshHealth();
-    window.location.reload();
-  };
+    try {
+      await fetch("/api/refresh", { method: "POST" });
+      await refreshHealth();
+      window.location.reload();
+    } catch {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, refreshHealth]);
+
+  // Instant Markdown Export handler
+  const handleExportMarkdown = useCallback(() => {
+    const link = document.createElement("a");
+    link.href = "/api/export-markdown";
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  // Keyboard shortcut listener: Command+K (refresh) & Command+E (export)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement)?.isContentEditable;
+
+      // Command + K or Ctrl + K: Instant Refresh
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        void handleRefresh();
+        return;
+      }
+
+      // Command + E or Ctrl + E: Export Full Markdown
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        handleExportMarkdown();
+        return;
+      }
+
+      // Plain 'r' key when not focused on an input
+      if (!isInput && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        void handleRefresh();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleRefresh, handleExportMarkdown]);
 
   // ─── DataFreshness State (Prompt §2) ───
-  // OFFLINE: ● Offline
-  // STALE:   ● Stale · 2m ago
-  // LIVE WS: ● Live · 4s ago
-  // POLLING: Updated 4s ago (NO dot for ordinary healthy polling)
   let statusDot: React.ReactNode = null;
   let freshnessText = `Updated ${relativeTime}`;
 
@@ -83,9 +138,11 @@ export function TopBar() {
     freshnessText = `Live · ${relativeTime}`;
   }
 
+  const kMod = isMac ? "⌘" : "Ctrl+";
+
   return (
     <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] select-none">
-      {/* Left: Clean Page Title without generic subtitle filler (Prompt §1 & §28) */}
+      {/* Left: Clean Page Title */}
       <div className="flex items-center gap-3">
         <button
           onClick={toggleMobileNav}
@@ -100,25 +157,46 @@ export function TopBar() {
         </h1>
       </div>
 
-      {/* Right: Freshness state + refresh button (Prompt §2) */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 font-sans text-xs text-zinc-400">
-          {statusDot}
-          <span className="text-zinc-300">{freshnessText}</span>
-        </div>
+      {/* Right: Freshness state + Instant Refresh (⌘K) + Export .md (⌘E) */}
+      <div className="flex items-center gap-2.5">
+        {isRefreshing ? (
+          <span className="text-xs text-[var(--cyan)] font-sans animate-pulse flex items-center gap-1.5">
+            <RefreshCw size={12} className="animate-spin" />
+            <span>Syncing latest data...</span>
+          </span>
+        ) : (
+          <div className="flex items-center gap-1.5 font-sans text-xs text-zinc-400">
+            {statusDot}
+            <span className="text-zinc-300">{freshnessText}</span>
+          </div>
+        )}
 
+        {/* Instant Refresh Button with ⌘K Badge */}
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
           className={cn(
-            "w-7 h-7 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors",
-            isRefreshing && "animate-spin"
+            "h-7 px-2 rounded flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors border border-transparent hover:border-zinc-700/50 cursor-pointer",
+            isRefreshing && "text-zinc-200"
           )}
-          title="Refresh data"
-          aria-label="Refresh data"
+          title={`Fetch latest data (${kMod}K)`}
+          aria-label={`Fetch latest data (${kMod}K)`}
         >
-          <RefreshCw size={13} />
+          <RefreshCw size={13} className={cn(isRefreshing && "animate-spin text-[var(--cyan)]")} />
+          <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">{kMod}K</span>
         </button>
+
+        {/* Complete Markdown Export Button with ⌘E Badge */}
+        <a
+          href="/api/export-markdown"
+          download
+          className="h-7 px-2.5 rounded flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors border border-zinc-800 hover:border-zinc-700 text-xs font-sans font-medium"
+          title={`Export complete system dossier (.md) [${kMod}E]`}
+        >
+          <FileDown size={13} className="text-zinc-400" />
+          <span className="hidden sm:inline">Export .md</span>
+          <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">{kMod}E</span>
+        </a>
       </div>
     </header>
   );
