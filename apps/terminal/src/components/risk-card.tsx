@@ -1,7 +1,6 @@
 import React from "react";
 import type { AccountSnapshot } from "@/lib/propr-api";
-import { formatUSD, formatPercent, formatShortId } from "@/lib/utils";
-import { ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
+import { formatUSD, formatPercent, formatShortId, cn } from "@/lib/utils";
 
 interface RiskCardProps {
   account: AccountSnapshot;
@@ -83,10 +82,10 @@ export function RiskCard({ account, rank }: RiskCardProps) {
             <h3 className="font-semibold text-sm sm:text-base text-white tracking-wide">
               {account.challengeName || "Starter Turbo"}
             </h3>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold">
+            <span className="text-xs font-mono text-zinc-400 font-semibold">
               {cleanBadgeTag}
             </span>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 uppercase">
+            <span className="text-[11px] font-mono text-zinc-500 uppercase">
               {account.stage}
             </span>
           </div>
@@ -95,23 +94,30 @@ export function RiskCard({ account, rank }: RiskCardProps) {
           </p>
         </div>
 
-        {/* Risk Status Pill */}
-        <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold border ${
-            riskStatus === "SAFE"
-              ? "bg-emerald-950/50 text-emerald-400 border-emerald-800/50"
-              : riskStatus === "WATCH"
-              ? "bg-amber-950/50 text-amber-400 border-amber-800/50"
-              : "bg-red-950/50 text-red-400 border-red-800/50"
-          }`}
-        >
-          {riskStatus === "SAFE" && <ShieldCheck size={13} />}
-          {riskStatus === "WATCH" && <AlertTriangle size={13} />}
-          {(riskStatus === "CRITICAL" || riskStatus === "BREACHED") && (
-            <ShieldAlert size={13} className="animate-pulse" />
-          )}
-          {riskStatus}
-        </span>
+        {/* Status Indicator (Prompt §4: text + dot only, no border, no background) */}
+        <div className="flex items-center gap-1.5 text-xs font-mono font-semibold">
+          <span
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              riskStatus === "SAFE"
+                ? "bg-emerald-400"
+                : riskStatus === "WATCH"
+                ? "bg-amber-400"
+                : "bg-red-500 animate-pulse"
+            )}
+          />
+          <span
+            className={
+              riskStatus === "SAFE"
+                ? "text-emerald-400"
+                : riskStatus === "WATCH"
+                ? "text-amber-400"
+                : "text-red-400"
+            }
+          >
+            {riskStatus}
+          </span>
+        </div>
       </div>
 
       {/* ─── Zone 2: Hero Stat (Single Closest Failure Point) ─── */}

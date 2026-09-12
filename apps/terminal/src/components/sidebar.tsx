@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,7 +13,6 @@ import {
   History,
   Settings,
   ChevronLeft,
-  ChevronRight,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,31 +34,31 @@ const navSections: NavSection[] = [
     items: [{ href: "/", label: "Overview", icon: LayoutDashboard }],
   },
   {
-    title: "RISK",
+    title: "Risk",
     items: [
       { href: "/live", label: "Monitor", icon: Radio },
     ],
   },
   {
-    title: "TRADING",
+    title: "Trading",
     items: [
       { href: "/positions", label: "Positions", icon: TrendingUp },
       { href: "/orders", label: "Orders", icon: ListOrdered },
     ],
   },
   {
-    title: "ACCOUNTS",
+    title: "Accounts",
     items: [
       { href: "/accounts", label: "Active", icon: Layers },
       { href: "/accounts?tab=archived", label: "Archived", icon: History },
     ],
   },
   {
-    title: "FINANCE",
+    title: "Finance",
     items: [{ href: "/finance", label: "Finance", icon: Wallet }],
   },
   {
-    title: "SYSTEM",
+    title: "System",
     items: [{ href: "/system", label: "System", icon: Settings }],
   },
 ];
@@ -68,70 +67,21 @@ export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggleCollapsed, mobileNavOpen, setMobileNavOpen } = useShell();
 
-  const [relativeTime, setRelativeTime] = useState("15s ago");
-  const [restHealthy, setRestHealthy] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    let lastSync = Date.now() - 15000;
-
-    const fetchHealth = async () => {
-      try {
-        const res = await fetch("/api/health");
-        if (res.ok && isMounted) {
-          const data = await res.json();
-          if (data.health?.lastSyncAt) {
-            lastSync = new Date(data.health.lastSyncAt).getTime();
-          }
-          setRestHealthy(data.health?.restStatus === "HEALTHY");
-        }
-      } catch {
-        if (isMounted) setRestHealthy(false);
-      }
-    };
-
-    void fetchHealth();
-    const fetchInterval = setInterval(fetchHealth, 30000);
-
-    const updateRelative = () => {
-      const now = Date.now();
-      const diffSec = Math.max(0, Math.floor((now - lastSync) / 1000));
-      if (diffSec < 10) setRelativeTime("just now");
-      else if (diffSec < 60) setRelativeTime(`${diffSec}s ago`);
-      else if (diffSec < 3600) setRelativeTime(`${Math.floor(diffSec / 60)}m ago`);
-      else setRelativeTime(`${Math.floor(diffSec / 3600)}h ago`);
-    };
-
-    updateRelative();
-    const ticker = setInterval(updateRelative, 5000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(fetchInterval);
-      clearInterval(ticker);
-    };
-  }, []);
-
   const renderNavContent = (isMobile = false) => (
     <div className="flex flex-col h-full bg-[var(--bg-secondary)] border-r border-[var(--border-primary)] select-none">
-      {/* Brand Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--border-primary)]">
+      {/* ─── 1. Brand Header (Typographic lockup, no cyan box) ─── */}
+      <div className="flex items-center justify-between px-4 py-5 border-b border-zinc-900">
         <Link
           href="/"
           onClick={() => isMobile && setMobileNavOpen(false)}
-          className="flex items-center gap-2.5 group"
+          className="flex items-center gap-2"
         >
-          <div className="w-6 h-6 rounded bg-[var(--cyan)] flex items-center justify-center text-[11px] font-bold text-black flex-shrink-0 group-hover:scale-105 transition-transform">
-            P
-          </div>
-          {(!collapsed || isMobile) && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold tracking-widest text-white truncate">
-                PROPR
-              </span>
-              <span className="text-[9px] tracking-wider text-zinc-400 uppercase font-mono">
-                TRADING TERMINAL
-              </span>
+          {collapsed && !isMobile ? (
+            <span className="font-semibold text-base tracking-wider text-zinc-100 pl-0.5">P</span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-base tracking-wider text-zinc-100">PROPR</span>
+              <span className="text-[11px] font-mono text-zinc-500">// TERMINAL</span>
             </div>
           )}
         </Link>
@@ -146,12 +96,12 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Grouped Nav Sections */}
+      {/* ─── 2. Grouped Nav Sections ─── */}
       <nav className="flex-1 py-3 px-2 space-y-4 overflow-y-auto">
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1">
             {section.title && (!collapsed || isMobile) && (
-              <div className="px-2.5 py-1 text-[10px] font-mono font-semibold tracking-wider text-zinc-400">
+              <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500">
                 {section.title}
               </div>
             )}
@@ -172,10 +122,10 @@ export function Sidebar() {
                   href={href}
                   onClick={() => isMobile && setMobileNavOpen(false)}
                   className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs transition-all",
+                    "flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs transition-colors",
                     isActive
-                      ? "border-l-2 border-[var(--cyan)] bg-white/[0.05] text-white font-medium pl-2 shadow-[inset_4px_0_12px_rgba(0,229,255,0.03)]"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
+                      ? "border-l-[3px] border-[var(--cyan)] bg-white/[0.04] text-white font-medium pl-2"
+                      : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.02]"
                   )}
                   title={collapsed && !isMobile ? label : undefined}
                 >
@@ -196,39 +146,19 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Collapse Desktop Toggle */}
+      {/* ─── 3. Desktop Collapse Footer (No status bloat) ─── */}
       {!isMobile && (
-        <button
-          onClick={toggleCollapsed}
-          className="hidden md:flex items-center justify-center py-2.5 border-t border-[var(--border-primary)] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.02] transition-colors text-[11px] font-mono"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronRight size={14} />
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <ChevronLeft size={14} />
-              <span>Collapse</span>
-            </div>
-          )}
-        </button>
+        <div className="p-2 border-t border-zinc-900">
+          <button
+            onClick={toggleCollapsed}
+            className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors w-full px-2.5 py-2 rounded"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronLeft className={cn("h-4 w-4 transition-transform shrink-0", collapsed && "rotate-180")} />
+            {!collapsed && <span>Collapse</span>}
+          </button>
+        </div>
       )}
-
-      {/* Bottom Health Indicators */}
-      <div className="px-3.5 py-3 border-t border-[var(--border-primary)] bg-black/20 text-[10px] font-mono space-y-1.5">
-        <div className="flex items-center gap-2" title={`REST API: ${restHealthy ? "HEALTHY" : "OFFLINE"}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${restHealthy ? "bg-emerald-400" : "bg-red-500"}`} />
-          {(!collapsed || isMobile) && (
-            <span className="text-zinc-400">{restHealthy ? "REST API healthy" : "REST API offline"}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2" title="Telemetry freshness">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          {(!collapsed || isMobile) && (
-            <span className="text-zinc-400">Data updated {relativeTime}</span>
-          )}
-        </div>
-      </div>
     </div>
   );
 

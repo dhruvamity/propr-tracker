@@ -1,140 +1,318 @@
-# No AI slop eval
+Five elements in the layout suffer from dashboard bloat: redundant status dots, duplicated account counts, and decorative badges that state the obvious.
 
-Use this after the rewrite. Answer each check with pass or fail. If any check fails, fix the draft before returning it.
-
-For detect requests, make sure the response names each pattern found with a quoted line and a short fix, without rewriting the draft.
-
-## Editing principles
-
-1. Does the edit preserve the user's point without adding claims, examples, stats, quotes, or opinions?
-2. Does it preserve the writer's distinctive vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish?
-3. Does it leave strong human sentences alone instead of rewriting them for consistency or making every paragraph equally tidy?
-4. Is the amount of cutting proportional to the actual slop, with no aggressive compression that strips out character?
-5. Does the draft lead with what the reader needs while keeping personal setup that adds context, tension, or character?
-6. Are points front-loaded where that improves clarity without forcing every unit into the same structure?
-7. Do sentences earn their place, with concrete facts, protected details, and direct verbs where the draft supports them?
-8. Does every generic sentence pass the portability test, or was it cut or made specific to this subject?
-9. Does the draft use active voice with human subjects where possible?
-10. Does the edit keep useful edge and preserve structure unless the structure was hurting the piece?
-11. Are genuinely tangled sentences fixed while clear spoken cadence, fragments, and changes in pace remain intact?
-
-## Words to cut
-
-1. Are banned words, filler phrases, often-empty adverbs, and inflated claims removed unless quoted as examples?
-
-## Patterns to cut
-
-1. Are binary contrasts, negative listings, rhetorical setups, and throat-clearing openers removed?
-2. Are faux-insight setups, colon reveals, superficial analysis, fake-strong verbs, synonym cycling, dramatic fragments, and robotic rhythm fixed?
-3. Are importance puffery and weasel attribution replaced with plain facts and named sources, or flagged for the user when no source exists?
-4. Is interpretive metadiscourse removed, including authorial metacommentary, reader guidance, emphasis markers, and redundant glossing?
-5. Are fake-profound kicker lines deleted instead of rewritten into better metaphors?
-6. Are summary-recap endings cut so the piece ends on a concrete point, takeaway, or next action?
-7. Is formatting slop removed: Emoji headings, decorative bold, bullets that should be prose, headers over tiny sections?
-8. Are colons sentence case unless grammar, a proper noun, a title, or code requires otherwise?
-9. Are em dashes used sparingly: Usually none in short copy, and only 1-2 in longer drafts when they clearly help?
-
-## Final read
-
-1. Does the draft avoid robotic symmetry, repeated sentence shapes, and stacked punchy fragments?
-2. Would the writer recognize the edited draft as their own voice?
-3. Would the edited draft sound natural if read to a sharp colleague?
-4. Does the final output include the full edited draft and a short **What changed** section?
-5. For detect requests, does the response name each pattern with a quoted line and a short fix, without rewriting, scoring, or claiming AI authorship?
----
-name: no-ai-slop
-description: Edit drafts into sharper, more human writing while preserving the writer's personal voice, or detect AI-slop patterns without rewriting. Use when the user wants a draft clearer, more direct, more opinionated, or less AI-sounding, or asks whether writing reads as AI.
 ---
 
-# No AI slop
+### 1. Top-Left Brand Block (`sidebar.tsx`)
 
-You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.
+* **Why it reads as slop:** The cyan square "P" with stacked micro-labels (`PROPR / TRADING TERMINAL`) looks like a generic boilerplate template.
+* **The Fix:** Drop the cyan box. Use a clean, confident typographic lockup with tight tracking.
 
-## Two jobs
+```tsx
+// Replace the logo box with a minimal typographic header:
+<div className="flex items-center gap-2 px-4 py-5 border-b border-zinc-900">
+  <span className="font-semibold text-sm tracking-wider text-zinc-100">PROPR</span>
+  <span className="text-[11px] font-mono text-zinc-500">// TERMINAL</span>
+</div>
 
-**Edit (default).** The user shares a draft to fix. Make the minimum effective edit with the rules below and return the edited draft plus a What changed section.
+```
 
-**Detect.** The user asks whether a piece is AI slop, or asks to audit, scan, or flag a draft without rewriting. Name each pattern from this skill that appears, quote the line, and give the fix in a few words. Do not rewrite, score the draft, or guess whether AI wrote it. AI detectors guess. Named patterns are evidence the user can check. Offer to edit the draft after.
+---
 
-## What to ask for
+### 2. Top-Right Status Cluster (`top-bar.tsx`)
 
-If the user has not provided a draft, ask them to paste it.
+* **Why it reads as slop:** It clusters four separate widgets together: a `POLLING (15s)` pill, a `Updated 15s ago` timestamp, separate `REST` and `WS` indicator dots, and a refresh icon. This is telemetry overkill for a primary navigation bar.
+* **The Fix:** Collapse everything into a single, muted status indicator and a plain refresh button. Move raw connection diagnostics exclusively to the `/system` page.
 
-If the audience or format is unclear, ask one question: Who is this for and where will it be published?
+```tsx
+// Clean top-right status:
+<div className="flex items-center gap-3 text-xs text-zinc-400">
+  <div className="flex items-center gap-1.5 font-mono text-[11px]">
+    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+    <span>Synced 15s ago</span>
+  </div>
+  <button 
+    onClick={onRefresh}
+    className="p-1 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
+    aria-label="Refresh data"
+  >
+    <RefreshCw className="h-3.5 w-3.5" />
+  </button>
+</div>
 
-If the goal is unclear, ask what the reader should think, feel, or do after reading it.
+```
 
-## Editing principles
+---
 
-- **Preserve the writer's real voice.** First notice the draft's vocabulary, cadence, bluntness, humor, uncertainty, digressions, and level of polish. Keep the traits that feel personal to the writer. Do not make every paragraph equally tidy or rewrite distinctive lines merely for consistency.
-- **Make the minimum effective edit.** Fix AI patterns, errors, repetition, and unclear passages. Leave strong human sentences alone. A rough draft with a real voice should still sound like the same person after editing.
-- **Lead with the point when the setup adds nothing.** Cut generic throat-clearing. Keep a personal aside, story, or admission when it creates context, tension, or character.
-- **Front-load only when it improves clarity.** Put conclusions early when that helps the reader. Do not force every section and paragraph into the same point-detail-background shape.
-- **Keep the user's meaning.** Don't invent claims, examples, stats, or opinions. If something is unclear, ask.
-- **Open it up, don't dumb it down.** Keep the substance, nuance, and precision. Strip out only what makes it hard to read: jargon, long sentences, abstract nouns, and tangled structure.
-- **Use active voice.** "The team shipped it Tuesday" beats "the decision emerged." Never let inanimate things do human verbs.
-- **Make every sentence earn its place.** Cut empty qualifiers and throat-clearing. Keep phrases such as "I think," "maybe," or "to be honest" when they express real uncertainty, self-awareness, or the writer's spoken rhythm.
-- **Untangle sentences without flattening the cadence.** Split sentences and paragraphs when they are genuinely hard to follow. Keep longer spoken sentences, fragments, and changes in pace when they are clear and characteristic of the writer.
-- **Be concrete and specific.** Abstraction is where writing goes to die. "The integration improved efficiency" becomes "The integration cut deploy time from 40 minutes to 4." Names, numbers, dates, mechanisms, and examples beat abstractions.
-- **Use the portability test.** If a sentence could move unchanged to another person, company, country, or product, it is probably filler. Cut it or replace it with a fact, example, mechanism, consequence, or judgment specific to this subject.
-- **Always show, don't tell the reader what to think.** Make facts, actions, examples, and consequences carry the emphasis. Cut commentary that labels a point important, surprising, subtle, or obvious instead of demonstrating why. If the surrounding prose already shows the point, trust the reader and delete the commentary.
-- **Protect the specific fact.** Don't smooth a useful detail into generic importance. "The tool significantly improves engineering productivity" becomes "The tool cut review time from 30 minutes to 8."
-- **Make verbs do the work.** Replace weak verb phrases with direct verbs. "Made a decision" becomes "decided." "Has the ability to" becomes "can."
-- **Know the job.** Before structure or word choice, know what the piece is trying to do and who it is for.
-- **Preserve useful edge and character.** Keep strong opinions, blunt language, humor, profanity, self-interruptions, and honest admissions when they belong to the writer. Don't replace them with safer or more professional wording.
-- **Keep structure unless it's hurting the piece.** Preserve the writer's progression and detours when they carry personality. If you reorganize, say why in the What changed section.
+### 3. Upper-Right Ledger Counter (`page.tsx`)
 
-## Words to cut
+* **Why it reads as slop:** A pill displaying `2 Active · 6 Failed` floats inside the **Capital Ledger** card. Account lifecycle counts have no relationship to a fiat expense ledger. Worse, the section directly below is already titled `ACTIVE ACCOUNTS (2)`, and the link beneath says `Archived / Breached Accounts (6)`.
+* **The Fix:** Delete this floating pill entirely from the Capital Ledger container. Let the ledger card focus strictly on cash numbers (Total Outflow, Active Capital, Net Outflow).
 
-Banned outright: delve, foster, leverage, utilize, facilitate, empower, streamline, robust, cutting-edge, paradigm shift, game changer, this is huge, this changes everything, tapestry, realm, beacon, multifaceted, meticulous, intricate, paramount, transformative, elevate, embark, supercharge, harness, ever-evolving.
+---
 
-Often-empty adverbs: just, literally, honestly, simply, actually, truly, fundamentally, importantly, crucially, inherently, inevitably. Cut them when they add nothing. Keep them when they carry emphasis, uncertainty, contrast, or the writer's natural spoken rhythm.
+### 4. Shield "SAFE" Badges on Risk Cards (`risk-card.tsx`)
 
-Often-empty phrases: it's worth noting, it's important to note, at the end of the day, when it comes to, at its core, in today's world, in the age of, in the world of, the reality is, the truth is, in terms of, with regard to, in order to, going forward, in this article, let's dive in. Cut them when they delay the point. Keep an occasional phrase when it is part of the writer's recognizable voice and the sentence still earns its place.
+* **Why it reads as slop:** Antivirus-style shield badges labeled `SAFE` treat the user like an amateur. The numbers ($152.35 and $305.21 room to floor) already tell the trader their exact position.
+* **The Fix:** Remove the shield badge. Show a plain, muted tag only when an account is under active risk rules, and let healthy accounts remain unbadged.
 
-## Patterns to cut
+```tsx
+// Instead of a green [Shield SAFE] pill:
+// If healthy: render nothing or just the account tier/mode.
+// If critical (<$50 to floor): render a minimal text warning.
+{isNearBreach ? (
+  <span className="text-[11px] font-mono uppercase tracking-wider text-rose-400 bg-rose-950/40 border border-rose-900/60 px-2 py-0.5 rounded">
+    Breach Warning
+  </span>
+) : (
+  <span className="text-[11px] font-mono text-zinc-500">
+    EVALUATION
+  </span>
+)}
 
-**Binary contrasts.** "This is not X. It's Y." / "The question isn't X, it's Y." / "It's not just X but Y." State Y directly. "The question isn't the model. It's the eval." becomes "The eval matters more than the model."
+```
 
-**Throat-clearing openers.** "Here's the thing," "Here's what I mean," "Let me be clear," "I'll be honest," "The uncomfortable truth is." Cut them and state the point.
+---
 
-**Faux-insight setups.** "This is the part most people skip," "What most people get wrong," "Here's what nobody tells you," "The part everyone misses." These flatter the writer as the lone expert. Cut the setup and make the claim stand on its own. "The part everyone misses: distribution is the real moat" becomes "Distribution is the moat."
+### 5. Bottom-Left Sidebar Telemetry (`sidebar.tsx`)
 
-**Colon reveals.** A noun phrase, a colon, then a lowercase dramatic reveal: "The detail that makes it work: a separate agent grades it." "The best part: it learns." Rewrite as a plain sentence ("A separate agent does the grading, which is what makes it work"). Use colons for lists, labels, and quotes, not fake drama. Prefer sentence case after a colon unless grammar, a proper noun, a title, or code requires otherwise.
+* **Why it reads as slop:** `REST API Healthy` and `Data updated 15s ago` repeat the top bar's telemetry word for word. Placing redundant heartbeat monitors in two opposing corners of the screen adds visual noise.
+* **The Fix:** Strip out the entire bottom telemetry block. Keep the sidebar footer dedicated to the sidebar collapse button and app version.
 
-**Superficial analysis.** Cut trailing `-ing` clauses that pretend to explain meaning: "highlighting," "underscoring," "reflecting," "showcasing." "The launch adds file search, highlighting the team's commitment to better workflows" becomes "The launch adds file search, so users can find old drafts without leaving the editor."
+```tsx
+// Remove the stacked status dots. Keep the sidebar footer clean:
+<div className="p-3 border-t border-zinc-900">
+  <button
+    onClick={() => setCollapsed(!collapsed)}
+    className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors w-full px-2 py-1.5"
+  >
+    <ChevronLeft className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+    {!collapsed && <span>Collapse</span>}
+  </button>
+</div>
 
-**Importance puffery.** "Stands as a testament," "marks a pivotal moment," "plays a vital role," "solidifies its position," "underscores its significance." State the fact and let the reader judge whether it matters. "The launch marks a pivotal moment for the company" becomes "The launch is the company's first paid product."
+```
 
-**Interpretive metadiscourse.** Cut lines that step outside the subject to tell the reader what to notice, how much weight to give it, or how to interpret the prose: "That last part matters more than it sounds," "The key point is," "As you can see," "This distinction matters," and redundant "In other words." If the point is clear, delete the aside. Otherwise, replace it with support or facts already in the content.
+---
 
-**Weasel attribution.** "Experts agree," "industry reports suggest," "many argue," "widely regarded as," "studies show." Name the source or cut the claim. If the user has no source, ask instead of inventing one.
+# UI Refactor: Remove AI-Slop Shell Components
 
-**Fake-strong verbs.** Prefer "is" and "has" when they are clearer. "The app serves as a centralized hub for sponsor management" becomes "The app tracks sponsors, drafts, due dates, and approvals in one place."
+The current terminal shell still uses generic rounded pills, tiny telemetry labels,
+duplicated health states, and decorative badges. Refactor these components without
+changing business logic or financial calculations.
 
-**Synonym cycling.** If the clear word is right, repeat it. Don't rotate terms for style. "The agent reviews the draft. The assistant scores the piece. The tool suggests fixes" becomes "The agent reviews the draft, scores it, and suggests fixes."
+## Files
 
-**Negative listing.** "Not a X. Not a Y. A Z." Just say Z.
+Primary:
+- apps/terminal/src/components/sidebar.tsx
+- apps/terminal/src/components/top-bar.tsx
 
-**Dramatic fragmentation.** "X. And Y. And Z." or "That's it. That's the whole thing." Use complete sentences.
+Shared:
+- shell-context / health state implementation
+- status/badge utilities if present
+- global styling tokens/classes as needed
 
-**Robotic rhythm.** Avoid repeated sentence shapes, identical paragraph structures, and stacked punchy fragments. Vary the shape only when it helps the point.
+## 1. Brand
 
-**Rhetorical setups.** "What if I told you...", "Think about it:", "Plot twist:", and self-answered "Question? Answer." pairs. Drop them and make the point.
+Replace the current cyan rounded-square P logo treatment.
 
-**Fake-profound kickers.** Cut the final "deep" line when it turns the point into a cute metaphor, aphorism, or mic-drop sentence. Do not rewrite it into a better metaphor. Do not preserve the rhythm. Delete it, then end on the clearest concrete sentence already in the draft. If the ending needs more closure, add a plain takeaway or next action.
+Current:
+- cyan 24px rounded square
+- "P"
+- tracked PROPR
+- 9px "TRADING TERMINAL"
+- hover scale
 
-**Summary-recap endings.** "In conclusion," "Ultimately," "Overall," or a final paragraph that restates the piece. The reader was just there. End on the last concrete point, takeaway, or next action instead.
+New:
+- use existing real brand asset from public/ if available
+- otherwise use a minimal text-based mark
+- PROPR: 16px semibold
+- Trading Terminal: 11px muted
+- no cyan square
+- no hover scale
+- no glow
+- no decorative animation
 
-**Formatting slop.** Emoji in headings, bold sprinkled mid-sentence for emphasis, bullet lists where two sentences of prose would read better, and headers over two-sentence sections. Format should follow the content, not decorate it.
+## 2. TopBar freshness
 
-**Em dashes.** Do not use them as a default rhythm crutch. In short copy, use none. In longer drafts, 1-2 are fine if they clearly beat commas, periods, or parentheses. Remove clusters and decorative dashes.
+Delete the bordered "POLLING · 15s" badge.
 
-## Workflow
+Create a shared DataFreshness component/state:
 
-1. Read the full draft before editing.
-2. Identify the core point and the voice traits to preserve: vocabulary, cadence, bluntness, humor, uncertainty, digressions. If you cannot identify the core point, ask the user.
-3. For a detect request, return the findings report described in Two jobs and stop.
-4. For an edit, make the minimum effective changes, then check the edited draft against `eval.md` yourself.
-5. If any check fails, fix the draft and run the checks again.
-6. Output the full edited draft and a short **What changed** section.
+- LIVE: "● Live · 2s ago"
+- POLLING: "● Updated 15s ago"
+- STALE: "● Stale · 2m ago"
+- OFFLINE: "● Offline"
+
+Rules:
+- no bordered pill
+- no filled badge background
+- no transport terminology in normal user-facing header
+- keep refresh icon as a separate 32–36px icon button
+
+REST/WS transport details belong on System, not the normal shell.
+
+## 3. Remove duplicate REST/WS header telemetry
+
+Delete the "REST ● WS ○" group from the normal top bar.
+
+Do not remove the underlying health state.
+
+Expose it only through:
+- System page
+- tooltip/detail view if needed
+
+## 4. Account status badges
+
+Replace rounded SAFE/CRITICAL/BREACHED pills with:
+
+- "● SAFE"
+- "● CRITICAL"
+- "● BREACHED"
+
+Rules:
+- text + dot only
+- no border
+- no background
+- no shield icon
+- green/amber/red semantic color
+- keep Evaluation/Funded as muted plain text, not pill-shaped badges
+
+## 5. Active/Failed counts
+
+Replace:
+- [2 Active]
+- [6 Failed]
+
+with:
+"2 active · 6 failed"
+
+Counts become pills only when they are interactive filters on Accounts.
+
+## 6. Sidebar footer
+
+Delete the bottom:
+- REST API healthy
+- Data updated X ago
+
+Do not replace them with another status block.
+
+Sidebar should end after the collapse control.
+
+## 7. Remove Sidebar health polling
+
+Sidebar must not independently fetch /api/health.
+
+Create or reuse one shared system-health state/hook.
+
+TopBar and System consume the same state.
+
+Sidebar consumes none of it.
+
+This prevents duplicated polling and inconsistent UI state.
+
+## 8. Sidebar section labels
+
+Change:
+- RISK
+- TRADING
+- ACCOUNTS
+- FINANCE
+- SYSTEM
+
+to normal title case:
+- Risk
+- Trading
+- Accounts
+- Finance
+- System
+
+Style:
+- 11–12px
+- semibold
+- muted
+- Inter/system font
+- no monospace
+- no excessive tracking
+
+## 9. Active nav item
+
+Remove the rounded-card + inset-shadow appearance.
+
+Use:
+- 3px cyan left indicator
+- subtle surface background
+- white text
+- no glow
+- no heavy border
+
+## 10. Global shell rule
+
+Do not use the following pattern for normal UI state:
+rounded pill + border + colored background + icon + tiny uppercase text.
+
+Use:
+- typography for brand
+- typography + indicator for navigation
+- dot + text for state
+- plain text for counts
+- pills only for interactive filters
+
+## 11. Preserve invariants
+
+Do NOT change:
+- risk calculations
+- breach/daily-loss calculations
+- finance calculations
+- account data
+- polling interval
+- WebSocket behavior
+- read-only behavior
+- stale/offline semantics
+
+The repository is a read-only monitoring terminal, not an execution interface.
+
+## 12. Acceptance criteria
+
+At 2560x1440 and 1920x1080:
+
+- top bar contains only page context + freshness + refresh
+- no bordered polling badge
+- no REST/WS telemetry cluster in normal top bar
+- no health block at bottom of sidebar
+- no rounded SAFE/CRITICAL badges
+- no rounded Active/Failed summary badges unless interactive
+- sidebar looks like navigation, not a monitoring console
+- brand looks intentional rather than like a generated app-logo treatment
+- all important shell text remains >= 12px
+- no duplicated health polling between Sidebar and TopBar
+The key rule
+
+Do not replace one AI-slop component with a different AI-slop component.
+
+Don't turn:
+
+[ ● POLLING · 15s ]
+
+into:
+
+[ ● DATA FRESH ]
+
+That is the same problem with different wording.
+
+Turn it into:
+
+● Updated 15s ago
+
+Likewise:
+
+[ 🛡 SAFE ]
+
+shouldn't become:
+
+[ ✓ HEALTHY ]
+
+It should become:
+
+● SAFE
+
+That's the visual language this terminal needs.

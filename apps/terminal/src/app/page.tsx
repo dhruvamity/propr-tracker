@@ -103,14 +103,6 @@ export default async function OverviewPage() {
               INR Base
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-xs font-mono bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium">
-              {summary.activeEvals + summary.funded} Active
-            </span>
-            <span className="px-2 py-0.5 rounded text-xs font-mono bg-red-950/40 text-red-400 border border-red-800/40 font-medium">
-              {summary.failedBreached} Failed
-            </span>
-          </div>
         </div>
 
         {/* Primary Cash Figures (24px-30px bold numbers) */}

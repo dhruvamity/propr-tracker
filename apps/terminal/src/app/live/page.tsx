@@ -128,24 +128,24 @@ export default async function LiveMonitorPage() {
 
             // Semantic Color & Status Logic
             let statusText = "SAFE";
-            let statusBadgeClass = "bg-emerald-950/60 text-emerald-400 border-emerald-800/50";
+            let dotColor = "bg-emerald-400";
+            let textColor = "text-emerald-400";
             let barColor = "bg-emerald-500";
 
             if (acc.stage === "BREACHED" || acc.stage === "FAILED" || pctUsed >= 100) {
               statusText = "BREACHED";
-              statusBadgeClass = "bg-red-950/80 text-red-400 border-red-800";
+              dotColor = "bg-red-500 animate-pulse";
+              textColor = "text-red-400";
               barColor = "bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.7)]";
-            } else if (pctUsed >= 90) {
-              statusText = "CRITICAL";
-              statusBadgeClass = "bg-red-950/80 text-red-400 border-red-800";
-              barColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]";
             } else if (pctUsed >= 75) {
               statusText = "CRITICAL";
-              statusBadgeClass = "bg-orange-950/80 text-orange-400 border-orange-800";
-              barColor = "bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.5)]";
+              dotColor = "bg-red-500 animate-pulse";
+              textColor = "text-red-400";
+              barColor = "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.7)]";
             } else if (pctUsed >= 50) {
               statusText = "CAUTION";
-              statusBadgeClass = "bg-amber-950/60 text-amber-400 border-amber-800/50";
+              dotColor = "bg-amber-400";
+              textColor = "text-amber-400";
               barColor = "bg-amber-500";
             }
 
@@ -167,13 +167,14 @@ export default async function LiveMonitorPage() {
                       {formatAccountTag(acc.accountId)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-zinc-900 border border-zinc-800 text-zinc-300 uppercase">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-mono text-zinc-500 uppercase">
                       {acc.stage}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold border ${statusBadgeClass}`}>
-                      {statusText}
-                    </span>
+                    <div className="flex items-center gap-1.5 text-xs font-mono font-semibold">
+                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                      <span className={textColor}>{statusText}</span>
+                    </div>
                   </div>
                 </div>
 

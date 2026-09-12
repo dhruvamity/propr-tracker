@@ -18,12 +18,12 @@ export default async function SystemPage() {
             Connection health, pipeline synchronization, and telemetry state
           </p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-            Engine: Propr Core
-          </span>
-          <span className="px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-800/40 text-emerald-400">
-            Read-Only: Active
+        <div className="flex items-center gap-3 font-mono text-xs text-zinc-400">
+          <span>Engine: <strong className="text-zinc-200">Propr Core</strong></span>
+          <span>•</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-emerald-400">Read-Only Active</span>
           </span>
         </div>
       </div>

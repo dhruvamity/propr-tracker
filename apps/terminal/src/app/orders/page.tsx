@@ -42,8 +42,8 @@ export default async function OrdersPage() {
                 {activeAccounts.length} active accounts · no pending orders or protective stops
               </p>
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-zinc-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <div className="inline-flex items-center gap-2 text-xs font-mono text-zinc-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               <span>Checked now · Upstream queue clear · Zero resting orders</span>
             </div>
           </div>

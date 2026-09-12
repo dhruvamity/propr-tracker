@@ -19,16 +19,8 @@ export default async function AccountsPage() {
             Active evaluations, funded accounts, and challenge history
           </p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300">
-            Total: {summary.totalAccounts}
-          </span>
-          <span className="px-2.5 py-1 rounded bg-emerald-950/40 border border-emerald-800/40 text-emerald-400">
-            Active: {summary.activeEvals + summary.funded}
-          </span>
-          <span className="px-2.5 py-1 rounded bg-red-950/40 border border-red-800/40 text-red-400">
-            Failed: {summary.failedBreached}
-          </span>
+        <div className="text-xs font-mono text-zinc-400">
+          {summary.totalAccounts} total · {summary.activeEvals + summary.funded} active · {summary.failedBreached} failed
         </div>
       </div>
 

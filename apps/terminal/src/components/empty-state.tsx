@@ -78,10 +78,10 @@ export function EmptyState({
         </div>
       )}
 
-      {/* Optional Status Pill */}
+      {/* Optional Status Indicator */}
       {statusBadge && (
-        <div className="mt-3.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           <span>{statusBadge}</span>
         </div>
       )}

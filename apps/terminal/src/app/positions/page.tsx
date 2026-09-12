@@ -43,8 +43,8 @@ export default async function PositionsPage() {
                 {activeAccounts.length} active accounts · flat
               </p>
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-zinc-400">
-              <span className="w-2 h-2 rounded-full bg-[var(--cyan)] animate-pulse" />
+            <div className="inline-flex items-center gap-2 text-xs font-mono text-zinc-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--cyan)]" />
               <span>Checked now · Telemetry active · Listening for fills</span>
             </div>
           </div>

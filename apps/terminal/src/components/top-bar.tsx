@@ -4,12 +4,7 @@ import { RefreshCw, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useShell } from "./shell-context";
-
-interface HealthData {
-  restStatus: "HEALTHY" | "ERROR" | "UNKNOWN";
-  wsStatus: "CONNECTED" | "DISCONNECTED" | "ERROR";
-  lastSyncAt: string;
-}
+import { cn } from "@/lib/utils";
 
 const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
   "/": {
@@ -48,14 +43,9 @@ const ROUTE_HEADERS: Record<string, { title: string; subtitle: string }> = {
 
 export function TopBar() {
   const pathname = usePathname();
-  const { toggleMobileNav } = useShell();
+  const { toggleMobileNav, health, refreshHealth } = useShell();
 
-  const [health, setHealth] = useState<HealthData>({
-    restStatus: "HEALTHY",
-    wsStatus: "DISCONNECTED",
-    lastSyncAt: "",
-  });
-  const [relativeTime, setRelativeTime] = useState("Just now");
+  const [relativeTime, setRelativeTime] = useState("just now");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStale, setIsStale] = useState(false);
 
@@ -67,35 +57,9 @@ export function TopBar() {
     };
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchHealth = async () => {
-      try {
-        const res = await fetch("/api/health");
-        if (res.ok && isMounted) {
-          const data = await res.json();
-          if (data.health) {
-            setHealth(data.health);
-          }
-        }
-      } catch {
-        if (isMounted) {
-          setHealth((h) => ({ ...h, restStatus: "ERROR" }));
-        }
-      }
-    };
-
-    void fetchHealth();
-    const interval = setInterval(fetchHealth, 30000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  useEffect(() => {
     const updateRelative = () => {
       if (!health.lastSyncAt) {
-        setRelativeTime("Just now");
+        setRelativeTime("just now");
         setIsStale(false);
         return;
       }
@@ -105,7 +69,7 @@ export function TopBar() {
 
       setIsStale(diffSec > 60);
 
-      if (diffSec < 10) setRelativeTime("Just now");
+      if (diffSec < 10) setRelativeTime("just now");
       else if (diffSec < 60) setRelativeTime(`${diffSec}s ago`);
       else if (diffSec < 3600) setRelativeTime(`${Math.floor(diffSec / 60)}m ago`);
       else
@@ -122,48 +86,29 @@ export function TopBar() {
     return () => clearInterval(ticker);
   }, [health.lastSyncAt]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
+    await refreshHealth();
     window.location.reload();
   };
 
-  // Determine Semantic 4-State Status Badge (Prompt Requirement §2)
-  let statusBadge: {
-    label: string;
-    dotClass: string;
-    textClass: string;
-    containerClass: string;
-  };
+  // ─── DataFreshness State (Prompt §2: No bordered pill, dot + text only) ───
+  // LIVE:    ● Live · 2s ago
+  // POLLING: ● Updated 15s ago
+  // STALE:   ● Stale · 2m ago
+  // OFFLINE: ● Offline
+  let dotColor = "bg-emerald-400";
+  let freshnessText = `Updated ${relativeTime}`;
 
   if (health.restStatus === "ERROR") {
-    statusBadge = {
-      label: "OFFLINE",
-      dotClass: "bg-red-500",
-      textClass: "text-red-400",
-      containerClass: "bg-red-950/40 border-red-800/50",
-    };
+    dotColor = "bg-red-500";
+    freshnessText = "Offline";
   } else if (isStale) {
-    statusBadge = {
-      label: "STALE",
-      dotClass: "bg-amber-500 animate-pulse",
-      textClass: "text-amber-400",
-      containerClass: "bg-amber-950/40 border-amber-800/50",
-    };
-  } else if (health.restStatus === "HEALTHY" && health.wsStatus === "CONNECTED") {
-    statusBadge = {
-      label: "LIVE",
-      dotClass: "bg-emerald-400 animate-pulse",
-      textClass: "text-emerald-400",
-      containerClass: "bg-emerald-950/40 border-emerald-800/50",
-    };
-  } else {
-    // REST healthy + WS disconnected (Polling mode)
-    statusBadge = {
-      label: "POLLING · 15s",
-      dotClass: "bg-[var(--cyan)]",
-      textClass: "text-[var(--cyan)]",
-      containerClass: "bg-cyan-950/40 border-cyan-800/50",
-    };
+    dotColor = "bg-amber-400 animate-pulse";
+    freshnessText = `Stale · ${relativeTime}`;
+  } else if (health.wsStatus === "CONNECTED") {
+    dotColor = "bg-emerald-400 animate-pulse";
+    freshnessText = `Live · ${relativeTime}`;
   }
 
   return (
@@ -182,55 +127,28 @@ export function TopBar() {
           <h1 className="text-sm md:text-base font-semibold text-white tracking-wide">
             {headerInfo.title}
           </h1>
-          <p className="text-[11px] text-zinc-400 hidden sm:block">
+          <p className="text-xs text-zinc-400 hidden sm:block">
             {headerInfo.subtitle}
           </p>
         </div>
       </div>
 
-      {/* Right: Semantic Connection State, Relative Sync & Refresh */}
-      <div className="flex items-center gap-3 md:gap-5">
-        {/* Semantic Status Badge */}
-        <div
-          className={`flex items-center gap-2 px-2.5 py-1 rounded-md border text-xs font-mono font-medium ${statusBadge.containerClass}`}
-        >
-          <div className={`w-2 h-2 rounded-full ${statusBadge.dotClass}`} />
-          <span className={`${statusBadge.textClass} text-[11px]`}>
-            {statusBadge.label}
-          </span>
+      {/* Right: Freshness state (dot + text) + plain 32px refresh button */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-400">
+          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dotColor)} />
+          <span className="text-zinc-300">{freshnessText}</span>
         </div>
 
-        {/* Relative Sync Timing */}
-        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-zinc-400">
-          <span>Updated</span>
-          <span className="text-zinc-200">{relativeTime}</span>
-        </div>
-
-        {/* REST / WS Mini Telemetry Dots (REST ●   WS ○) */}
-        <div className="hidden lg:flex items-center gap-3 text-[11px] font-mono select-none">
-          <div className="flex items-center gap-1.5" title={`REST API: ${health.restStatus}`}>
-            <span className="text-zinc-400">REST</span>
-            <span className={health.restStatus === "HEALTHY" ? "text-emerald-400 text-xs leading-none" : "text-red-400 text-xs leading-none"}>
-              ●
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5" title={`WebSocket: ${health.wsStatus}`}>
-            <span className="text-zinc-400">WS</span>
-            <span className={health.wsStatus === "CONNECTED" ? "text-emerald-400 text-xs leading-none" : "text-zinc-500 text-xs leading-none font-bold"}>
-              {health.wsStatus === "CONNECTED" ? "●" : "○"}
-            </span>
-          </div>
-        </div>
-
-        {/* Refresh Button */}
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className={`p-1.5 rounded hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-white ${
-            isRefreshing ? "animate-spin" : ""
-          }`}
-          title="Refresh Data"
-          aria-label="Refresh Data"
+          className={cn(
+            "w-8 h-8 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors",
+            isRefreshing && "animate-spin"
+          )}
+          title="Refresh data"
+          aria-label="Refresh data"
         >
           <RefreshCw size={14} />
         </button>
