@@ -104,7 +104,7 @@ export function Sidebar() {
         {navSections.map((section, sIdx) => (
           <div key={sIdx} className="space-y-1">
             {section.title && (!collapsed || isMobile) && (
-              <div className="px-2.5 py-1 text-[11px] font-semibold text-zinc-500">
+              <div className="px-2.5 py-1 text-[11px] font-medium text-zinc-400 uppercase tracking-wider">
                 {section.title}
               </div>
             )}

@@ -60,7 +60,7 @@ export default async function PositionsPage() {
                 <th className="py-2.5 px-3 text-right font-normal">Mark</th>
                 <th className="py-2.5 px-3 text-right font-normal">Liq</th>
                 <th className="py-2.5 px-3 text-right font-normal">Margin</th>
-                <th className="py-2.5 px-3 text-right font-normal">P&L</th>
+                <th className="py-2.5 px-3 text-right font-normal">uPnL</th>
                 <th className="py-2.5 px-3 text-right font-normal">ROE</th>
               </tr>
             </thead>
@@ -81,11 +81,11 @@ export default async function PositionsPage() {
                     <td className="py-2.5 px-3 font-semibold text-white font-sans">{pos.asset}</td>
                     <td className="py-2.5 px-3 font-sans">
                       <span
-                        className={`text-[11px] font-semibold uppercase ${
+                        className={`text-xs font-medium ${
                           pos.positionSide === "long" ? "text-emerald-400" : "text-red-400"
                         }`}
                       >
-                        {pos.positionSide || "Long"}
+                        {pos.positionSide === "long" ? "Long" : "Short"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right text-zinc-200 font-mono">

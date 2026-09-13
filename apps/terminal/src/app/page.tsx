@@ -68,7 +68,7 @@ export default async function OverviewPage() {
   const isCooldownRunning = cooldownElapsedMin < 45;
 
   let isGateClear = true;
-  let gateStatusTitle = "Pre-Flight Gate: Clear to trade";
+  let gateStatusTitle = "Pre-Flight Gate: Clear";
   let gateStatusSubtitle = "Market window open · 0 open positions · Cooldown satisfied";
 
   if (!isMarketOpen) {
@@ -108,7 +108,7 @@ export default async function OverviewPage() {
         <div className="flex items-center justify-between py-1 text-xs font-sans">
           <span className="text-zinc-300 font-medium">All accounts healthy</span>
           <div className="flex items-center gap-4">
-            <span className="text-zinc-500">{rankedActiveAccounts.length} active</span>
+            <span className="text-zinc-400 font-mono">{rankedActiveAccounts.length} active</span>
             <Link href="/live" className="text-[var(--cyan)] hover:text-white transition-colors">
               View risk →
             </Link>
@@ -137,7 +137,7 @@ export default async function OverviewPage() {
           href="/rules"
           className="text-xs text-[var(--cyan)] hover:text-white transition-colors font-medium shrink-0 flex items-center gap-1"
         >
-          <span>Pre-flight rules & sizer →</span>
+          <span>View rules →</span>
         </Link>
       </div>
 

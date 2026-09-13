@@ -42,65 +42,65 @@ export function SystemView({ health }: SystemViewProps) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: REST API */}
         <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5">
-            <Server size={13} className="text-zinc-500" />
+          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
+            <Server size={13} className="text-zinc-400" />
             <span>REST API</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm font-medium">
+          <div className="flex items-center gap-1.5 text-sm font-medium font-sans">
             <span className={`w-1.5 h-1.5 rounded-full ${health.restStatus === "HEALTHY" ? "bg-emerald-400" : "bg-red-500"}`} />
             <span className={health.restStatus === "HEALTHY" ? "text-white" : "text-red-400"}>
               {health.restStatus === "HEALTHY" ? "Healthy" : "Offline"}
             </span>
           </div>
-          <div className="text-xs text-zinc-500 font-mono">
-            38ms
+          <div className="text-xs text-zinc-400 font-mono">
+            38ms latency
           </div>
         </div>
 
         {/* Card 2: WebSocket Stream */}
         <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5">
-            <Radio size={13} className="text-zinc-500" />
+          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
+            <Radio size={13} className="text-zinc-400" />
             <span>WebSocket</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm font-medium">
+          <div className="flex items-center gap-1.5 text-sm font-medium font-sans">
             <span className={`w-1.5 h-1.5 rounded-full ${isWsConnected ? "bg-emerald-400" : "bg-zinc-500"}`} />
             <span className="text-white">
               {isWsConnected ? "Connected" : "Disconnected"}
             </span>
           </div>
-          <div className="text-xs text-zinc-500 font-sans">
+          <div className="text-xs text-zinc-400 font-sans">
             {isWsConnected ? "Realtime stream" : "Polling every 15s"}
           </div>
         </div>
 
         {/* Card 3: Data */}
         <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5">
-            <Database size={13} className="text-zinc-500" />
+          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
+            <Database size={13} className="text-zinc-400" />
             <span>Data</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm font-medium">
+          <div className="flex items-center gap-1.5 text-sm font-medium font-sans">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span className="text-white">Synced</span>
           </div>
-          <div className="text-xs text-zinc-500 font-sans">
-            {health.accountCount} accounts
+          <div className="text-xs text-zinc-400 font-sans">
+            {health.accountCount} accounts monitored
           </div>
         </div>
 
         {/* Card 4: Security (Prompt §23 & §24) */}
         <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5">
-            <Shield size={13} className="text-zinc-500" />
+          <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
+            <Shield size={13} className="text-zinc-400" />
             <span>Security</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm font-medium">
+          <div className="flex items-center gap-1.5 text-sm font-medium font-sans">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span className="text-white">Read-only</span>
           </div>
-          <div className="text-xs text-zinc-500 font-sans">
-            0 mutations
+          <div className="text-xs text-zinc-400 font-sans">
+            0 mutations permitted
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@ export function SystemView({ health }: SystemViewProps) {
               key={idx}
               className="flex items-baseline gap-4 px-4 py-2.5 hover:bg-white/[0.02] transition-colors"
             >
-              <span className="font-mono text-zinc-500 shrink-0 select-none">
+              <span className="font-mono text-zinc-400 shrink-0 select-none">
                 {evt.time}
               </span>
               <span className="font-medium text-zinc-300 w-24 shrink-0 font-sans">

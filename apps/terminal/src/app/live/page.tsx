@@ -39,10 +39,10 @@ export default async function LiveMonitorPage() {
     <div className="space-y-6">
       {/* ─── 1. Header (Prompt §9 & §10: No duplicate Risk header, quiet count line) ─── */}
       <div className="flex items-center justify-between text-xs font-sans">
-        <span className="text-zinc-400">
-          {liveAccounts.length} active
+        <span className="text-zinc-300 font-medium">
+          <span className="font-mono text-white font-semibold">{liveAccounts.length}</span> active accounts
         </span>
-        <span className="text-zinc-500">
+        <span className="text-zinc-400">
           Nearest limit first
         </span>
       </div>
@@ -70,8 +70,8 @@ export default async function LiveMonitorPage() {
           <h2 className="text-sm font-semibold text-zinc-200 font-sans">
             Open positions
           </h2>
-          <span className="text-xs font-sans text-zinc-500">
-            {allPositions.length}
+          <span className="text-xs font-mono text-zinc-400">
+            {allPositions.length} active
           </span>
         </div>
 
@@ -86,8 +86,8 @@ export default async function LiveMonitorPage() {
                   <div className="font-semibold text-zinc-200">
                     Flat
                   </div>
-                  <p className="text-zinc-500 mt-0.5">
-                    {liveAccounts.length} active accounts
+                  <p className="text-zinc-400 mt-0.5">
+                    {liveAccounts.length} active accounts · Zero open exposure
                   </p>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export default async function LiveMonitorPage() {
                         {pos.positionSide}
                       </span>
                     </div>
-                    <span className="text-zinc-400 font-mono text-xs">
+                    <span className="text-zinc-300 font-mono text-xs font-medium">
                       {formatAccountTag(pos.accountId)}
                     </span>
                   </div>
@@ -132,21 +132,21 @@ export default async function LiveMonitorPage() {
                   {/* Supporting Rows */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-800/80 text-xs font-sans">
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Entry</span>
-                      <span className="font-mono text-zinc-300">{formatUSD(pos.entryPrice)}</span>
+                      <span className="text-zinc-400 block text-[11px]">Entry</span>
+                      <span className="font-mono text-zinc-200">{formatUSD(pos.entryPrice)}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Mark</span>
+                      <span className="text-zinc-400 block text-[11px]">Mark</span>
                       <span className="font-mono text-zinc-100 font-medium">{formatUSD(pos.markPrice)}</span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">uPnL</span>
+                      <span className="text-zinc-400 block text-[11px]">uPnL</span>
                       <span className={`font-mono font-medium ${isPos ? "text-emerald-400" : "text-red-400"}`}>
                         {isPos ? `+${formatUSD(uPnlNum)}` : `-${formatUSD(Math.abs(uPnlNum))}`}
                       </span>
                     </div>
                     <div>
-                      <span className="text-zinc-500 block text-[11px]">Liq.</span>
+                      <span className="text-zinc-400 block text-[11px]">Liq.</span>
                       <span className="font-mono text-amber-400">
                         {pos.liquidationPrice ? formatUSD(pos.liquidationPrice) : "—"}
                       </span>

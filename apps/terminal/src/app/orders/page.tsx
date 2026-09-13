@@ -81,11 +81,11 @@ export default async function OrdersPage() {
                   </td>
                   <td className="py-2.5 px-3 font-sans">
                     <span
-                      className={`text-[11px] font-semibold uppercase ${
+                      className={`text-xs font-medium ${
                         ord.side === "buy" ? "text-emerald-400" : "text-red-400"
                       }`}
                     >
-                      {ord.side}
+                      {ord.side.toLowerCase() === "buy" ? "Buy" : "Sell"}
                     </span>
                   </td>
                   {/* Human-readable order type (Prompt §17) */}

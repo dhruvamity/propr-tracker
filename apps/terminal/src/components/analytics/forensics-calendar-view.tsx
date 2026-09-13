@@ -789,20 +789,20 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
               <div className="overflow-x-auto rounded-lg border border-zinc-800">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 font-mono text-[11px]">
-                      <th className="py-2.5 px-3 w-8">#</th>
-                      <th className="py-2.5 px-3">Time (UTC / IST)</th>
-                      <th className="py-2.5 px-3">Account</th>
-                      <th className="py-2.5 px-3">Asset</th>
-                      <th className="py-2.5 px-3">Side</th>
-                      <th className="py-2.5 px-3">Quantity</th>
-                      <th className="py-2.5 px-3">Price</th>
-                      <th className="py-2.5 px-3">Net P&L</th>
-                      <th className="py-2.5 px-3">Discipline Audit</th>
-                      <th className="py-2.5 px-3">Status</th>
+                    <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 font-sans text-xs">
+                      <th className="py-2.5 px-3 w-8 font-normal">#</th>
+                      <th className="py-2.5 px-3 font-normal">Time (UTC / IST)</th>
+                      <th className="py-2.5 px-3 font-normal">Account</th>
+                      <th className="py-2.5 px-3 font-normal">Asset</th>
+                      <th className="py-2.5 px-3 font-normal">Side</th>
+                      <th className="py-2.5 px-3 text-right font-normal">Quantity</th>
+                      <th className="py-2.5 px-3 text-right font-normal">Price</th>
+                      <th className="py-2.5 px-3 text-right font-normal">Net P&L</th>
+                      <th className="py-2.5 px-3 font-normal">Discipline Audit</th>
+                      <th className="py-2.5 px-3 text-center font-normal">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-800/80 bg-zinc-950/20">
+                  <tbody className="divide-y divide-zinc-800/80 bg-zinc-950/20 font-mono text-xs">
                     {selectedDaySummary.taggedTrades.map((tt: TaggedTrade, idx: number) => {
                       const trade = tt.trade;
                       const isExpanded = expandedTradeId === trade.tradeId;
@@ -828,31 +828,31 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
                             }
                             className="hover:bg-zinc-800/30 cursor-pointer transition-colors"
                           >
-                            <td className="py-2.5 px-3 text-zinc-500 font-mono text-[11px]">
+                            <td className="py-2.5 px-3 text-zinc-500 text-xs">
                               {idx + 1}
                             </td>
-                            <td className="py-2.5 px-3 font-mono text-zinc-300 text-[11px]">
+                            <td className="py-2.5 px-3 text-zinc-300 text-xs">
                               <span>{timeUtc}</span>
-                              <span className="text-zinc-500 ml-1.5 text-[10px]">({timeIst})</span>
+                              <span className="text-zinc-500 ml-1.5 text-[11px]">({timeIst})</span>
                             </td>
                             <td className="py-2.5 px-3">
-                              <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                              <div className="flex items-center gap-1.5 text-xs">
                                 <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-200 font-bold border border-zinc-700">
                                   {tt.accountTag || formatAccountTag(trade.accountId)}
                                 </span>
                                 {tt.accountTier && (
-                                  <span className="text-[10px] text-zinc-400 font-medium">
+                                  <span className="text-[11px] text-zinc-400 font-medium">
                                     {tt.accountTier}
                                   </span>
                                 )}
                                 {tt.accountStage && (
                                   <span
-                                    className={`text-[9px] px-1 py-0.2 rounded font-sans uppercase font-medium ${
+                                    className={`text-[10px] px-1.5 py-0.5 rounded font-sans uppercase font-medium ${
                                       tt.accountStage === "FUNDED"
                                         ? "bg-emerald-950 text-emerald-400 border border-emerald-800/40"
                                         : tt.accountStage === "EVALUATION"
                                         ? "bg-cyan-950 text-cyan-400 border border-cyan-800/40"
-                                        : "bg-zinc-900 text-zinc-500 border border-zinc-800"
+                                        : "bg-zinc-900 text-zinc-400 border border-zinc-800"
                                     }`}
                                   >
                                     {tt.accountStage}
@@ -860,28 +860,28 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
                                 )}
                               </div>
                             </td>
-                            <td className="py-2.5 px-3 font-medium text-white">
+                            <td className="py-2.5 px-3 font-semibold text-white font-sans">
                               {trade.asset}
                             </td>
-                            <td className="py-2.5 px-3 font-mono">
+                            <td className="py-2.5 px-3 font-sans">
                               <span
-                                className={`uppercase text-[11px] font-semibold ${
+                                className={`text-xs font-medium ${
                                   trade.side === "buy" || trade.positionSide === "long"
                                     ? "text-emerald-400"
-                                    : "text-orange-400"
+                                    : "text-red-400"
                                 }`}
                               >
-                                {trade.side || trade.positionSide || "buy"}
+                                {trade.side?.toLowerCase() === "buy" || trade.positionSide === "long" ? "Buy" : "Sell"}
                               </span>
                             </td>
-                            <td className="py-2.5 px-3 font-mono text-zinc-300">
+                            <td className="py-2.5 px-3 text-right text-zinc-200">
                               {trade.quantity}
                             </td>
-                            <td className="py-2.5 px-3 font-mono text-zinc-300">
+                            <td className="py-2.5 px-3 text-right text-zinc-200">
                               {formatUSD(trade.price)}
                             </td>
                             <td
-                              className={`py-2.5 px-3 font-mono font-bold ${
+                              className={`py-2.5 px-3 text-right font-bold ${
                                 isWin ? "text-emerald-400" : "text-red-400"
                               }`}
                             >

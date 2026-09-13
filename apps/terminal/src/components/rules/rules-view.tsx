@@ -401,13 +401,13 @@ export function RulesView({ data }: RulesViewProps) {
                     canTradeNow ? "bg-emerald-400" : "bg-red-500"
                   }`}
                 />
-                <h2 className="text-base md:text-lg font-bold tracking-tight text-white">
+                <h2 className="text-base md:text-lg font-bold tracking-tight text-white font-sans">
                   {canTradeNow
-                    ? "PRE-FLIGHT GATE: PERMITTED TO TAKE A TRADE"
-                    : "TRADE GATE LOCKED: NO POSITIONS ALLOWED"}
+                    ? "Pre-Flight Gate: Permitted to take a trade"
+                    : "Trade Gate Locked: No positions allowed"}
                 </h2>
               </div>
-              <p className="text-xs md:text-sm text-zinc-300 mt-1">
+              <p className="text-xs md:text-sm text-zinc-300 mt-1 font-sans">
                 {canTradeNow
                   ? "All 5 trading criteria satisfied: Market hours open, 0 open positions, 45m cooldown satisfied, daily circuit breaker safe."
                   : activeBlockers.map((b) => b.failReason).join(" · ")}
@@ -418,13 +418,13 @@ export function RulesView({ data }: RulesViewProps) {
           {/* Time & Session Clocks */}
           <div className="flex items-center gap-4 bg-zinc-900/80 px-4 py-2.5 rounded-lg border border-zinc-800 shrink-0 text-xs">
             <div className="space-y-0.5">
-              <div className="text-zinc-500 font-mono text-[10px] uppercase">IST (Trading Zone)</div>
-              <div className="font-mono text-zinc-200 font-medium">{currentISTString}</div>
+              <div className="text-zinc-400 font-sans text-[11px]">IST (Trading Zone)</div>
+              <div className="font-mono text-zinc-100 font-medium">{currentISTString}</div>
             </div>
             <div className="w-px h-6 bg-zinc-800" />
             <div className="space-y-0.5">
-              <div className="text-zinc-500 font-mono text-[10px] uppercase">EST (Reset Zone)</div>
-              <div className="font-mono text-zinc-200 font-medium">{currentESTString}</div>
+              <div className="text-zinc-400 font-sans text-[11px]">EST (Reset Zone)</div>
+              <div className="font-mono text-zinc-100 font-medium">{currentESTString}</div>
             </div>
           </div>
         </div>
@@ -461,26 +461,26 @@ export function RulesView({ data }: RulesViewProps) {
         {/* Dynamic Sizing Stats for Selected Account */}
         <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
           <div>
-            <span className="text-zinc-500">Max Risk / Trade: </span>
+            <span className="text-zinc-400">Max Risk / Trade: </span>
             <span className="text-emerald-400 font-bold">${currentMaxRiskUSD.toFixed(2)}</span>
             {isTargetProtectionActive && (
-              <span className="text-[10px] text-amber-400 ml-1">(De-risked)</span>
+              <span className="text-[11px] text-amber-400 ml-1">(De-risked)</span>
             )}
           </div>
           <div className="text-zinc-700">|</div>
           <div>
-            <span className="text-zinc-500">Circuit Breaker: </span>
+            <span className="text-zinc-400">Circuit Breaker: </span>
             <span className="text-zinc-200 font-bold">${circuitBreakerCeiling}</span>
-            <span className="text-zinc-400 text-[11px] ml-1">(${lossRoomRemainingUSD.toFixed(2)} room)</span>
+            <span className="text-zinc-300 text-[11px] ml-1">(${lossRoomRemainingUSD.toFixed(2)} room)</span>
           </div>
           <div className="text-zinc-700">|</div>
           <div>
-            <span className="text-zinc-500">Target Progress: </span>
+            <span className="text-zinc-400">Target Progress: </span>
             <span className={`font-bold ${profitPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {profitPercent >= 0 ? "+" : ""}
               {profitPercent.toFixed(2)}%
             </span>
-            <span className="text-zinc-500 text-[10px] ml-1">/ 7.5% de-risk</span>
+            <span className="text-zinc-400 text-[11px] ml-1">/ 7.5% de-risk</span>
           </div>
         </div>
       </div>
@@ -498,26 +498,26 @@ export function RulesView({ data }: RulesViewProps) {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                <span className="font-mono text-[10px] text-zinc-500">RULE {check.ruleNum}</span>
+                <span className="font-mono text-[11px] text-zinc-400">Rule {check.ruleNum}</span>
               </div>
               {check.passed ? (
-                <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
                   <CheckCircle2 size={13} />
-                  <span>PASS</span>
+                  <span>Pass</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-[11px] text-red-400 font-medium">
+                <span className="flex items-center gap-1 text-xs text-red-400 font-medium">
                   <XCircle size={13} />
-                  <span>LOCKED</span>
+                  <span>Locked</span>
                 </span>
               )}
             </div>
 
-            <div className="mt-2.5 font-medium text-sm text-zinc-100">{check.title}</div>
-            <div className="mt-1 text-xs text-zinc-400 leading-relaxed">{check.description}</div>
+            <div className="mt-2.5 font-medium text-sm text-zinc-100 font-sans">{check.title}</div>
+            <div className="mt-1 text-xs text-zinc-400 leading-relaxed font-sans">{check.description}</div>
 
             {check.failReason && (
-              <div className="mt-3 text-[11px] text-red-300 font-mono bg-red-950/40 p-2 rounded border border-red-900/50">
+              <div className="mt-3 text-xs text-red-300 font-mono bg-red-950/40 p-2 rounded border border-red-900/50">
                 {check.failReason}
               </div>
             )}

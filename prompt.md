@@ -1,1456 +1,1044 @@
-Yes. The yellow-circled areas are exactly where the current interface still reads like an AI-assembled dashboard: too many small labels, duplicated context, pill-like states, decorative separators, and repeated "explanation" text.
+# PROPR TERMINAL — DEEP UI/UX AUDIT + CLEANUP + READABILITY + DEDUPLICATION
 
-I reviewed the annotated Overview and Risk screens plus the latest Analytics, Positions, Orders, Accounts, Finance, and System screenshots. The bigger issue is that the UI is now **cleaner than before, but still over-explains itself**.
 
-## The core rule for this pass
 
-> **Remove UI that explains what the surrounding UI already makes obvious.**
+You are auditing and improving an existing production-oriented prop-trading monitoring terminal.
 
-The terminal should feel authored, not generated.
+This is NOT a request to redesign the product from scratch.
 
-That means:
+Your job is to deeply inspect the existing implementation, identify everything that makes the terminal feel repetitive, visually noisy, hard to read, inconsistent, unnecessarily dense, poorly structured, or less professional than it should be, and then FIX the problems directly in the code.
 
-* fewer subtitles
-* fewer section descriptors
-* fewer pills
-* fewer helper sentences
-* fewer repeated numbers
-* fewer labels around obvious things
-* larger type for important data
-* more whitespace between concepts
-* stronger alignment
-* no ornamental "terminal" language
+The final product should feel like a polished professional trading/risk terminal: dense, calm, information-first, highly readable, consistent, and intentional.
 
 ---
 
-# 1. Overview: title + subtitle
+# 1. FIRST: FULL REPOSITORY + UI AUDIT
 
-### Circled
+Before modifying anything, inspect the entire repository.
 
-```text
-Overview
-Cash, risk, and exposure
-```
+Pay particular attention to:
 
-### Problem
+* `apps/terminal`
+* shared packages
+* reusable UI components
+* layouts
+* pages/routes
+* CSS/Tailwind configuration
+* fonts
+* typography utilities
+* design tokens
+* tables
+* cards
+* badges
+* progress bars
+* navigation
+* headers
+* responsive layouts
+* loading states
+* empty states
+* error states
+* tooltips
+* data formatting
+* duplicated components
+* duplicated CSS/classes
+* repeated patterns across pages
 
-The subtitle is generic product-copy filler.
+Also inspect:
 
-`Overview` already tells me what the page is.
+* `UI_DESIGN_REQUIREMENTS.md`
+* `README.md`
+* `prompt.md`
 
-And "Cash, risk, and exposure" isn't helping me decide anything.
+Treat `UI_DESIGN_REQUIREMENTS.md` as an important design reference, but DO NOT blindly assume that the current implementation perfectly follows it.
 
-### Replace with
+The current implementation is the source of truth for what actually exists.
 
-```text
-Overview
-```
+Your responsibility is to identify the gap between:
 
-That's it.
+1. intended design,
+2. implemented design,
+3. actual usability/readability.
 
-Then let the first section communicate the page's purpose.
-
-If you really need context:
-
-```text
-Portfolio
-```
-
-But I'd remove the subtitle entirely.
-
-### Rule
-
-Every page should use:
-
-```text
-Page title
-```
-
-not:
-
-```text
-Page title
-Generic description of page
-```
-
-Unless the description gives concrete information.
+Do not stop at obvious issues.
 
 ---
 
-# 2. Top-right "Updated just now"
+# 2. DO NOT REDESIGN THE PRODUCT
 
-### Circled
+Preserve the existing product purpose and information architecture.
 
-```text
-● Updated just now     ↻
-```
+This is a read-only prop-firm monitoring/risk terminal.
 
-This is much better than the old polling pill, but it is still slightly UI-heavy.
+Do NOT introduce:
 
-### Problem
+* order execution
+* buy/sell controls
+* unnecessary animations
+* decorative dashboard elements
+* generic SaaS-style hero sections
+* giant cards
+* excessive whitespace
+* unnecessary illustrations
+* gamification
+* meaningless gradients
+* visual clutter
+* ornamental UI that reduces information density
 
-The green dot + text + refresh icon is functioning like another small widget.
+The terminal should remain:
 
-The user mainly cares about freshness.
+* analytical
+* dense
+* professional
+* restrained
+* highly scannable
+* information-first
+* risk-oriented
 
-### Better
+Make it better, not different.
 
-```text
-Updated now   ↻
-```
+---
 
-or:
+# 3. PRIMARY AUDIT OBJECTIVE: READABILITY
 
-```text
-● Updated 4s ago   ↻
-```
+A major problem to investigate is text that technically fits but is difficult to read.
 
-Use the dot only when state matters:
+Audit EVERY route and EVERY reusable component for:
 
-```text
-● Live
-● Stale
-● Offline
-```
+## Typography problems
 
-For ordinary freshness, don't need the dot.
+Find:
 
-### Also
+* font families that are poorly suited to the text
+* inconsistent font families
+* accidental fallback fonts
+* overly condensed typography
+* fonts that make uppercase labels difficult to scan
+* excessive letter spacing
+* insufficient letter spacing
+* text that is too small
+* text that is too thin
+* text that is too tightly packed
+* text with insufficient line height
+* numbers that are difficult to distinguish
+* unclear `0/O`
+* unclear `1/l/I`
+* tiny timestamps
+* tiny table values
+* tiny secondary labels
+* low-contrast metadata
+* overly muted labels
+* labels that become unreadable against dark backgrounds
+* text that becomes unreadable when values are large
+* text that becomes cramped inside cards
+* text wrapping in places where it should not
+* truncation without useful indication
+* tooltip-dependent information that should be readable directly
 
-Do not say:
+Do not merely increase every font size.
 
-```text
-Updated just now
-```
+Instead establish a coherent typography hierarchy.
 
-when you have exact relative time available.
+---
+
+# 4. TYPOGRAPHY SYSTEM
+
+Use the existing design specification as the baseline.
+
+The intended system is:
+
+* Inter for general UI text
+* JetBrains Mono for financial/numerical data
+* Page titles around 14px
+* Section labels around 12px
+* Metric values around 20–24px
+* Table data around 11–12px
+* Micro metadata around 10px
+
+However:
+
+DO NOT blindly preserve a size just because it exists in the specification.
+
+If a value is technically 11px but objectively difficult to read in the implemented UI, improve it.
+
+The goal is:
+
+> maximum information density WITHOUT sacrificing comfortable reading.
+
+Establish clear roles for:
+
+* page title
+* section title
+* card heading
+* metric label
+* metric value
+* primary table value
+* secondary table value
+* badge
+* metadata
+* timestamp
+* helper text
+* status text
+* error text
+* navigation text
+
+Every role should use a predictable typography rule.
+
+Avoid having dozens of one-off font-size combinations.
+
+---
+
+# 5. FONT FAMILY AUDIT
+
+Search the complete codebase for:
+
+* `font-family`
+* Tailwind `font-*`
+* inline font declarations
+* imported Google fonts
+* local font files
+* fallback stacks
+* component-specific font overrides
+
+Identify every place where typography deviates unnecessarily from the design system.
+
+Create a centralized typography strategy wherever practical.
+
+For example:
+
+UI:
+Inter
+
+Financial/numeric:
+JetBrains Mono
+
+Do not allow random components to use:
+
+* Arial
+* system UI
+* monospace
+* another condensed font
+* random Google font
+* browser default
+
+unless there is a deliberate reason.
+
+Also check whether fonts are actually loaded correctly in production.
+
+A declared font that silently falls back to another font is a bug.
+
+---
+
+# 6. READABILITY BY CONTRAST
+
+Audit all text against its actual background.
+
+Pay special attention to:
+
+* muted labels
+* timestamps
+* table headers
+* disabled states
+* secondary descriptions
+* empty-state text
+* chart labels
+* sidebar text
+* inactive navigation
+* small badges
+* status indicators
+* tooltip content
+
+Dark terminal UI often becomes unreadable because designers keep reducing opacity.
+
+Do NOT use opacity as a substitute for hierarchy.
+
+Where needed:
+
+* increase contrast
+* increase font weight
+* slightly increase font size
+* simplify text
+* reduce visual competition
+
+Do not make every piece of text bright.
+
+The hierarchy should remain:
+
+Primary > Secondary > Muted
+
+but all three must remain comfortably readable.
+
+---
+
+# 7. IDENTIFY REPETITIVE UI
+
+This is a major priority.
+
+Inspect every page and identify repeated information that does not provide additional value.
+
+Look for:
+
+* the same metric appearing in multiple nearby cards
+* the same account status being repeated multiple times
+* duplicate labels
+* duplicate account identifiers
+* repeated explanatory text
+* repeated section titles
+* repeated risk percentages
+* duplicated badges
+* multiple components conveying the same state
+* repeated “live” indicators
+* repeated freshness indicators
+* redundant headings
+* duplicated summary metrics
+* redundant subtotals
+* repeated instructions
+* repeated visual warnings
+* excessive use of cards around already-grouped information
+
+Ask for every element:
+
+> “Does this tell the user something new?”
+
+If not, remove it or consolidate it.
+
+Do NOT remove information merely to make the interface emptier.
+
+Consolidate intelligently.
+
+---
+
+# 8. REDUCE “CARD FATIGUE”
+
+Audit the dashboard and every secondary page for excessive card usage.
+
+A common problem in financial dashboards is:
+
+Card inside card inside card inside card.
+
+This creates:
+
+* visual noise
+* excessive borders
+* excessive padding
+* poor hierarchy
+* fragmented information
+
+Determine which information genuinely deserves a separate container.
+
+Where appropriate:
+
+* merge related metrics
+* use a single structured panel
+* use subtle dividers instead of individual cards
+* group related values horizontally
+* remove unnecessary nested surfaces
+
+Do not turn every metric into an independent visual object.
+
+---
+
+# 9. AUDIT INFORMATION DENSITY
+
+The product is intended for serious prop traders and should work well on widescreen / dual-monitor environments.
+
+Check every route for:
+
+* excessive unused whitespace
+* oversized vertical gaps
+* oversized cards
+* unnecessarily tall table rows
+* redundant padding
+* content being pushed below the fold unnecessarily
+* important risk information requiring unnecessary scrolling
+* section ordering that makes users search for critical information
+
+But do NOT compress everything blindly.
+
+The target is:
+
+> HIGH INFORMATION DENSITY + HIGH READABILITY.
+
+Not:
+
+> AS MUCH INFORMATION AS POSSIBLE IN THE SMALLEST SPACE.
+
+---
+
+# 10. TABLE AUDIT
+
+Deeply inspect every table.
+
+Check:
+
+* font size
+* row height
+* column width
+* header readability
+* numerical alignment
+* decimal alignment
+* currency alignment
+* negative/positive values
+* badges
+* truncation
+* IDs
+* timestamps
+* horizontal scrolling
+* sticky columns
+* excessive columns
+* duplicate columns
+* unnecessary labels
+* column ordering
+
+All numerical values should be visually easy to compare.
+
+Financial numbers should consistently use the numerical font.
+
+Check whether tables contain information that could be removed, merged, shortened, or moved to secondary/detail interaction.
+
+Do not remove useful trading/risk information simply because the table is dense.
+
+---
+
+# 11. NUMERIC READABILITY
+
+Financial terminals depend heavily on numbers.
+
+Audit:
+
+* balances
+* equity
+* PnL
+* percentages
+* drawdown
+* leverage
+* prices
+* liquidation prices
+* margins
+* account IDs
+* timestamps
+* cash values
+* FX values
+
+Check:
+
+* consistent decimals
+* consistent currency formatting
+* consistent sign formatting
+* consistent negative-value treatment
+* consistent thousand separators
+* decimal alignment
+* appropriate use of `$`
+* appropriate use of `₹`
+* consistent abbreviation rules
+
+Avoid visually inconsistent formats such as:
+
+`$5,000`
+
+`5000 USD`
+
+`USD 5k`
+
+appearing in the same context without reason.
+
+Create consistent formatting utilities where necessary.
+
+---
+
+# 12. VISUAL HIERARCHY AUDIT
+
+For every screen ask:
+
+1. What should the user see first?
+2. What should they see second?
+3. What requires attention?
+4. What is contextual information?
+5. What is diagnostic information?
+
+The visual hierarchy should reflect risk importance.
+
+For example:
+
+Critical breach risk > drawdown headroom > active exposure > PnL > secondary metadata
+
+Do not allow:
+
+* decorative elements
+* secondary labels
+* low-value metrics
+* oversized headings
+* excessive borders
+
+to compete with critical risk information.
+
+---
+
+# 13. COLOR SYSTEM AUDIT
+
+Preserve the established semantic palette unless there is a strong usability reason to change it.
+
+Audit whether colors are being overused.
+
+Semantic meaning should remain clear:
+
+* green = healthy / profit / funded
+* red = loss / breach / failure
+* amber = warning / stale / caution
+* cyan = active / brand / informational emphasis
+
+Do NOT color every metric.
+
+Especially avoid:
+
+* rainbow dashboard effects
+* multiple accent colors on one component
+* unnecessary glowing elements
+* excessive gradients
+* bright text everywhere
+
+Normal healthy states should remain calm.
+
+Urgent states should become visually dominant.
+
+---
+
+# 14. BORDER / SURFACE / SHADOW AUDIT
+
+Check whether the interface contains too many:
+
+* borders
+* boxes
+* panel outlines
+* shadows
+* glows
+* separators
+
+A terminal UI should feel structured without every element being boxed.
+
+Replace unnecessary hard borders with:
+
+* spacing
+* subtle background differences
+* typography hierarchy
+* fine dividers
+
+where appropriate.
+
+Avoid making the UI look like hundreds of separate widgets.
+
+---
+
+# 15. SPACING CONSISTENCY
+
+Search for random spacing values.
+
+Identify:
+
+* arbitrary margins
+* arbitrary paddings
+* inconsistent gaps
+* inconsistent card padding
+* different section spacing
+* inconsistent table spacing
+* inconsistent header spacing
+
+Create a consistent spacing rhythm.
+
+Avoid situations where visually equivalent components use noticeably different spacing without a reason.
+
+---
+
+# 16. COMPONENT DUPLICATION
+
+Search the codebase for components that perform essentially the same job under different names.
+
+Examples:
+
+* multiple metric-card implementations
+* multiple status badges
+* multiple table wrappers
+* multiple risk bars
+* multiple panel components
+* multiple loading states
+* multiple empty states
+* multiple data formatting functions
+
+Where two components are functionally equivalent, consolidate them.
+
+Do not over-abstract.
+
+A shared component should only be introduced where the repeated pattern is genuinely stable.
+
+Avoid creating a giant “universal component” with dozens of conditional props just to eliminate a few duplicated lines.
+
+---
+
+# 17. DUPLICATED CONTENT
+
+Search the actual rendered UI for repeated text.
+
+Examples:
+
+* repeated “Account Status”
+* repeated account name
+* repeated risk percentage
+* repeated “Last Updated”
+* repeated live indicator
+* repeated explanatory copy
+* repeated labels that are already obvious from context
+
+Simplify wording where possible.
+
+Trading terminals should use concise language.
 
 Prefer:
 
-```text
-Updated 4s ago
-```
+`DRAWDOWN`
 
-Once it crosses a threshold:
+over:
 
-```text
-Updated 2m ago
-```
+`CURRENT TRAILING DRAWDOWN CONSUMPTION`
 
-Then:
+Prefer:
 
-```text
-Stale · 2m ago
-```
+`HEADROOM`
 
----
+over:
 
-# 3. Overview attention banner
+`REMAINING AVAILABLE LOSS HEADROOM`
 
-### Circled
-
-```text
-● All accounts healthy · no immediate breach risk
-```
-
-and:
-
-```text
-2 active     Risk monitor →
-```
-
-### Problem
-
-This is trying to be both:
-
-* a status message
-* a navigation element
-* a count summary
-* an explanation
-
-That is why it feels like an AI-generated "smart banner".
-
-### Redesign
-
-For healthy state:
-
-```text
-All accounts healthy
-```
-
-Small muted text:
-
-```text
-2 active
-```
-
-And put the navigation separately:
-
-```text
-View risk →
-```
-
-Example:
-
-```text
-All accounts healthy                         2 active    View risk →
-```
-
-No bordered banner.
-
-No colored background.
-
-No paragraph.
-
-### When there is actual danger
-
-Then it becomes a real alert:
-
-```text
-1 account needs attention
-
-Starter 1-Step Turbo · $22.40 daily room remaining
-
-View risk →
-```
-
-The banner should visually exist **because something needs attention**, not because the design system requires a banner.
+unless the additional wording genuinely prevents ambiguity.
 
 ---
 
-# 4. Cash footer breakdown
+# 18. NAVIGATION + GLOBAL SHELL
 
-### Circled
+Audit:
 
-```text
-Net cash outflow: -₹25,394.83
-Propr: ₹21,559.58
-Breakout: ₹3,835.25
-```
+* sidebar width
+* navigation spacing
+* active item styling
+* icons
+* text size
+* collapsed sidebar readability
+* top bar density
+* live indicator
+* refresh control
+* sync timestamp
+* mobile navigation
 
-### Problem
+Check whether the shell itself consumes too much space.
 
-This is a second mini-summary underneath the three primary figures.
+The global shell must remain visually consistent across every route.
 
-The same numbers are already available from the three main metrics.
-
-It creates:
-
-```text
-summary
-summary
-summary
-```
-
-### Remove it from Overview entirely.
-
-Overview should only show:
-
-```text
-Total spent       ₹25,394.83
-Cash at risk       ₹7,336.19
-Payouts                ₹0
-```
-
-Then:
-
-```text
-View finance →
-```
-
-The firm breakdown belongs on Finance.
-
-This is one of the clearest cases of unnecessary repetition.
+Avoid each page feeling like it was designed independently.
 
 ---
 
-# 5. "2 sorted by nearest limit"
+# 19. PAGE-BY-PAGE AUDIT
 
-### Circled
+Inspect every implemented route individually.
 
-```text
-2 sorted by nearest limit
-```
+At minimum:
 
-### Problem
+* `/`
+* `/live`
+* `/accounts`
+* `/positions`
+* `/orders`
+* `/finance`
+* `/history`
+* `/system`
 
-This is a table-header style sentence masquerading as useful information.
+For each page identify:
 
-The user can see:
+### A. Readability problems
 
-1.
-2.
+### B. Repetition
 
-and the ordering.
+### C. Excessive UI elements
 
-They don't need:
+### D. Missing hierarchy
 
-```text
-2 sorted by nearest limit
-```
+### E. Unnecessary whitespace
 
-### Replace with
+### F. Poor mobile behavior
 
-```text
-2 active
-```
+### G. Misleading emphasis
 
-That's enough.
+### H. Weak states
 
-Or:
+### I. Redundant information
 
-```text
-Nearest limit first
-```
+### J. Inconsistent component usage
 
-as a tiny sort control if sorting is interactive.
+### K. Inconsistent typography
 
-Better:
+### L. Inconsistent formatting
 
-```text
-Active accounts                            2
-```
+Do not assume fixing one shared component fixes every page.
 
-No explanatory sentence.
+Verify every route individually after changes.
 
 ---
 
-# 6. SAFE badge
+# 20. RESPONSIVE AUDIT
 
-### Circled
+Test at minimum:
 
-```text
-● SAFE
-```
+* 1440px
+* 1280px
+* 1024px
+* 768px
+* 640px
+* 390px
 
-This is actually close.
+Check for:
 
-The problem isn't the text.
+* text collisions
+* clipped values
+* overflowing tables
+* broken layouts
+* excessive scrolling
+* navigation problems
+* unreadable tiny text
+* cards becoming ridiculously tall
+* horizontal overflow
+* buttons becoming too small
+* badges wrapping badly
+* important values disappearing below the fold
 
-The problem is the repetition and the visual treatment.
+Mobile should not simply be “desktop but narrower”.
 
-Currently every account has:
-
-```text
-name
-ID
-Evaluation
-daily binding
-SAFE
-```
-
-### Use
-
-```text
-Starter 1-Step Turbo                    ● Safe
-```
-
-That's fine.
-
-But:
-
-* no pill
-* no border
-* no icon inside a circle
-* no uppercase
-* no glowing green
-
-Use a small dot + `Safe`.
-
-For critical:
-
-```text
-● Critical
-```
-
-For failed:
-
-```text
-● Failed
-```
-
-Use normal sentence case.
+Maintain the same information hierarchy while restructuring where needed.
 
 ---
 
-# 7. Yellow rectangles around the account metrics
+# 21. ACCESSIBILITY AUDIT
 
-These are not necessarily "bad components"; the problem is their **layout density**.
+Check:
 
-Current:
+* contrast
+* focus states
+* keyboard navigation
+* semantic HTML
+* aria labels
+* button semantics
+* tooltips
+* table semantics
+* screen-reader labels
+* touch targets
+* status communication
 
-```text
-Threshold                  Equity
-$4,926.11                  $5,078.47
+Do not fix accessibility by making everything oversized.
 
-Drawdown room              Target progress
-$253.88                    2.08% (+$102.91)
-```
-
-### Problem
-
-Four secondary metrics are crammed into a little matrix below the hero metric.
-
-They all have the same visual weight.
-
-So the user doesn't know what matters.
-
-### New hierarchy
-
-```text
-Daily loss room
-
-$177.77
-0% used
-
-────────────────────────────
-
-Equity           $5,103.88
-Threshold        $4,926.11
-Drawdown room      $253.88
-
-Target            2.08%
-```
-
-That is much easier to scan.
-
-### Important
-
-Do **not** make these four values into mini-cards.
-
-Just use aligned rows.
+Use proper semantics first.
 
 ---
 
-# 8. "Daily binding" is too technical
+# 22. LOADING / EMPTY / ERROR STATES
 
-Current:
+Audit every state.
 
-```text
-#fjU6 · Evaluation · daily binding
-```
+Check:
 
-### Problem
+* loading skeletons
+* empty tables
+* missing account data
+* API failure
+* stale data
+* disconnected state
+* partial data
+* zero-value state
+* unavailable data
 
-"daily binding" sounds like an implementation term.
+The interface must clearly communicate the difference between:
 
-The user doesn't need to know your risk engine's terminology.
+* zero
+* unavailable
+* loading
+* stale
+* error
 
-Replace with:
+For example:
 
-```text
-#fjU6 · Evaluation
-```
+`$0.00`
 
-The actual binding limit is shown below:
+is NOT the same as:
 
-```text
-Daily loss room
-$177.77
-```
+`—`
 
-This is another example of removing hidden implementation language from visible product UI.
-
----
-
-# 9. Risk page has duplicated page context
-
-### Circled
-
-You have:
-
-```text
-Risk
-2 active accounts · Sorted by nearest limit
-```
-
-then again:
-
-```text
-Risk
-2 active accounts · Sorted by nearest limit
-```
-
-This is a genuine UX issue, not just aesthetics.
-
-### Fix
-
-The top shell should say:
-
-```text
-Risk
-```
-
-Then page body should start directly with the risk content:
-
-```text
-2 active accounts
-Nearest limit first
-```
-
-But don't repeat `Risk`.
-
-Even better:
-
-```text
-Risk                                    2 active
-```
-
-Then the cards.
+and neither should be silently interchangeable.
 
 ---
 
-# 10. Risk page should not repeat account context more than once
+# 23. MICROCOPY AUDIT
 
-Each card currently contains:
-
-```text
-#1 Starter 1-Step Turbo
-#fjU6
-Evaluation
-Safe
-
-Daily loss room
-$176.79
-
-0% used
-
-Threshold
-Equity
-Drawdown room
-Target progress
-```
-
-That's already close to the maximum.
-
-Do not add another explanatory line such as:
-
-```text
-Ranked by binding failure threshold
-```
-
-at the top.
-
-The ordering itself tells the story.
-
----
-
-# 11. The Risk page's "LIVE FEED" pill should be gone
-
-In the earlier version there was:
-
-```text
-LIVE FEED
-```
-
-That has no value now that the top-right freshness indicator exists.
-
-Use one source of truth:
-
-```text
-Updated 4s ago
-```
-
-System can expose:
-
-```text
-WebSocket connected
-```
-
-Don't advertise "Live feed" on the Risk page.
-
----
-
-# 12. Position exposure section
-
-Current:
-
-```text
-Open positions
-
-HYPE
-LONG
-
-Size
-Entry
-Mark
-Unrealized P&L
-Margin
-Liquidation
-```
-
-This is actually decent now.
-
-But there is a remaining hierarchy problem.
-
-### Current
-
-```text
-HYPE LONG
-#fjU6
-```
-
-followed by six metrics.
-
-### Better
-
-```text
-HYPE / LONG                              #fjU6
-
-108.2323 HYPE
-Entry        $78.78
-Mark         $79.02
-uPnL         +$25.78
-Liq.         $31.68
-```
-
-Make **position size** the prominent value.
-
-The current version makes all numbers look like equal-weight table cells.
-
----
-
-# 13. The Markets table is too broad for Risk
-
-On the Risk page:
-
-```text
-Market
-Mark Price
-24h Change
-8h Funding
-Max Leverage
-Tick Size
-```
-
-That's not inherently bad, but it competes with the risk content.
-
-### Move to a secondary section
-
-```text
-Markets
-BTC   $68,432.50   +2.45%
-ETH    $3,542.80   +1.82%
-SOL      $178.45   +4.12%
-SUI        $1.84   -0.65%
-
-View market specs →
-```
-
-`Max leverage` and `tick size` can live in the details drawer.
-
-This follows the progressive disclosure model without losing the underlying data.
-
----
-
-# 14. Analytics is currently the most "dashboard" screen
-
-This screen is much more AI-template-like than Overview.
-
-You have:
-
-```text
-account selector
-tabs
-time filters
-export button
-6 KPI cards
-chart
-status panel
-3 gauges
-rules button
-```
-
-That's a lot of chrome before reaching the actual analysis.
-
-## Main issue
-
-The screen is trying to be:
-
-* account selector
-* reporting dashboard
-* performance dashboard
-* risk dashboard
-* rulebook viewer
-
-simultaneously.
-
-That is too much.
-
-### Redesign
-
-Header:
-
-```text
-Explorer 1-Step Turbo                          All time
-```
-
-Then:
-
-```text
-Net P&L       Win rate       Profit factor       Sharpe
-+$173.67      52.4%          1.47                3.91
-```
-
-Then **large chart**.
-
-Then:
-
-```text
-Risk
-Profit target     1.74%
-Drawdown used     0%
-Daily loss        0%
-```
-
-Everything else goes into:
-
-```text
-Trade history
-Rules
-Export
-```
-
-as tabs/actions.
-
-### Kill the decorative circular gauges
-
-The little semicircle gauges for:
-
-* Profit target
-* Drawdown
-* Daily loss
-
-are classic dashboard decoration.
-
-They don't add much beyond:
-
-```text
-Profit target 1.74%
-Drawdown      0%
-Daily loss    0%
-```
-
-Replace them with numbers and one compact progress indicator where useful.
-
----
-
-# 15. Analytics chart readability
-
-The chart itself is good.
-
-But:
-
-```text
-Equity
-Drawdown
-24H
-7D
-30D
-All Time
-```
-
-creates too many controls around the plot.
-
-Use one range control:
-
-```text
-1D   7D   30D   ALL
-```
-
-and one metric switch:
-
-```text
-Equity | Drawdown
-```
-
-That's enough.
-
-Also don't put a `Read Full Rules` button directly inside the analytics status panel.
-
-That is a contextual mismatch.
-
----
-
-# 16. Positions page is now very close
-
-This screenshot is one of the strongest.
-
-The table works.
-
-But:
-
-### Column widths are excessive
-
-There is a massive amount of horizontal whitespace.
-
-You can make the table much more compact:
-
-```text
-Account   Asset   Side   Size   Entry   Mark   Liq   Margin   P&L   ROE
-```
-
-Right-align all numeric columns.
-
-Set fixed widths.
-
-Don't let every column expand equally.
-
-### Also
-
-`0.006046% ROE` looks suspiciously precise.
-
-For normal display:
-
-```text
-ROE +0.01%
-```
-
-Use full precision only in row details.
-
-Precision should follow usefulness.
-
----
-
-# 17. Orders is also structurally good
-
-The Orders page is clear now.
-
-Two remaining issues:
-
-### `pending`
-
-For read-only monitoring, use:
-
-```text
-Pending
-```
-
-with a tiny amber dot.
-
-Not a bare lowercase value.
-
-### Type names
-
-```text
-Take_profit_market
-Stop_market
-```
-
-look like API enum values.
-
-Use human-readable labels:
-
-```text
-Take profit
-Stop loss
-```
-
-Keep the raw enum in a detail drawer if required.
-
-This is a significant readability improvement.
-
----
-
-# 18. Accounts page: strong structure, but still too many visual statuses
-
-The Accounts page is probably the best data page now.
-
-But:
-
-```text
-● Failed
-Evaluation
-```
-
-creates inconsistency because some states are dots and some are plain text.
-
-Standardize:
-
-```text
-● Failed
-● Evaluation
-● Funded
-● Archived
-```
-
-with only risk/problem states colored.
-
-Neutral lifecycle states:
-
-```text
-Evaluation
-Funded
-Archived
-```
-
-should remain gray.
-
----
-
-# 19. Accounts table needs more breathing room
-
-The account table is readable, but:
-
-```text
-#fjU6 (4D8Xw...)
-Starter 1-Step Turbo
-```
-
-contains too much identity information in the same cell.
-
-Use:
-
-```text
-#fjU6
-Starter 1-Step Turbo
-```
-
-and make the raw ID copy action appear on hover.
-
-Don't display both short and full IDs simultaneously.
-
-That is unnecessary text density.
-
----
-
-# 20. Finance page has one remaining AI-slop pattern
-
-This:
-
-```text
-Cash
-Bank settled capital & cash flows
-```
-
-is classic generated section decoration.
-
-Remove the right-side explanatory phrase.
-
-Just:
-
-```text
-Cash
-```
-
-Then the four metrics.
-
-Same with:
-
-```text
-Spent by firm                    Settled INR allocation
-```
+Review every visible label.
 
 Remove:
 
-```text
-Settled INR allocation
-```
+* unnecessary words
+* repetitive wording
+* long explanations inside compact cards
+* awkward uppercase phrases
+* engineering terminology exposed to users
+* unnecessary punctuation
+* overly verbose helper text
 
-It's obvious from the numbers.
+Make the language feel like a serious trading terminal.
 
----
-
-# 21. Finance summary needs stronger alignment
-
-The four top values:
-
-```text
-₹25,394.83
-₹7,336.19
-₹0.00
--₹25,394.83
-```
-
-are good.
-
-But their subtitles have slightly different lengths and visual weights.
-
-Standardize:
-
-```text
-Total spent
-₹25,394.83
-
-Cash at risk
-₹7,336.19
-
-Payouts
-₹0
-
-Net cash outflow
--₹25,394.83
-```
-
-The number first.
-
-Label second.
-
-No extra explanatory sentence.
+Concise, precise, direct.
 
 ---
 
-# 22. Finance "Spent by firm" bars are good, but remove redundant percentage text
+# 24. “AI SLOP” AUDIT
 
-Current:
+Explicitly inspect for anything that makes the UI look AI-generated or templated.
 
-```text
-Propr                     ₹21,559.58 (85%)
-██████████████████████
-```
+Examples include:
 
-The bar already conveys the ratio.
+* excessive rounded cards
+* excessive pills
+* random gradients
+* unnecessary glow
+* decorative icons everywhere
+* giant typography
+* generic dashboard compositions
+* repetitive card grids
+* excessive section headings
+* over-explained labels
+* arbitrary symbols
+* inconsistent icon styles
+* excessive shadows
+* overly polished but information-poor UI
 
-Keep the percentage, but make it secondary:
+Remove or redesign these elements.
 
-```text
-Propr                              ₹21,559.58
-85%
-██████████████████████████
-```
-
-or:
-
-```text
-Propr           ₹21,559.58     85%
-████████████████████████████████
-```
-
-Don't make `85%` visually compete with the amount.
+The result should look like a deliberately engineered trading terminal, not an AI-generated SaaS dashboard.
 
 ---
 
-# 23. System page is now much more mature
+# 25. DO NOT OVER-CORRECT
 
-The new System screen is significantly better than the earlier raw-terminal version.
+Important:
 
-But this header:
+Do not turn the UI into a minimalist empty dashboard.
 
-```text
-Engine: Propr Core · ● Read-Only Active
-```
+Do not:
 
-is unnecessary.
+* remove important metrics
+* hide useful information
+* merge unrelated concepts
+* eliminate necessary status indicators
+* shrink everything
+* make all text tiny
+* remove useful explanatory context
+* replace meaningful controls with ambiguous icons
 
-The user already knows the app is read-only.
+Every change must improve:
 
-Put that information under Security:
-
-```text
-Read-only
-No mutation endpoints
-```
-
-System should answer:
-
-```text
-Is the data healthy?
-```
-
-not:
-
-```text
-How did the engineering team build this?
-```
+READABILITY
+or
+HIERARCHY
+or
+EFFICIENCY
+or
+CONSISTENCY
+or
+INFORMATION DENSITY.
 
 ---
 
-# 24. System health cards are too decorative
+# 26. IMPLEMENTATION RULES
 
-These:
+After auditing:
 
-```text
-REST API
-HEALTHY
-
-WebSocket
-DISCONNECTED
-
-Data Pipeline
-SYNCED
-
-Security
-ACTIVE
-```
-
-are useful.
-
-But the giant status words are a little excessive.
-
-Use:
-
-```text
-REST API
-● Healthy
-38ms
-
-WebSocket
-● Disconnected
-Polling every 15s
-
-Data
-● Synced
-8 accounts
-
-Security
-● Read-only
-0 mutations
-```
-
-This is much quieter.
+1. Fix the issues directly.
+2. Reuse existing components where practical.
+3. Create shared primitives where repetition is real.
+4. Remove obsolete styles and dead UI code.
+5. Remove duplicated components where appropriate.
+6. Centralize typography rules where practical.
+7. Centralize formatting utilities where needed.
+8. Keep business logic unchanged unless you find an actual bug.
+9. Do not alter financial calculations merely to improve UI.
+10. Do not change API behavior unnecessarily.
+11. Do not introduce new dependencies unless genuinely required.
+12. Keep the application production-safe.
 
 ---
 
-# 25. Recent events should look like events, not a database table
+# 27. VERIFY AFTER EVERY MAJOR CHANGE
 
-Current:
+Run:
 
-```text
-Time | Channel | Event Detail
-```
+* type checking
+* lint
+* tests
+* production build
 
-This is okay, but it still feels like a generic admin table.
+Resolve regressions.
 
-Use an event stream:
+Then inspect every affected route again.
 
-```text
-23:58:32   Risk Engine    Drawdown check passed
-23:58:28   REST Sync      8 accounts synchronized
-23:58:24   Market         SOL mark updated
-23:58:20   Gateway        Heartbeat 14ms
-```
+Do not consider the task complete just because the build passes.
 
-No giant table headers.
+A build passing does not prove that:
 
-No box around every row.
-
-Subtle separators only.
-
----
-
-# 26. The biggest cross-app UX problem now: inconsistent language
-
-You currently use all of these:
-
-```text
-Cash at risk
-Active capital
-Active cash
-Daily loss room
-Daily allowance
-Daily binding
-Daily threshold
-Binding limit
-Drawdown room
-DD floor
-Target progress
-Profit target
-```
-
-That is too many terms for the same underlying concepts.
-
-Lock vocabulary.
-
-### Cash
-
-```text
-Total spent
-Cash at risk
-Payouts
-Net cash outflow
-```
-
-### Risk
-
-```text
-Daily loss room
-Drawdown room
-Equity
-Threshold
-Target progress
-```
-
-### State
-
-```text
-Safe
-Caution
-Critical
-Failed
-```
-
-### Freshness
-
-```text
-Live
-Updated 4s ago
-Stale
-Offline
-```
-
-No cycling synonyms.
-
-The no-slop guidance explicitly calls out synonym cycling as a source of artificial writing. 
+* text is readable
+* hierarchy is good
+* duplication is gone
+* responsive layout works
+* typography is consistent
+* the interface looks professional
 
 ---
 
-# 27. The biggest typography problem
+# 28. CREATE AN AUDIT REPORT BEFORE FINALIZING
 
-Your current UI has improved, but still uses too much:
+Before completing the work, produce a concise but detailed report containing:
 
-```text
-uppercase + letter spacing + monospace
-```
+## Critical Issues
 
-for headings.
+Issues that materially hurt usability.
 
-That is the "terminal cosplay" effect.
+## Readability Issues
 
-Use:
+Every major typography/font/contrast problem found and fixed.
 
-```text
-Overview
-Risk
-Markets
-Cash
-Active accounts
-Positions
-Orders
-Accounts
-System
-```
+## Repetition Issues
 
-in normal sans-serif.
+Every major duplicated UI/content/component pattern found and what was consolidated.
 
-Use monospace only for:
+## Visual Hierarchy Issues
 
-```text
-₹25,394.83
-$173.67
-#fjU6
-23:58:32
-+1.74%
-```
+What previously competed for attention and how it was corrected.
 
-This single rule will make the application feel much more intentional.
+## Responsive Issues
+
+Desktop/tablet/mobile issues found.
+
+## Component Cleanup
+
+What was merged, removed, or standardized.
+
+## Design-System Improvements
+
+Typography, spacing, colors, borders, surfaces, and reusable primitives standardized.
+
+## Remaining Issues
+
+Anything intentionally left unchanged and why.
 
 ---
 
-# 28. Remove "generated explanatory labels"
+# 29. FINAL QUALITY BAR
 
-I would aggressively delete phrases such as:
+Do not stop at:
 
-```text
-Cash, risk, and exposure
-Sorted by nearest limit
-Perpetual contract specs & 8h funding
-Bank settled capital & cash flows
-Account performance and trade analytics
-Gateway health and sync status
-Active perpetual market exposures across monitored accounts
-```
+“Looks cleaner.”
 
-Some of them are harmless individually.
+The final result should pass this test:
 
-Collectively, they make every screen talk too much.
+### At a glance
 
-Replace with concise page titles and let the data communicate the context.
+I can immediately understand:
 
----
+* overall financial state
+* which accounts are active
+* which account is closest to breach
+* current drawdown risk
+* current exposure
+* PnL
+* important system/freshness state
 
-# 29. One new rule I strongly recommend
+### At normal reading distance
 
-### Every section gets either a title OR a descriptor, never both.
+I can comfortably read:
 
-Bad:
+* account names
+* values
+* risk percentages
+* table rows
+* timestamps
+* statuses
+* metadata
 
-```text
-Markets
-Perpetual contract specs & 8h funding
-```
+without squinting or relying heavily on hover tooltips.
 
-Good:
+### During active trading
 
-```text
-Markets
-```
+The interface remains calm and readable.
 
-Bad:
+Critical warnings stand out.
 
-```text
-Finance
-Capital ledger and cash flow
-```
+Normal information does not scream for attention.
 
-Good:
+### Visually
 
-```text
-Cash
-```
+The terminal feels:
 
-Bad:
+* professional
+* dense
+* deliberate
+* coherent
+* consistent
+* technically polished
 
-```text
-System
-Gateway health and sync status
-```
+and NOT:
 
-Good:
-
-```text
-System
-```
-
-This will remove a surprising amount of visual noise.
+* repetitive
+* cramped
+* noisy
+* generic
+* AI-generated
+* over-designed
+* unreadable
 
 ---
 
-# 30. Your page hierarchy should now be
+# 30. MOST IMPORTANT INSTRUCTION
 
-## Overview
+Do not limit yourself to the issues explicitly listed above.
 
-```text
-Overview
+Use your own design judgement.
 
-Attention
-Cash
-Active accounts
-Exposure
-```
+While inspecting the repository, identify any additional problem involving:
 
-## Risk
+* UX
+* UI
+* typography
+* accessibility
+* visual hierarchy
+* responsive behavior
+* component architecture
+* repetition
+* spacing
+* information density
+* semantic clarity
+* interaction design
+* state handling
+* data presentation
+* consistency
+* maintainability
 
-```text
-Risk
+Fix legitimate issues even if they were not specifically mentioned in this prompt.
 
-Active accounts
-Open positions
-Markets
-```
+However:
 
-## Analytics
+DO NOT invent product requirements.
 
-```text
-Analytics
+DO NOT add unnecessary features.
 
-Performance
-Equity chart
-Risk
-Trades
-```
+DO NOT redesign the information architecture without a strong reason.
 
-## Positions
+DO NOT change financial/business logic unless there is an actual correctness issue.
 
-```text
-Positions
+The objective is to take the EXISTING Propr Terminal and make it feel like a significantly more mature, readable, coherent, and professionally engineered product.
 
-Open positions
-```
+Start with a full audit.
 
-## Orders
+Then implement the fixes.
 
-```text
-Orders
-
-Open orders
-```
-
-## Accounts
-
-```text
-Accounts
-
-Filters
-Account table
-```
-
-## Finance
-
-```text
-Finance
-
-Cash
-Spent by firm
-Ledger
-```
-
-## System
-
-```text
-System
-
-Health
-Data flow
-Recent events
-```
-
-That's the vocabulary.
-
----
-
-# 31. One important thing you should NOT do
-
-Don't try to make the UI "less AI" by adding more personality, gradients, glass effects, huge typography, custom illustrations, or decorative charts.
-
-That will create a different kind of AI slop.
-
-The fix is **restraint**.
-
-The supplied no-slop guidance emphasizes keeping concrete information while removing decorative formatting, repetition, generic framing, and robotic structure. 
-
----
-
-# Priority order
-
-### P0 — remove now
-
-| Area                        | Change                      |
-| --------------------------- | --------------------------- |
-| Page subtitles              | Remove generic descriptions |
-| Attention banner            | Make quiet by default       |
-| Cash footer                 | Delete from Overview        |
-| "2 sorted by nearest limit" | Replace with `2 active`     |
-| Status pills                | Dot + text                  |
-| "daily binding"             | Remove                      |
-| Repeated daily-room numbers | Show once                   |
-| Section descriptors         | Remove                      |
-| API enum labels             | Human-readable              |
-| System engine label         | Remove                      |
-| Synonym cycling             | Standardize terminology     |
-
-### P1 — readability
-
-| Area           | Change                       |
-| -------------- | ---------------------------- |
-| Typography     | Sans for UI, mono for data   |
-| Section titles | 14px sans                    |
-| Metadata       | 11–12px minimum              |
-| Money          | 28–32px                      |
-| Risk bars      | Single semantic color        |
-| Tables         | Fixed numeric alignment      |
-| IDs            | Short ID + hover copy        |
-| Rows           | More vertical breathing room |
-
-### P2 — deeper UX
-
-| Area            | Change                              |
-| --------------- | ----------------------------------- |
-| Account details | Drawer                              |
-| Finance ledger  | Row detail drawer                   |
-| Analytics       | Remove gauges, simplify controls    |
-| Markets         | Move specs into detail              |
-| Orders          | Human-readable order types          |
-| System          | Event stream instead of admin table |
-| Risk            | Remove duplicate header/context     |
-
----
-
-# Final design rule for the coding agent
-
-Use this as the governing instruction:
-
-> **Design the terminal as a financial workstation, not a dashboard template.**
->
-> Remove any UI element whose only purpose is to explain, decorate, classify, or repeat information already obvious from nearby content. Prefer one strong metric over three representations of the same metric. Prefer one clean row over a card containing smaller cards. Use normal sans-serif for interface language and monospace only for financial/technical values. Keep status colors semantic and quiet. Use progressive disclosure for secondary information. Default screens should feel calm; only real risk should create visual urgency.
-
-The current state is finally close enough that I would **not add more components**. The next pass should be a subtraction pass. That is what will make it feel genuinely designed rather than progressively more polished but still AI-generated.
+Then verify the entire terminal.

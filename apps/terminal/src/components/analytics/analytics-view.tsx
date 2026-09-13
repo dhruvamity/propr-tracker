@@ -616,7 +616,7 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                       Discipline Forensics & Rule Audit
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                      className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold uppercase tracking-wider ${
                         forensics.disciplineScore >= 90
                           ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60"
                           : forensics.disciplineScore >= 75
@@ -631,7 +631,7 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                         : "Rule Breaches Detected"}
                     </span>
                   </div>
-                  <div className="text-xs text-zinc-500 mt-1">
+                  <div className="text-xs text-zinc-400 mt-1">
                     {forensics.compliantTrades} of {forensics.totalTrades} trades adhered strictly to account limits, weekend freeze, and cooldown protocols.
                   </div>
                 </div>
@@ -693,7 +693,7 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
             {/* Violation Category Pill Breakdown */}
             {forensics.violatingTrades > 0 && (
               <div className="mt-3.5 pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-[11px] font-medium text-zinc-500">Breaches Tagged:</span>
+                <span className="text-[11px] font-medium text-zinc-400">Breaches Tagged:</span>
                 {forensics.violationsByType.WEEKEND_TRADE.count > 0 && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
                     <AlertTriangle size={11} />

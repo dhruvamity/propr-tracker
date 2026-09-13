@@ -476,19 +476,19 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                               {t.asset ? t.asset.replace("xyz:", "") : "—"}
                             </td>
                             <td className="py-2 px-3">
-                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
-                                t.side?.toLowerCase() === "buy" ? "text-emerald-400 bg-emerald-950/40" : "text-red-400 bg-red-950/40"
+                              <span className={`font-sans text-[11px] font-semibold ${
+                                t.side?.toLowerCase() === "buy" ? "text-emerald-400" : "text-red-400"
                               }`}>
-                                {t.side ? t.side.toUpperCase() : "—"}
+                                {t.side ? (t.side.toLowerCase() === "buy" ? "Buy" : "Sell") : "—"}
                               </span>
                             </td>
-                            <td className="py-2 px-3 text-right text-zinc-300 whitespace-nowrap">
+                            <td className="py-2 px-3 text-right text-zinc-200 whitespace-nowrap">
                               {formatUSD(t.price)}
                             </td>
-                            <td className="py-2 px-3 text-right text-zinc-300">
+                            <td className="py-2 px-3 text-right text-zinc-200">
                               {t.quantity || "—"}
                             </td>
-                            <td className="py-2 px-3 text-right text-zinc-500">
+                            <td className="py-2 px-3 text-right text-zinc-400">
                               {formatUSD(t.fee)}
                             </td>
                             <td className={`py-2 px-3 text-right font-semibold whitespace-nowrap ${
