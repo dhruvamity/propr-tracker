@@ -151,17 +151,17 @@ export function ForensicsCalendarGrid({
       <div className="overflow-x-auto">
         <div className="min-w-[700px]">
           {/* Day-of-week headers */}
-          <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center text-xs font-semibold text-zinc-400">
+          <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center text-xs font-medium text-[var(--text-secondary)]">
             {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => (
               <div
                 key={day}
-                className={`py-1.5 rounded bg-zinc-900/40 border border-zinc-800/60 ${
-                  idx >= 5 ? "text-amber-400/80 bg-amber-950/10" : ""
+                className={`py-1.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] ${
+                  idx >= 5 ? "text-[var(--amber)]" : ""
                 }`}
               >
                 <span>{day}</span>
                 {idx >= 5 && (
-                  <span className="block text-[11px] font-sans text-amber-400">
+                  <span className="block text-[11px] font-sans text-[var(--amber)]">
                     Freeze
                   </span>
                 )}

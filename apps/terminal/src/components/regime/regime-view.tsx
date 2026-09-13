@@ -1,18 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Download, HelpCircle, Radio, TrendingUp, ShieldAlert, Clock, BarChart2 } from "lucide-react";
 import {
   Interval,
   Candle,
   Baseline,
   Reading,
-  Condition,
   HistoryPoint,
   CONDITION_CONFIG,
 } from "./regime-types";
 import {
-  istParts,
   keyFor,
   rankPercentile,
   percentile,
@@ -20,16 +17,13 @@ import {
   labelFor,
   appendCandle,
 } from "./regime-calc";
+import { RegimeDecisionBanner } from "./regime-decision-banner";
+import { RegimeMetricCards } from "./regime-metric-cards";
 import { RegimeChart } from "./regime-chart";
-import { Card } from "@/components/ui/card";
+import { RegimeSessionTable } from "./regime-session-table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import {
-  TableContainer,
-  TableHeaderRow,
-  TableHeaderCell,
-  TableBody,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/empty-state";
+import { Radio } from "lucide-react";
 
 interface RegimeViewProps {
   initialBaseline: Baseline;
@@ -133,17 +127,6 @@ function downloadServerLog() {
   a.href = "/api/regime-log";
   a.download = "regime-log.jsonl";
   a.click();
-}
-
-function Tooltip({ text }: { text: string }) {
-  return (
-    <span className="relative group inline-flex items-center ml-1.5 align-middle cursor-help select-none">
-      <HelpCircle size={12} className="text-zinc-400 group-hover:text-white transition-colors" />
-      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 rounded-md bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 font-sans font-normal opacity-0 group-hover:opacity-100 transition-opacity shadow-xl z-50 leading-relaxed">
-        {text}
-      </span>
-    </span>
-  );
 }
 
 export function RegimeView({ initialBaseline }: RegimeViewProps) {
@@ -382,8 +365,6 @@ export function RegimeView({ initialBaseline }: RegimeViewProps) {
   }, [baseline, candles]);
 
   const primary = readings["5m"];
-  const activeCondition: Condition = primary?.label ?? "DEAD";
-  const activeMeta = CONDITION_CONFIG[activeCondition];
 
   // 4. Record closed calls to IndexedDB & Server log
   useEffect(() => {
@@ -518,6 +499,8 @@ export function RegimeView({ initialBaseline }: RegimeViewProps) {
       }) + " IST"
     : "Awaiting sync";
 
+  const hasNoData = status === "error" && !candles["5m"].length;
+
   return (
     <div className="space-y-6 font-sans">
       {/* ─── 1. Top Control & Telemetry Strip ─── */}
@@ -528,18 +511,18 @@ export function RegimeView({ initialBaseline }: RegimeViewProps) {
             label={status === "live" ? "Live stream" : status.toUpperCase()}
             tone={status === "live" ? "buy" : status === "error" ? "red" : "amber"}
           />
-          <span className="text-xs font-mono text-zinc-400">{istDateStr}</span>
+          <span className="text-xs font-mono text-[var(--text-secondary)]">{istDateStr}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-sans text-zinc-400 hidden md:inline">
+          <span className="text-xs font-sans text-[var(--text-secondary)] hidden md:inline">
             Rolling 7-day adaptive window
           </span>
           <div className="flex items-center gap-1.5 font-mono text-xs">
             <button
               type="button"
               onClick={() => exportJSON()}
-              className="px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="px-2 py-1 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white transition-colors"
               aria-label="Export regime calls as JSON"
             >
               JSON
@@ -547,7 +530,7 @@ export function RegimeView({ initialBaseline }: RegimeViewProps) {
             <button
               type="button"
               onClick={() => exportCSV()}
-              className="px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="px-2 py-1 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white transition-colors"
               aria-label="Export regime calls as CSV"
             >
               CSV
@@ -555,7 +538,7 @@ export function RegimeView({ initialBaseline }: RegimeViewProps) {
             <button
               type="button"
               onClick={downloadServerLog}
-              className="px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="px-2 py-1 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white transition-colors"
               aria-label="Download server JSONL log"
             >
               Log
@@ -564,259 +547,44 @@ export function RegimeView({ initialBaseline }: RegimeViewProps) {
         </div>
       </div>
 
-      {/* ─── 2. Core Decision Banner & Timeframe Matrix ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Main Decision Banner (2 Columns) */}
-        <div className="lg:col-span-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium font-sans">
-                <Radio size={14} className="text-zinc-400" />
-                <span>Current Market State</span>
-                <Tooltip text="Evaluates 5-minute volatility and directional persistence against the rolling 7-day market distribution." />
-              </div>
-              <span
-                className={cn(
-                  "text-[11px] font-mono px-2 py-0.5 rounded font-medium border",
-                  activeCondition === "TREND"
-                    ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
-                    : activeCondition === "CHOP"
-                    ? "bg-amber-950/60 text-amber-300 border-amber-800/40"
-                    : activeCondition === "GRIND"
-                    ? "bg-cyan-950/60 text-cyan-300 border-cyan-800/40"
-                    : "bg-zinc-800 text-zinc-300 border-zinc-700"
-                )}
-              >
-                {activeMeta.tag}
-              </span>
-            </div>
+      {hasNoData ? (
+        <EmptyState
+          icon={Radio}
+          title="Market Data Offline"
+          description="Unable to connect to Binance Futures feed. Please verify your internet connection or network firewall."
+        />
+      ) : (
+        <>
+          {/* ─── 2. Core Decision Banner & Timeframe Matrix ─── */}
+          <RegimeDecisionBanner
+            primary={primary}
+            readings={readings}
+            streakText={stats.streakText}
+          />
 
-            <div className="mt-2">
-              <h2 className={cn("text-2xl sm:text-3xl font-bold font-sans tracking-tight", activeMeta.textColor)}>
-                {activeMeta.name}
-              </h2>
-              <p className="mt-2 text-xs text-zinc-300 leading-relaxed font-sans max-w-xl">
-                {activeMeta.action}
-              </p>
-            </div>
-          </div>
+          {/* ─── 3. Four Core Metric Cards ─── */}
+          <RegimeMetricCards
+            primary={primary}
+            chartRange={chartRange}
+            stats={stats}
+          />
 
-          <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400 font-mono">
-            <span>Streak: <strong className="text-white">{stats.streakText}</strong></span>
-            <span>Evaluated on 5m closed bar</span>
-          </div>
-        </div>
+          {/* ─── 4. Historical Timeline SVG Chart ─── */}
+          <RegimeChart
+            historySeries={historySeries}
+            chartRange={chartRange}
+            onRangeChange={setChartRange}
+          />
 
-        {/* Timeframe Confirmation Matrix (1 Column) */}
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
-              <span>Timeframe Alignment</span>
-              <Tooltip text="Checks whether intermediate (15m) and structural (1h) timeframes agree with the 5m direction. Alignment across all 3 timeframes yields optimal continuation setups." />
-            </h3>
-          </div>
-
-          <div className="space-y-2.5 pt-1">
-            <div className="flex items-center justify-between p-2.5 rounded bg-zinc-900/60 border border-zinc-800/80">
-              <span className="text-xs font-sans text-zinc-300">5m Execution</span>
-              <StatusBadge
-                label={primary?.label ?? "Syncing"}
-                tone={primary ? CONDITION_CONFIG[primary.label].badgeTone : "neutral"}
-              />
-            </div>
-            <div className="flex items-center justify-between p-2.5 rounded bg-zinc-900/60 border border-zinc-800/80">
-              <span className="text-xs font-sans text-zinc-300">15m Trend</span>
-              <StatusBadge
-                label={readings["15m"]?.label ?? "Syncing"}
-                tone={readings["15m"] ? CONDITION_CONFIG[readings["15m"]!.label].badgeTone : "neutral"}
-              />
-            </div>
-            <div className="flex items-center justify-between p-2.5 rounded bg-zinc-900/60 border border-zinc-800/80">
-              <span className="text-xs font-sans text-zinc-300">1h Macro</span>
-              <StatusBadge
-                label={readings["1h"]?.label ?? "Syncing"}
-                tone={readings["1h"] ? CONDITION_CONFIG[readings["1h"]!.label].badgeTone : "neutral"}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── 3. Four Core Metric Cards ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Volatility Pulse */}
-        <Card spacing="1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center justify-between font-sans">
-            <div className="flex items-center gap-1.5">
-              <Activity size={13} className="text-zinc-400" />
-              <span>Volatility Pulse</span>
-            </div>
-            <Tooltip text="Current 60-minute True Range compared to weekly norms. ≥50% indicates active range expansion." />
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-bold text-white">
-              {primary ? `${Math.round(primary.activity)}%` : "—"}
-            </span>
-            <span className="text-xs text-zinc-400">
-              {(primary?.activity ?? 0) >= 50 ? "Active range" : "Depressed"}
-            </span>
-          </div>
-          {/* Visual Gauge */}
-          <div className="relative w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mt-1">
-            <div
-              className="h-full bg-emerald-400 transition-all duration-300"
-              style={{ width: `${Math.min(100, primary?.activity ?? 0)}%` }}
-            />
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-white/70"
-              style={{ left: "50%" }}
-              title="50% Median Cutoff"
-            />
-          </div>
-        </Card>
-
-        {/* Card 2: Direction Strength */}
-        <Card spacing="1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center justify-between font-sans">
-            <div className="flex items-center gap-1.5">
-              <TrendingUp size={13} className="text-zinc-400" />
-              <span>Direction Strength</span>
-            </div>
-            <Tooltip text="Directional efficiency: net price move divided by total absolute move over 12 bars. ≥50% indicates clean directional flow." />
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-bold text-white">
-              {primary ? `${Math.round(primary.persistence)}%` : "—"}
-            </span>
-            <span className="text-xs text-zinc-400">
-              {(primary?.persistence ?? 0) >= 50 ? "Clean trend" : "Whippy"}
-            </span>
-          </div>
-          {/* Visual Gauge */}
-          <div className="relative w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mt-1">
-            <div
-              className="h-full bg-cyan-400 transition-all duration-300"
-              style={{ width: `${Math.min(100, primary?.persistence ?? 0)}%` }}
-            />
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-white/70"
-              style={{ left: "50%" }}
-              title="50% Direction Cutoff"
-            />
-          </div>
-        </Card>
-
-        {/* Card 3: Dormant Ratio */}
-        <Card spacing="1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center justify-between font-sans">
-            <div className="flex items-center gap-1.5">
-              <ShieldAlert size={13} className="text-zinc-400" />
-              <span>{chartRange.toUpperCase()} Dormant Ratio</span>
-            </div>
-            <Tooltip text={`Percentage of time Bitcoin spent in DEAD (flatline) mode over the last ${chartRange}.`} />
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-bold text-zinc-200">{stats.deadPct}%</span>
-            <span className="text-xs text-zinc-400">Flatlined</span>
-          </div>
-          <div className="text-[11px] font-mono text-zinc-400 flex items-center justify-between pt-1 border-t border-zinc-800/80">
-            <span>Trend: <strong className="text-emerald-400">{stats.trendPct}%</strong></span>
-            <span>Chop: <strong className="text-amber-400">{stats.chopPct}%</strong></span>
-            <span>Drift: <strong className="text-cyan-400">{stats.grindPct}%</strong></span>
-          </div>
-        </Card>
-
-        {/* Card 4: Current Streak */}
-        <Card spacing="1.5">
-          <div className="text-xs text-zinc-400 font-medium flex items-center justify-between font-sans">
-            <div className="flex items-center gap-1.5">
-              <Clock size={13} className="text-zinc-400" />
-              <span>Current Streak</span>
-            </div>
-            <Tooltip text="Continuous uninterrupted duration in current condition." />
-          </div>
-          <div className="flex items-baseline justify-between font-mono">
-            <span className="text-2xl font-bold text-white">
-              {stats.streakText.split("for")[1]?.trim() ?? "—"}
-            </span>
-            <span className={cn("text-xs font-semibold", activeMeta.textColor)}>
-              {activeMeta.name}
-            </span>
-          </div>
-          <div className="text-[11px] font-sans text-zinc-400 pt-1 border-t border-zinc-800/80">
-            Updated on every 5m closed bar
-          </div>
-        </Card>
-      </div>
-
-      {/* ─── 4. Historical Timeline SVG Chart ─── */}
-      <RegimeChart
-        historySeries={historySeries}
-        chartRange={chartRange}
-        onRangeChange={setChartRange}
-      />
-
-      {/* ─── 5. Intraday Session Performance Table ─── */}
-      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-200">
-            Intraday Session Performance (Historical Reference)
-          </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Discrete 15m trend continuation entries with 1.2× ATR risk and 2R profit target.
-          </p>
-        </div>
-
-        <TableContainer>
-          <thead>
-            <TableHeaderRow>
-              <TableHeaderCell align="left">Session Window</TableHeaderCell>
-              <TableHeaderCell align="right">Samples (N)</TableHeaderCell>
-              <TableHeaderCell align="right">Median Return (R)</TableHeaderCell>
-              <TableHeaderCell align="right">2R Target Hit Rate</TableHeaderCell>
-            </TableHeaderRow>
-          </thead>
-          <TableBody>
-            {baseline.sessions.slice(0, 5).map((row) => (
-              <tr key={row.name} className="hover:bg-white/[0.02] transition-colors">
-                <td className="py-2.5 px-3 font-sans text-zinc-200">
-                  <span>{row.name}</span>
-                  {row.samples < 15 && (
-                    <span className="text-zinc-400 text-[11px] ml-1.5 font-mono">
-                      (small sample)
-                    </span>
-                  )}
-                </td>
-                <td className="py-2.5 px-3 text-right font-mono text-zinc-300">
-                  {row.samples}
-                </td>
-                <td
-                  className={cn(
-                    "py-2.5 px-3 text-right font-mono font-semibold",
-                    row.medianOutcomeR >= 0 ? "text-emerald-400" : "text-red-400"
-                  )}
-                >
-                  {row.medianOutcomeR >= 0
-                    ? `+${row.medianOutcomeR.toFixed(2)} R`
-                    : `${row.medianOutcomeR.toFixed(2)} R`}
-                </td>
-                <td className="py-2.5 px-3 text-right font-mono text-zinc-200 font-medium">
-                  {(row.hit2R * 100).toFixed(0)}%
-                </td>
-              </tr>
-            ))}
-          </TableBody>
-        </TableContainer>
-
-        <p className="text-[11px] text-zinc-400 font-sans">
-          * Note: Sample size per session bucket is modest (n &lt; 15). Rankings serve as historical reference rather than standalone trade triggers.
-        </p>
-      </div>
+          {/* ─── 5. Intraday Session Performance Table ─── */}
+          <RegimeSessionTable baseline={baseline} />
+        </>
+      )}
 
       {/* ─── 6. Footer Telemetry ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-xs text-zinc-400 font-mono">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-xs text-[var(--text-secondary)] font-mono">
         <span>{statusMessage}</span>
-        <span className="text-[11px] text-zinc-400">
+        <span className="text-[11px] text-[var(--text-muted)]">
           Calibration: Adaptive percentile rank against rolling 7-day volume
         </span>
       </div>

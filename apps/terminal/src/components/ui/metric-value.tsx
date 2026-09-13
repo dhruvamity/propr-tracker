@@ -10,11 +10,11 @@ interface MetricValueProps {
 
 const TONE_MAP = {
   default: "text-white",
-  positive: "text-emerald-400",
-  negative: "text-red-400",
-  warning: "text-amber-400",
-  cyan: "text-cyan-400",
-  muted: "text-zinc-400",
+  positive: "text-[var(--green)]",
+  negative: "text-[var(--red)]",
+  warning: "text-[var(--amber)]",
+  cyan: "text-[var(--cyan)]",
+  muted: "text-[var(--text-secondary)]",
 };
 
 const SIZE_MAP = {

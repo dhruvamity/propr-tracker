@@ -87,7 +87,7 @@ export const CONDITION_CONFIG: Record<Condition, ConditionMeta> = {
     code: "trend",
     color: "#10b981",
     bgTint: "rgba(16, 185, 129, 0.12)",
-    textColor: "text-emerald-400",
+    textColor: "text-[var(--green)]",
     badgeTone: "buy",
   },
   CHOP: {
@@ -97,7 +97,7 @@ export const CONDITION_CONFIG: Record<Condition, ConditionMeta> = {
     code: "chop",
     color: "#f59e0b",
     bgTint: "rgba(245, 158, 11, 0.12)",
-    textColor: "text-amber-400",
+    textColor: "text-[var(--amber)]",
     badgeTone: "amber",
   },
   GRIND: {
@@ -107,7 +107,7 @@ export const CONDITION_CONFIG: Record<Condition, ConditionMeta> = {
     code: "grind",
     color: "#06b6d4",
     bgTint: "rgba(6, 182, 212, 0.10)",
-    textColor: "text-cyan-400",
+    textColor: "text-[var(--cyan)]",
     badgeTone: "cyan",
   },
   DEAD: {
@@ -117,7 +117,7 @@ export const CONDITION_CONFIG: Record<Condition, ConditionMeta> = {
     code: "dead",
     color: "#a1a1aa",
     bgTint: "rgba(161, 161, 170, 0.08)",
-    textColor: "text-zinc-400",
+    textColor: "text-[var(--text-secondary)]",
     badgeTone: "zinc",
   },
 };

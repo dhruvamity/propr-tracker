@@ -20,9 +20,7 @@ import {
   VolumeX,
   Play,
 } from "lucide-react";
-import { Card } from "@/components/ui";
-
-const RULE_BADGE_BASE = "text-xs px-2 py-0.5 rounded font-mono border";
+import { Card, StatusBadge } from "@/components/ui";
 
 // Web Audio API pure synthesizer chime for 45-min cooldown completion
 function playCooldownChime() {
@@ -466,39 +464,35 @@ export function RulesView({ data }: RulesViewProps) {
             <ChevronDown size={14} className="absolute right-2.5 top-2.5 text-zinc-400 pointer-events-none" />
           </div>
 
-          <span
-            className={cn(
-              RULE_BADGE_BASE,
-              is10k ? "bg-purple-950/60 text-purple-300 border-purple-800/40" : "bg-blue-950/60 text-blue-300 border-blue-800/40"
-            )}
-          >
-            {is10k ? "10K Turbo Tier" : "5K Turbo Tier"}
-          </span>
+          <StatusBadge
+            label={is10k ? "10K Turbo Tier" : "5K Turbo Tier"}
+            tone={is10k ? "cyan" : "neutral"}
+          />
         </div>
 
         {/* Dynamic Sizing Stats for Selected Account */}
         <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
           <div>
-            <span className="text-zinc-400">Max Risk / Trade: </span>
-            <span className="text-emerald-400 font-bold">${currentMaxRiskUSD.toFixed(2)}</span>
+            <span className="text-[var(--text-secondary)]">Max Risk / Trade: </span>
+            <span className="text-[var(--green)] font-bold">${currentMaxRiskUSD.toFixed(2)}</span>
             {isTargetProtectionActive && (
-              <span className="text-[11px] text-amber-400 ml-1">(De-risked)</span>
+              <span className="text-[11px] text-[var(--amber)] ml-1">(De-risked)</span>
             )}
           </div>
-          <div className="text-zinc-400 select-none">|</div>
+          <div className="text-[var(--text-secondary)] select-none">|</div>
           <div>
-            <span className="text-zinc-400">Circuit Breaker: </span>
-            <span className="text-zinc-200 font-bold">${circuitBreakerCeiling}</span>
-            <span className="text-zinc-300 text-[11px] ml-1">(${lossRoomRemainingUSD.toFixed(2)} room)</span>
+            <span className="text-[var(--text-secondary)]">Circuit Breaker: </span>
+            <span className="text-white font-bold">${circuitBreakerCeiling}</span>
+            <span className="text-[var(--text-secondary)] text-[11px] ml-1">(${lossRoomRemainingUSD.toFixed(2)} room)</span>
           </div>
-          <div className="text-zinc-400 select-none">|</div>
+          <div className="text-[var(--text-secondary)] select-none">|</div>
           <div>
-            <span className="text-zinc-400">Target Progress: </span>
-            <span className={`font-bold ${profitPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            <span className="text-[var(--text-secondary)]">Target Progress: </span>
+            <span className={`font-bold ${profitPercent >= 0 ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
               {profitPercent >= 0 ? "+" : ""}
               {profitPercent.toFixed(2)}%
             </span>
-            <span className="text-zinc-400 text-[11px] ml-1">/ 7.5% de-risk</span>
+            <span className="text-[var(--text-secondary)] text-[11px] ml-1">/ 7.5% de-risk</span>
           </div>
         </div>
       </div>
@@ -554,26 +548,20 @@ export function RulesView({ data }: RulesViewProps) {
           <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock size={16} className="text-cyan-400" />
+                <Clock size={16} className="text-[var(--cyan)]" />
                 <h4 className="text-sm font-semibold text-white">1. Trading Hours Window</h4>
               </div>
-              <span
-                className={cn(
-                  RULE_BADGE_BASE,
-                  isTradingHoursOpen
-                    ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
-                    : "bg-red-950/60 text-red-300 border-red-800/40"
-                )}
-              >
-                {isTradingHoursOpen ? "● Open" : "● Closed"}
-              </span>
+              <StatusBadge
+                label={isTradingHoursOpen ? "Open" : "Closed"}
+                tone={isTradingHoursOpen ? "green" : "red"}
+              />
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               <strong>Window:</strong> Monday 6:30 AM IST – Saturday 12:30 AM IST. Strictly zero trading outside this window.
             </p>
-            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono flex justify-between text-zinc-400">
+            <div className="pt-2 border-t border-[var(--border-subtle)] text-xs font-mono flex justify-between text-[var(--text-secondary)]">
               <span>{nextWindowText}</span>
-              <span className="text-zinc-200 font-bold">{sessionCountdown}</span>
+              <span className="text-white font-bold">{sessionCountdown}</span>
             </div>
           </Card>
 
@@ -581,19 +569,20 @@ export function RulesView({ data }: RulesViewProps) {
           <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-400" />
+                <AlertTriangle size={16} className="text-[var(--amber)]" />
                 <h4 className="text-sm font-semibold text-white">2. Weekend Trading Restrictions</h4>
               </div>
-              <span className={cn(RULE_BADGE_BASE, "bg-zinc-800 text-zinc-300 border-zinc-700")}>
-                {isWeekend ? "Weekend Active" : "Weekday Normal"}
-              </span>
+              <StatusBadge
+                label={isWeekend ? "Weekend Active" : "Weekday Normal"}
+                tone={isWeekend ? "amber" : "neutral"}
+              />
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               No weekend trades until previous losses are recovered. After recovery, weekend trading allowed very rarely and only risking secured profits.
             </p>
-            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400">
+            <div className="pt-2 border-t border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)]">
               <span>Status: </span>
-              <span className={profitPercent > 0 ? "text-amber-300" : "text-red-300"}>
+              <span className={profitPercent > 0 ? "text-[var(--amber)]" : "text-[var(--red)]"}>
                 {weekendReason}
               </span>
             </div>
@@ -603,19 +592,17 @@ export function RulesView({ data }: RulesViewProps) {
           <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Flame size={16} className="text-cyan-400" />
+                <Flame size={16} className="text-[var(--cyan)]" />
                 <h4 className="text-sm font-semibold text-white">3. Allowed Assets Whitelist</h4>
               </div>
-              <span className={cn(RULE_BADGE_BASE, "bg-emerald-950/60 text-emerald-300 border-emerald-800/40")}>
-                6 Assets
-              </span>
+              <StatusBadge label="6 Assets" tone="green" />
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Trading is restricted exclusively to: <strong>Gold, BTC, NEAR, ENA, HYPE, ZEC</strong>. No other coins allowed.
             </p>
-            <div className="pt-2 border-t border-zinc-800/80 flex flex-wrap gap-1.5 text-xs font-mono">
+            <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-wrap gap-1.5 text-xs font-mono">
               {ALLOWED_ASSETS.map((a) => (
-                <span key={a.symbol} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/60">
+                <span key={a.symbol} className="px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]">
                   {a.symbol}
                 </span>
               ))}
@@ -626,19 +613,17 @@ export function RulesView({ data }: RulesViewProps) {
           <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldAlert size={16} className="text-cyan-400" />
+                <ShieldAlert size={16} className="text-[var(--cyan)]" />
                 <h4 className="text-sm font-semibold text-white">4. Single-Trade Risk Limit</h4>
               </div>
-              <span className={cn(RULE_BADGE_BASE, "bg-cyan-950/60 text-cyan-300 border-cyan-800/40")}>
-                ${currentMaxRiskUSD} Max
-              </span>
+              <StatusBadge label={`$${currentMaxRiskUSD} Max`} tone="cyan" />
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               <strong>5K Turbo:</strong> Maximum $30 risk per trade. <strong>10K Turbo:</strong> Maximum $50 risk per trade.
             </p>
-            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 flex justify-between">
+            <div className="pt-2 border-t border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] flex justify-between">
               <span>Account: {formatAccountTag(selectedAccount?.accountId)} ({is10k ? "10K" : "5K"})</span>
-              <span className="text-emerald-400 font-bold">${currentMaxRiskUSD.toFixed(2)} Cap</span>
+              <span className="text-[var(--green)] font-bold">${currentMaxRiskUSD.toFixed(2)} Cap</span>
             </div>
           </Card>
 
@@ -646,26 +631,20 @@ export function RulesView({ data }: RulesViewProps) {
           <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-400" />
+                <AlertTriangle size={16} className="text-[var(--red)]" />
                 <h4 className="text-sm font-semibold text-white">5. Intraday Circuit Breaker</h4>
               </div>
-              <span
-                className={cn(
-                  RULE_BADGE_BASE,
-                  isCircuitBreakerTripped
-                    ? "bg-red-950 text-red-300 border-red-800"
-                    : "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
-                )}
-              >
-                {isCircuitBreakerTripped ? "● Tripped" : "● Operational"}
-              </span>
+              <StatusBadge
+                label={isCircuitBreakerTripped ? "Tripped" : "Operational"}
+                tone={isCircuitBreakerTripped ? "red" : "green"}
+              />
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Trading must stop for the day when limit reached: <strong>5K: $75 loss</strong> | <strong>10K: $135 loss</strong>. Reset at 5:00 AM EST.
             </p>
-            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 flex justify-between">
-              <span>Daily Loss Room: <strong className="text-zinc-200">${lossRoomRemainingUSD.toFixed(2)}</strong></span>
-              <span>Reset in: <strong className="text-zinc-300">{nextResetCountdown}</strong></span>
+            <div className="pt-2 border-t border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] flex justify-between">
+              <span>Daily Loss Room: <strong className="text-white">${lossRoomRemainingUSD.toFixed(2)}</strong></span>
+              <span>Reset in: <strong className="text-[var(--text-secondary)]">{nextResetCountdown}</strong></span>
             </div>
           </Card>
 
@@ -673,26 +652,20 @@ export function RulesView({ data }: RulesViewProps) {
           <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-amber-400" />
+                <Sparkles size={16} className="text-[var(--amber)]" />
                 <h4 className="text-sm font-semibold text-white">6. Target Proximity De-Risking</h4>
               </div>
-              <span
-                className={cn(
-                  RULE_BADGE_BASE,
-                  isTargetProtectionActive
-                    ? "bg-amber-950 text-amber-300 border-amber-800"
-                    : "bg-zinc-800 text-zinc-300 border-zinc-700"
-                )}
-              >
-                {isTargetProtectionActive ? "ARMED (≥7.5%)" : "Standard"}
-              </span>
+              <StatusBadge
+                label={isTargetProtectionActive ? "ARMED (≥7.5%)" : "Standard"}
+                tone={isTargetProtectionActive ? "amber" : "neutral"}
+              />
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Once 7.5% profit is reached, reduce risk to: <strong>5K: Max $25 loss</strong> | <strong>10K: Max $50 loss</strong>.
             </p>
-            <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 flex justify-between">
+            <div className="pt-2 border-t border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] flex justify-between">
               <span>Current Profit: {profitPercent >= 0 ? "+" : ""}{profitPercent.toFixed(2)}%</span>
-              <span className={isTargetProtectionActive ? "text-amber-400 font-bold" : "text-zinc-400"}>
+              <span className={isTargetProtectionActive ? "text-[var(--amber)] font-bold" : "text-[var(--text-secondary)]"}>
                 {isTargetProtectionActive ? "Risk reduced to $25/$50" : "Arms at +7.50%"}
               </span>
             </div>
@@ -703,44 +676,38 @@ export function RulesView({ data }: RulesViewProps) {
         <Card rounded="xl" spacing="3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Layers size={16} className="text-cyan-400" />
+              <Layers size={16} className="text-[var(--cyan)]" />
               <h4 className="text-sm font-semibold text-white">7. Parallel Trading & Discipline Protocol</h4>
             </div>
-            <span
-              className={cn(
-                RULE_BADGE_BASE,
-                !hasParallelViolation && !isCooldownActive
-                  ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
-                  : "bg-amber-950/60 text-amber-300 border-amber-800/40"
-              )}
-            >
-              {openPositionsCount}/1 Open Trades
-            </span>
+            <StatusBadge
+              label={`${openPositionsCount}/1 Open Trades`}
+              tone={!hasParallelViolation && !isCooldownActive ? "green" : "amber"}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-1">
-              <div className="text-zinc-400 font-medium">Single Position Rule</div>
-              <div className="text-zinc-300 text-[11px]">Maximum 1 open trade across entire portfolio at any time.</div>
+            <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-1">
+              <div className="text-[var(--text-secondary)] font-medium">Single Position Rule</div>
+              <div className="text-[var(--text-secondary)] text-[11px]">Maximum 1 open trade across entire portfolio at any time.</div>
               <div className="pt-1 font-mono text-[11px]">
                 {openPositionsCount === 0 ? (
-                  <span className="text-emerald-400">✓ 0 active positions (Clear)</span>
+                  <span className="text-[var(--green)]">✓ 0 active positions (Clear)</span>
                 ) : (
-                  <span className="text-red-400">⛔ {openPositionsCount} active trade open</span>
+                  <span className="text-[var(--red)]">⛔ {openPositionsCount} active trade open</span>
                 )}
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-1.5">
+            <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-1.5">
               <div className="flex items-center justify-between">
-                <div className="text-zinc-400 font-medium">45-Minute Cooldown Gap</div>
+                <div className="text-[var(--text-secondary)] font-medium">45-Minute Cooldown Gap</div>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setAudioEnabled(!audioEnabled)}
                     title={audioEnabled ? "Audio chime enabled" : "Audio chime muted"}
                     aria-label={audioEnabled ? "Disable cooldown reset chime" : "Enable cooldown reset chime"}
                     className={`p-1 rounded text-xs transition-colors cursor-pointer ${
-                      audioEnabled ? "text-cyan-400 hover:text-cyan-300" : "text-zinc-400 hover:text-zinc-200"
+                      audioEnabled ? "text-[var(--cyan)] hover:opacity-80" : "text-[var(--text-secondary)] hover:text-white"
                     }`}
                   >
                     {audioEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
@@ -749,31 +716,31 @@ export function RulesView({ data }: RulesViewProps) {
                     onClick={() => playCooldownChime()}
                     title="Test cooldown reset chime"
                     aria-label="Test cooldown reset chime"
-                    className="p-1 rounded text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                    className="p-1 rounded text-xs text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer"
                   >
                     <Play size={11} />
                   </button>
                 </div>
               </div>
-              <div className="text-zinc-300 text-[11px]">Maintain minimum 45-minute pause between trades.</div>
+              <div className="text-[var(--text-secondary)] text-[11px]">Maintain minimum 45-minute pause between trades.</div>
               <div className="pt-1 font-mono text-[11px] flex items-center justify-between">
                 {isCooldownActive ? (
-                  <span className="text-amber-400">⏳ {cooldownRemainingText}</span>
+                  <span className="text-[var(--amber)]">⏳ {cooldownRemainingText}</span>
                 ) : (
-                  <span className="text-emerald-400">✓ Cooldown satisfied (&gt;45m)</span>
+                  <span className="text-[var(--green)]">✓ Cooldown satisfied (&gt;45m)</span>
                 )}
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-[var(--text-secondary)]">
                   {audioEnabled ? "Chime on" : "Muted"}
                 </span>
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-1">
-              <div className="text-zinc-400 font-medium">Anti-Revenge Principle</div>
-              <div className="text-zinc-300 text-[11px]">
+            <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-1">
+              <div className="text-[var(--text-secondary)] font-medium">Anti-Revenge Principle</div>
+              <div className="text-[var(--text-secondary)] text-[11px]">
                 Protect account first. No revenge trading, no overtrading, no increasing risk after losses.
               </div>
-              <div className="pt-1 font-mono text-[11px] text-emerald-400">
+              <div className="pt-1 font-mono text-[11px] text-[var(--green)]">
                 ✓ Policy enforced in terminal
               </div>
             </div>

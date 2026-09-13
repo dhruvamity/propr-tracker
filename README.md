@@ -67,6 +67,8 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run build
 ```
 
+> **Note on Build-Time Font Fetching:** `apps/terminal` uses `next/font/google` (`Inter` and `JetBrains Mono`). During `npm run build`, Next.js downloads these font files directly from Google Fonts at build time to optimize and self-host them. In restricted offline environments or CI sandboxes without outbound internet access to `fonts.googleapis.com`, `next build` may report a network error. Automated testing (`npm test`), design token verification (`npm run check:palette`), and type checking (`npm run type-check`) execute entirely offline with zero network dependency.
+
 ## Intentionally Unsupported
 - **Order Placement & Modification**: The terminal does not place orders, cancel orders, or modify stops. It contains zero mutation endpoints.
 - **Payout Requests**: Payout withdrawals cannot be initiated from this application.

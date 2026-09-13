@@ -2,7 +2,7 @@
 
 import React from "react";
 import { formatUSD } from "@/lib/utils";
-import { Card } from "@/components/ui";
+import { Card, MetricValue } from "@/components/ui";
 import {
   DailyPnlChart,
   type DailyPnlItem,
@@ -141,62 +141,77 @@ export function AnalyticsPerformanceTab({ metrics }: AnalyticsPerformanceTabProp
             {/* Summary Row */}
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 pt-4 border-t border-[var(--border-subtle)] text-xs">
               <div>
-                <div className="text-zinc-400 text-[11px]">Best day</div>
-                <div className="font-mono font-semibold text-emerald-400 mt-0.5">
-                  +{formatUSD(metrics.bestDay)}
-                </div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Best day</div>
+                <MetricValue
+                  value={`+${formatUSD(metrics.bestDay)}`}
+                  tone="positive"
+                  size="sm"
+                  className="mt-0.5"
+                />
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Worst day</div>
-                <div className="font-mono font-semibold text-red-400 mt-0.5">
-                  -{formatUSD(Math.abs(metrics.worstDay))}
-                </div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Worst day</div>
+                <MetricValue
+                  value={`-${formatUSD(Math.abs(metrics.worstDay))}`}
+                  tone="negative"
+                  size="sm"
+                  className="mt-0.5"
+                />
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Avg Profit day</div>
-                <div className="font-mono font-semibold text-emerald-400 mt-0.5">
-                  +{formatUSD(metrics.avgProfitDay)}
-                </div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Avg Profit day</div>
+                <MetricValue
+                  value={`+${formatUSD(metrics.avgProfitDay)}`}
+                  tone="positive"
+                  size="sm"
+                  className="mt-0.5"
+                />
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Avg Loss day</div>
-                <div className="font-mono font-semibold text-red-400 mt-0.5">
-                  -{formatUSD(Math.abs(metrics.avgLossDay))}
-                </div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Avg Loss day</div>
+                <MetricValue
+                  value={`-${formatUSD(Math.abs(metrics.avgLossDay))}`}
+                  tone="negative"
+                  size="sm"
+                  className="mt-0.5"
+                />
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Win Rate</div>
-                <div className="font-mono font-semibold text-white mt-0.5">
-                  {metrics.winRate.toFixed(2)}%
-                </div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Win Rate</div>
+                <MetricValue
+                  value={`${metrics.winRate.toFixed(2)}%`}
+                  tone="default"
+                  size="sm"
+                  className="mt-0.5"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-[var(--border-subtle)] text-xs">
               <div>
-                <div className="text-zinc-400 text-[11px]"># of trades</div>
+                <div className="text-[var(--text-secondary)] text-[11px]"># of trades</div>
                 <div className="font-mono text-white mt-0.5">
                   {metrics.totalTrades}{" "}
-                  <span className="text-emerald-400">{metrics.winningTrades}W</span>{" "}
-                  <span className="text-red-400">{metrics.losingTrades}L</span>
+                  <span className="text-[var(--green)]">{metrics.winningTrades}W</span>{" "}
+                  <span className="text-[var(--red)]">{metrics.losingTrades}L</span>
                 </div>
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Total volume</div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Total volume</div>
                 <div className="font-mono text-white mt-0.5">
                   ${Math.round(metrics.totalVolume / 1000)}K
                 </div>
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Active days</div>
+                <div className="text-[var(--text-secondary)] text-[11px]">Active days</div>
                 <div className="font-mono text-white mt-0.5">
                   {metrics.activeDays}
                 </div>
               </div>
               <div>
-                <div className="text-zinc-400 text-[11px]">Avg Slippage</div>
-                <div className="font-mono text-zinc-300 mt-0.5">
-                  $0.00 <span className="text-zinc-400">-0.002%</span>
+                <div className="text-[var(--text-secondary)] text-[11px]">Avg Slippage</div>
+                <div className="font-mono text-[var(--text-secondary)] mt-0.5">
+                  $0.00 <span className="text-[var(--text-secondary)]">-0.002%</span>
                 </div>
               </div>
             </div>

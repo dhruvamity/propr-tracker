@@ -93,25 +93,25 @@ export function RegimeChart({
       {/* Header Controls: Title & Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-200">
+          <h2 className="text-sm font-semibold text-white">
             {chartRange.toUpperCase()} Market Condition Timeline
           </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Calibrated against rolling 7-day volume: highlights momentum vs dormant flatlines.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* 24h / 48h Range Toggle */}
-          <div className="flex items-center p-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-xs">
+          <div className="flex items-center p-0.5 rounded-md bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs">
             <button
               type="button"
               onClick={() => onRangeChange("24h")}
               className={cn(
                 "px-2.5 py-1 rounded transition-colors font-mono",
                 chartRange === "24h"
-                  ? "bg-zinc-800 text-white font-semibold"
-                  : "text-zinc-400 hover:text-zinc-200"
+                  ? "bg-[var(--border-primary)] text-white font-semibold"
+                  : "text-[var(--text-secondary)] hover:text-white"
               )}
             >
               24H
@@ -122,8 +122,8 @@ export function RegimeChart({
               className={cn(
                 "px-2.5 py-1 rounded transition-colors font-mono",
                 chartRange === "48h"
-                  ? "bg-zinc-800 text-white font-semibold"
-                  : "text-zinc-400 hover:text-zinc-200"
+                  ? "bg-[var(--border-primary)] text-white font-semibold"
+                  : "text-[var(--text-secondary)] hover:text-white"
               )}
             >
               48H
@@ -131,7 +131,7 @@ export function RegimeChart({
           </div>
 
           {/* Filter Mode: All / Dead / Trend */}
-          <div className="flex items-center p-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-xs">
+          <div className="flex items-center p-0.5 rounded-md bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs">
             {(["all", "dead", "trend"] as const).map((mode) => (
               <button
                 key={mode}
@@ -140,8 +140,8 @@ export function RegimeChart({
                 className={cn(
                   "px-2.5 py-1 rounded transition-colors uppercase font-medium",
                   filterMode === mode
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[var(--border-primary)] text-white font-semibold"
+                    : "text-[var(--text-secondary)] hover:text-white"
                 )}
               >
                 {mode === "all" ? "All" : mode === "dead" ? "Dead only" : "Trend only"}
@@ -152,46 +152,46 @@ export function RegimeChart({
       </div>
 
       {/* Interactive Hover HUD */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 rounded bg-zinc-900/60 border border-zinc-800/80 text-xs font-mono">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-mono">
         <div>
-          <span className="text-[11px] text-zinc-400 block font-sans">Candle (IST)</span>
-          <span className="text-zinc-200 font-semibold mt-0.5 block">
+          <span className="text-[11px] text-[var(--text-secondary)] block font-sans">Candle (IST)</span>
+          <span className="text-white font-semibold mt-0.5 block">
             {activeHover?.istLabel ?? "—"}
           </span>
         </div>
         <div>
-          <span className="text-[11px] text-zinc-400 block font-sans">Price</span>
+          <span className="text-[11px] text-[var(--text-secondary)] block font-sans">Price</span>
           <span className="text-white font-bold mt-0.5 block">
             {activeHover ? formatUSD(activeHover.price) : "—"}
           </span>
         </div>
         <div>
-          <span className="text-[11px] text-zinc-400 block font-sans">Condition</span>
+          <span className="text-[11px] text-[var(--text-secondary)] block font-sans">Condition</span>
           <span
             className={cn(
               "font-semibold mt-0.5 block",
-              activeHover ? CONDITION_CONFIG[activeHover.label].textColor : "text-zinc-400"
+              activeHover ? CONDITION_CONFIG[activeHover.label].textColor : "text-[var(--text-secondary)]"
             )}
           >
             {activeHover ? CONDITION_CONFIG[activeHover.label].name : "—"}
           </span>
         </div>
         <div>
-          <span className="text-[11px] text-zinc-400 block font-sans">Volatility Pulse</span>
-          <span className="text-zinc-200 mt-0.5 block">
+          <span className="text-[11px] text-[var(--text-secondary)] block font-sans">Volatility Pulse</span>
+          <span className="text-white mt-0.5 block">
             {activeHover ? `${Math.round(activeHover.activity)}%` : "—"}
           </span>
         </div>
         <div>
-          <span className="text-[11px] text-zinc-400 block font-sans">Direction Strength</span>
-          <span className="text-zinc-200 mt-0.5 block">
+          <span className="text-[11px] text-[var(--text-secondary)] block font-sans">Direction Strength</span>
+          <span className="text-white mt-0.5 block">
             {activeHover ? `${Math.round(activeHover.persistence)}%` : "—"}
           </span>
         </div>
       </div>
 
       {/* SVG Canvas Frame */}
-      <div className="relative w-full overflow-hidden rounded border border-zinc-800/80 bg-zinc-950/80">
+      <div className="relative w-full overflow-hidden rounded border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           className="w-full h-auto block select-none"

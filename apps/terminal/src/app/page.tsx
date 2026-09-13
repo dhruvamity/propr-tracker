@@ -90,10 +90,10 @@ export default async function OverviewPage() {
       {criticalAccount ? (
         <div className="p-4 rounded-lg border border-red-800/60 bg-red-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
           <div>
-            <div className="text-xs font-semibold text-red-400">1 account needs attention</div>
-            <div className="text-xs text-zinc-300 mt-1 font-sans">
+            <p className="text-xs font-medium text-[var(--red)]">1 account needs attention</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-1 font-sans">
               {criticalAccount.challengeName || "Starter Turbo"} · <span className="font-mono text-white font-medium">{formatUSD(criticalAccount.dailyLossRemaining)}</span> daily room remaining
-            </div>
+            </p>
           </div>
           <Link
             href="/live"

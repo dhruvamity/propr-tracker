@@ -13,6 +13,7 @@
     "start": "npm run start --workspace=apps/terminal",
     "lint": "npm run lint --workspace=apps/terminal",
     "test": "vitest run",
+    "check:palette": "node scripts/check-raw-palette.mjs",
     "type-check": "tsc -b packages/data-model packages/calculations packages/finance packages/propr-client && npm run type-check --workspace=services/propr-sync && npx tsc --project apps/terminal/tsconfig.json --noEmit"
   },
   "devDependencies": {

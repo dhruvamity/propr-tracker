@@ -23,44 +23,44 @@ interface StatusBadgeProps {
 
 const TONE_STYLES: Record<StatusTone, { text: string; dot: string }> = {
   green: {
-    text: "text-emerald-400",
-    dot: "bg-emerald-500",
+    text: "text-[var(--green)]",
+    dot: "bg-[var(--green)]",
   },
   red: {
-    text: "text-red-400",
-    dot: "bg-red-500",
+    text: "text-[var(--red)]",
+    dot: "bg-[var(--red)]",
   },
   amber: {
-    text: "text-amber-400",
-    dot: "bg-amber-500",
+    text: "text-[var(--amber)]",
+    dot: "bg-[var(--amber)]",
   },
   cyan: {
-    text: "text-cyan-400",
-    dot: "bg-cyan-500",
+    text: "text-[var(--cyan)]",
+    dot: "bg-[var(--cyan)]",
   },
   zinc: {
-    text: "text-zinc-300",
-    dot: "bg-zinc-400",
+    text: "text-[var(--text-secondary)]",
+    dot: "bg-[var(--text-secondary)]",
   },
   neutral: {
-    text: "text-zinc-400",
-    dot: "bg-zinc-500",
+    text: "text-[var(--text-muted)]",
+    dot: "bg-[var(--text-muted)]",
   },
   buy: {
-    text: "text-emerald-400",
-    dot: "bg-emerald-500",
+    text: "text-[var(--green)]",
+    dot: "bg-[var(--green)]",
   },
   sell: {
-    text: "text-red-400",
-    dot: "bg-red-500",
+    text: "text-[var(--red)]",
+    dot: "bg-[var(--red)]",
   },
   long: {
-    text: "text-emerald-400",
-    dot: "bg-emerald-500",
+    text: "text-[var(--green)]",
+    dot: "bg-[var(--green)]",
   },
   short: {
-    text: "text-red-400",
-    dot: "bg-red-500",
+    text: "text-[var(--red)]",
+    dot: "bg-[var(--red)]",
   },
 };
 

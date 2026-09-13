@@ -179,8 +179,8 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("ALL")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "ALL"
-                ? "bg-zinc-800 text-white font-medium"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--bg-elevated)] text-white font-medium"
+                : "text-[var(--text-secondary)] hover:text-white"
             }`}
           >
             All ({accounts.length})
@@ -190,8 +190,8 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("ACTIVE")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "ACTIVE"
-                ? "bg-zinc-800 text-white font-medium"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--bg-elevated)] text-white font-medium"
+                : "text-[var(--text-secondary)] hover:text-white"
             }`}
           >
             Active ({activeCount})
@@ -201,8 +201,8 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("FUNDED")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "FUNDED"
-                ? "bg-zinc-800 text-white font-medium"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--bg-elevated)] text-white font-medium"
+                : "text-[var(--text-secondary)] hover:text-white"
             }`}
           >
             Funded ({fundedCount})
@@ -212,8 +212,8 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             onClick={() => setFilter("ARCHIVED")}
             className={`px-3 py-1 rounded-md transition-colors ${
               filter === "ARCHIVED"
-                ? "bg-zinc-800 text-white font-medium"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--bg-elevated)] text-white font-medium"
+                : "text-[var(--text-secondary)] hover:text-white"
             }`}
           >
             Archived ({failedCount})
@@ -225,23 +225,23 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
           <div className="relative flex-1 md:w-56">
             <Search
               size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
             />
             <input
               type="text"
               placeholder="Search account / ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-md pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-700 font-sans"
+              className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-md pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[var(--border-primary)] font-sans"
             />
           </div>
 
-          <div className="flex items-center gap-1 text-zinc-400 font-sans">
+          <div className="flex items-center gap-1 text-[var(--text-secondary)] font-sans">
             <span>Sort:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1 text-xs text-zinc-200 focus:outline-none focus:border-zinc-700 font-sans"
+              className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-[var(--border-primary)] font-sans"
             >
               <option value="RISK">Risk (Breach Proximity) ▼</option>
               <option value="EQUITY_DESC">Equity (High to Low)</option>
@@ -311,42 +311,42 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     {/* Column 2: Account Identifier + Challenge Tier (Prompt §19: clean ID + hover copy) */}
                     <td className="py-2.5 px-3 text-left group">
                       <div className="flex items-center gap-1.5 font-sans">
-                        <span className="font-semibold text-zinc-100">{formatAccountTag(acc.accountId)}</span>
+                        <span className="font-semibold text-white">{formatAccountTag(acc.accountId)}</span>
                         <button
                           type="button"
                           onClick={(e) => copyToClipboard(acc.accountId, e)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-zinc-400 hover:text-zinc-200 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[var(--text-secondary)] hover:text-white transition-opacity"
                           title="Copy account ID"
                           aria-label="Copy account ID"
                         >
                           {copiedId === acc.accountId ? (
-                            <Check size={11} className="text-emerald-400" />
+                            <Check size={11} className="text-[var(--green)]" />
                           ) : (
                             <Copy size={11} />
                           )}
                         </button>
                       </div>
-                      <span className="text-[11px] text-zinc-400 block font-sans font-normal mt-0.5">
+                      <span className="text-[11px] text-[var(--text-secondary)] block font-sans font-normal mt-0.5">
                         {acc.challengeName || "Starter Turbo"}
                       </span>
                     </td>
 
                     {/* Column 3: Starting Capital (Right-aligned) */}
-                    <td className="py-2.5 px-3 text-right text-zinc-400 whitespace-nowrap font-mono font-medium">
+                    <td className="py-2.5 px-3 text-right text-[var(--text-secondary)] whitespace-nowrap font-mono font-medium">
                       {formatUSD(startBal)}
                     </td>
 
                     {/* Column 4: Current / Ending Equity (Right-aligned) */}
-                    <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-medium text-zinc-100">
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-medium text-white">
                       {formatUSD(currentEq)}
                     </td>
 
                     {/* Column 5: Net PnL (Financial Monospace + Green/Red Sign) */}
                     <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono">
-                      <span className={`font-semibold ${isPos ? "text-emerald-400" : "text-red-400"}`}>
+                      <span className={`font-semibold ${isPos ? "text-[var(--green)]" : "text-[var(--red)]"}`}>
                         {isPos ? "+" : ""}{formatUSD(netPnlNum)}
                       </span>
-                      <span className={`text-[11px] block ${isPos ? "text-emerald-400/80" : "text-red-400/80"}`}>
+                      <span className={`text-[11px] block ${isPos ? "text-[var(--green)]/80" : "text-[var(--red)]/80"}`}>
                         {isPos ? "+" : ""}{pnlPct.toFixed(2)}%
                       </span>
                     </td>
@@ -354,21 +354,21 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     {/* Column 5: Failure Trigger / Target Progress (Left-aligned) */}
                     <td className="py-2.5 px-3 text-left font-sans">
                       {acc.failureReason ? (
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-[var(--text-secondary)]">
                           {acc.failureReason.replace(/_/g, " ")}
                         </span>
                       ) : isActive ? (
-                        <div className="text-zinc-300 text-xs">
-                          <span className="font-mono font-medium text-zinc-100">{formatPercent(acc.profitTargetPct, 2)}</span>
-                          <span className="text-zinc-400 ml-1">/ {acc.profitTargetPercent || "9"}% target</span>
+                        <div className="text-[var(--text-secondary)] text-xs">
+                          <span className="font-mono font-medium text-white">{formatPercent(acc.profitTargetPct, 2)}</span>
+                          <span className="text-[var(--text-secondary)] ml-1">/ {acc.profitTargetPercent || "9"}% target</span>
                           {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 && (
-                            <span className="text-zinc-400 block text-[11px] font-mono">
+                            <span className="text-[var(--text-secondary)] block text-[11px] font-mono">
                               ({formatUSD(acc.toTargetAmount)} left)
                             </span>
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-400 text-xs">Archived</span>
+                        <span className="text-[var(--text-secondary)] text-xs">Archived</span>
                       )}
                     </td>
 
@@ -377,7 +377,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                       <button
                         type="button"
                         onClick={() => setDrawerAccount(acc)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-sans font-medium text-[var(--cyan)] hover:text-white hover:bg-zinc-800 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-sans font-medium text-[var(--cyan)] hover:text-white hover:bg-[var(--bg-elevated)] transition-colors"
                       >
                         <span>View trades</span>
                         <ExternalLink size={11} />
@@ -397,29 +397,29 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
             onClick={() => setDrawerAccount(null)}
           />
-          <div className="relative w-full max-w-2xl bg-zinc-950 border-l border-zinc-800 h-full overflow-y-auto p-6 space-y-6 shadow-2xl z-10 animate-in slide-in-from-right duration-200">
+          <div className="relative w-full max-w-2xl bg-[var(--bg-primary)] border-l border-[var(--border-subtle)] h-full overflow-y-auto p-6 space-y-6 shadow-2xl z-10 animate-in slide-in-from-right duration-200">
             {/* Drawer Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-zinc-800 font-sans">
+            <div className="flex items-start justify-between pb-4 border-b border-[var(--border-subtle)] font-sans">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-semibold text-white">
                     {drawerAccount.challengeName || "Account Details"}
                   </h3>
-                  <span className="text-xs font-mono text-zinc-300 font-medium">
+                  <span className="text-xs font-mono text-[var(--text-secondary)] font-medium">
                     {formatAccountTag(drawerAccount.accountId)}
                   </span>
-                  <span className="text-xs text-zinc-400 capitalize">
+                  <span className="text-xs text-[var(--text-secondary)] capitalize">
                     {drawerAccount.stage?.toLowerCase()}
                   </span>
                 </div>
-                <p className="text-xs font-mono text-zinc-400 mt-1">
+                <p className="text-xs font-mono text-[var(--text-secondary)] mt-1">
                   {drawerAccount.accountId}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setDrawerAccount(null)}
-                className="p-1.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+                className="p-1.5 rounded text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-elevated)] transition-colors"
                 aria-label="Close drawer"
               >
                 <X size={18} />
@@ -427,38 +427,38 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
             </div>
 
             {/* Quick Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
               <div>
-                <span className="text-zinc-400 text-xs font-sans block">Equity</span>
+                <span className="text-[var(--text-secondary)] text-xs font-sans block">Equity</span>
                 <span className="text-base font-mono font-bold text-white mt-0.5 block">{formatUSD(drawerAccount.equity || drawerAccount.balance)}</span>
               </div>
               <div>
-                <span className="text-zinc-400 text-xs font-sans block">Starting</span>
-                <span className="text-base font-mono font-bold text-zinc-300 mt-0.5 block">{formatUSD(drawerAccount.initialBalance || drawerAccount.startingBalance)}</span>
+                <span className="text-[var(--text-secondary)] text-xs font-sans block">Starting</span>
+                <span className="text-base font-mono font-bold text-[var(--text-secondary)] mt-0.5 block">{formatUSD(drawerAccount.initialBalance || drawerAccount.startingBalance)}</span>
               </div>
               <div>
-                <span className="text-zinc-400 text-xs font-sans block">Drawdown Buffer</span>
-                <span className="text-base font-mono font-bold text-zinc-200 mt-0.5 block">{formatUSD(drawerAccount.drawdownRemaining)}</span>
+                <span className="text-[var(--text-secondary)] text-xs font-sans block">Drawdown Buffer</span>
+                <span className="text-base font-mono font-bold text-white mt-0.5 block">{formatUSD(drawerAccount.drawdownRemaining)}</span>
               </div>
               <div>
-                <span className="text-zinc-400 text-xs font-sans block">Daily Room</span>
-                <span className="text-base font-mono font-bold text-emerald-400 mt-0.5 block">{formatUSD(drawerAccount.dailyLossRemaining)}</span>
+                <span className="text-[var(--text-secondary)] text-xs font-sans block">Daily Room</span>
+                <span className="text-base font-mono font-bold text-[var(--green)] mt-0.5 block">{formatUSD(drawerAccount.dailyLossRemaining)}</span>
               </div>
             </div>
 
             {/* Account Trade History */}
             <div className="space-y-3 font-sans">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-zinc-200 text-sm">
+                <span className="font-semibold text-white text-sm">
                   Order execution history ({drawerAccount.closedTradesCount || drawerAccount.trades?.length || 0} trades)
                 </span>
                 {drawerAccount.winLossRatio && (
-                  <span className="text-zinc-400 font-mono">{drawerAccount.winLossRatio}</span>
+                  <span className="text-[var(--text-secondary)] font-mono">{drawerAccount.winLossRatio}</span>
                 )}
               </div>
 
               {!drawerAccount.trades || drawerAccount.trades.length === 0 ? (
-                <div className="rounded border border-zinc-800 p-6 bg-zinc-950/40">
+                <div className="rounded border border-[var(--border-subtle)] p-6 bg-[var(--bg-primary)]">
                   <EmptyState
                     icon={History}
                     title="No Trade History"
@@ -466,10 +466,10 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                   />
                 </div>
               ) : (
-                <div className="rounded border border-zinc-800 overflow-x-auto">
+                <div className="rounded border border-[var(--border-subtle)] overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 font-sans">
+                      <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] font-sans">
                         <th className="py-2 px-3 font-normal">Time</th>
                         <th className="py-2 px-3 font-normal">Asset</th>
                         <th className="py-2 px-3 font-normal">Side</th>
@@ -486,7 +486,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
 
                         return (
                           <tr key={t.tradeId || idx} className="hover:bg-white/[0.02]">
-                            <td className="py-2 px-3 text-zinc-400 whitespace-nowrap">
+                            <td className="py-2 px-3 text-[var(--text-secondary)] whitespace-nowrap">
                               {t.executedAt ? new Date(t.executedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "—"}
                             </td>
                             <td className="py-2 px-3 font-semibold text-white">
@@ -494,22 +494,22 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                             </td>
                             <td className="py-2 px-3">
                               <span className={`font-sans text-[11px] font-semibold ${
-                                t.side?.toLowerCase() === "buy" ? "text-emerald-400" : "text-red-400"
+                                t.side?.toLowerCase() === "buy" ? "text-[var(--green)]" : "text-[var(--red)]"
                               }`}>
                                 {t.side ? (t.side.toLowerCase() === "buy" ? "Buy" : "Sell") : "—"}
                               </span>
                             </td>
-                            <td className="py-2 px-3 text-right text-zinc-200 whitespace-nowrap">
+                            <td className="py-2 px-3 text-right text-white whitespace-nowrap">
                               {formatUSD(t.price)}
                             </td>
-                            <td className="py-2 px-3 text-right text-zinc-200">
+                            <td className="py-2 px-3 text-right text-white">
                               {t.quantity || "—"}
                             </td>
-                            <td className="py-2 px-3 text-right text-zinc-400">
+                            <td className="py-2 px-3 text-right text-[var(--text-secondary)]">
                               {formatUSD(t.fee)}
                             </td>
                             <td className={`py-2 px-3 text-right font-semibold whitespace-nowrap ${
-                              isPnlPos ? "text-emerald-400" : "text-red-400"
+                              isPnlPos ? "text-[var(--green)]" : "text-[var(--red)]"
                             }`}>
                               {isPnlPos ? `+${formatUSD(pnl)}` : `-${formatUSD(Math.abs(pnl))}`}
                             </td>
