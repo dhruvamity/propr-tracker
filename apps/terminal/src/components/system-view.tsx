@@ -107,23 +107,23 @@ export function SystemView({ health }: SystemViewProps) {
 
       {/* ─── 2. Data Flow Summary ─── */}
       <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-3">
-        <div className="text-xs font-semibold text-zinc-200">
+        <h3 className="text-xs font-semibold text-zinc-200">
           Data flow
-        </div>
+        </h3>
         <div className="flex items-center justify-center gap-4 py-3 bg-zinc-950/60 rounded-md border border-zinc-800/60">
           <div className="text-center">
             <span className="text-[var(--cyan)] font-bold text-sm block font-sans">REST API</span>
-            <span className="text-[10px] text-zinc-500 font-mono">api.propr.xyz</span>
+            <span className="text-[11px] text-zinc-400 font-mono">api.propr.xyz</span>
           </div>
-          <ArrowRight size={14} className="text-zinc-600" />
+          <ArrowRight size={14} className="text-zinc-500" />
           <div className="text-center">
             <span className="text-white font-bold text-sm block font-sans">CACHE</span>
-            <span className="text-[10px] text-zinc-500 font-sans">15s ISR</span>
+            <span className="text-[11px] text-zinc-400 font-sans">15s ISR</span>
           </div>
-          <ArrowRight size={14} className="text-zinc-600" />
+          <ArrowRight size={14} className="text-zinc-500" />
           <div className="text-center">
             <span className="text-emerald-400 font-bold text-sm block font-sans">CLIENT</span>
-            <span className="text-[10px] text-zinc-500 font-sans">Decimal.js</span>
+            <span className="text-[11px] text-zinc-400 font-sans">Decimal.js</span>
           </div>
         </div>
         <div className="flex items-center justify-between text-zinc-400 text-xs pt-1">

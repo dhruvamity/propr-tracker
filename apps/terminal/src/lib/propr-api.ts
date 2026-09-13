@@ -3,6 +3,14 @@
 
 import { SEED_PURCHASES, reconcileDynamicPurchases } from "./finance-data";
 import Decimal from "decimal.js";
+import {
+  isTradingActive,
+  isCashExposed,
+  isAccountFailed,
+  isEvaluation,
+  isFunded,
+  isPassed,
+} from "@propr/data-model";
 
 const API_KEY = process.env.PROPR_API_KEY || "";
 const BASE_URL = process.env.PROPR_API_URL || "https://api.propr.xyz/v1";
@@ -238,7 +246,7 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
         let positions: PositionData[] = [];
         let orders: OrderData[] = [];
 
-        if (stage === "EVALUATION" || stage === "FUNDED") {
+        if (isTradingActive(stage)) {
           const [posRaw, ordRaw] = await Promise.all([
             fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/positions`, { status: "open" }).catch(() => []),
             fetchAllPages<Record<string, unknown>>(`/accounts/${accountId}/orders`).catch(() => []),
@@ -677,12 +685,7 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
     const activePurchaseIds = new Set<string>();
     const activeAccountIds = new Set<string>();
     for (const acc of accounts) {
-      if (
-        acc.stage === "EVALUATION" ||
-        acc.stage === "FUNDED" ||
-        acc.stage === "PASSED" ||
-        acc.stage === "REVIEW_PENDING"
-      ) {
+      if (isCashExposed(acc.stage)) {
         activeAccountIds.add(acc.accountId);
         if (acc.purchaseId) activePurchaseIds.add(acc.purchaseId);
       }
@@ -760,10 +763,10 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
     const actualCashPnLUSD = rate.isZero() ? new Decimal(0) : actualCashPnLINR.dividedBy(rate);
 
     const summary = {
-      activeEvals: accounts.filter((a) => a.stage === "EVALUATION").length,
-      funded: accounts.filter((a) => a.stage === "FUNDED").length,
-      passed: accounts.filter((a) => a.stage === "PASSED").length,
-      failedBreached: accounts.filter((a) => a.stage === "FAILED" || a.stage === "BREACHED").length,
+      activeEvals: accounts.filter((a) => isEvaluation(a.stage)).length,
+      funded: accounts.filter((a) => isFunded(a.stage)).length,
+      passed: accounts.filter((a) => isPassed(a.stage)).length,
+      failedBreached: accounts.filter((a) => isAccountFailed(a.stage)).length,
       totalAccounts: accounts.length,
     };
 

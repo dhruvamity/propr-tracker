@@ -1,4 +1,5 @@
 import { fetchDashboardData } from "@/lib/propr-api";
+import { isTradingActive } from "@propr/data-model";
 import { formatUSD, formatINR } from "@/lib/utils";
 import { ArrowUpRight, TrendingUp, ShieldCheck, ShieldAlert } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
@@ -11,9 +12,7 @@ export default async function OverviewPage() {
   const data = await fetchDashboardData();
   const { finance, accounts, allPositions, allOrders } = data;
 
-  const activeAccounts = accounts.filter(
-    (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  );
+  const activeAccounts = accounts.filter((a) => isTradingActive(a.stage));
 
   // Sort active accounts by active breach proximity (lowest effective buffer first)
   const rankedActiveAccounts = [...activeAccounts].sort((a, b) => {

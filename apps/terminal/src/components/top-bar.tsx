@@ -183,7 +183,7 @@ export function TopBar() {
           aria-label={`Fetch latest data (${kMod}K)`}
         >
           <RefreshCw size={13} className={cn(isRefreshing && "animate-spin text-[var(--cyan)]")} />
-          <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">{kMod}K</span>
+          <span className="text-[11px] font-mono text-zinc-400 hidden sm:inline">{kMod}K</span>
         </button>
 
         {/* Complete Markdown Export Button with ⌘E Badge */}
@@ -195,7 +195,7 @@ export function TopBar() {
         >
           <FileDown size={13} className="text-zinc-400" />
           <span className="hidden sm:inline">Export .md</span>
-          <span className="text-[10px] font-mono text-zinc-500 hidden sm:inline">{kMod}E</span>
+          <span className="text-[11px] font-mono text-zinc-400 hidden sm:inline">{kMod}E</span>
         </a>
       </div>
     </header>

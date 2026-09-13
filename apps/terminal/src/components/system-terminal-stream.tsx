@@ -365,9 +365,9 @@ export function SystemTerminalStream() {
               key={log.id}
               className="flex items-start gap-2.5 hover:bg-zinc-900/50 px-2 py-0.5 rounded transition-colors"
             >
-              <span className="text-zinc-500 shrink-0 select-none text-xs">[{log.timestamp}]</span>
+              <span className="text-zinc-400 shrink-0 select-none text-xs">[{log.timestamp}]</span>
               <span
-                className={`px-1.5 py-0.2 rounded text-[10px] font-bold border shrink-0 ${getBadgeColor(
+                className={`px-1.5 py-0.2 rounded text-[11px] font-bold border shrink-0 ${getBadgeColor(
                   log.type
                 )}`}
               >

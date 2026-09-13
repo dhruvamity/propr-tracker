@@ -2,6 +2,12 @@
 
 import React, { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import {
+  isTradingActive,
+  isAccountFailed,
+  isFunded,
+  isPassed,
+} from "@propr/data-model";
 import { formatUSD, formatPercent, formatAccountTag } from "@/lib/utils";
 import {
   Search,
@@ -10,6 +16,13 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
+import {
+  TableContainer,
+  TableHeaderRow,
+  TableHeaderCell,
+  TableBody,
+  StatusBadge,
+} from "@/components/ui";
 
 export interface AccountTrade {
   tradeId?: string;
@@ -110,12 +123,12 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
   const filteredAndSortedAccounts = useMemo(() => {
     return accounts
       .filter((acc) => {
-        const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED" || acc.stage === "CLOSED";
-        const isActive = acc.stage === "EVALUATION" || acc.stage === "FUNDED";
+        const isFailed = isAccountFailed(acc.stage);
+        const isActive = isTradingActive(acc.stage);
 
         if (filter === "ACTIVE" && !isActive) return false;
         if (filter === "ARCHIVED" && !isFailed) return false;
-        if (filter === "FUNDED" && acc.stage !== "FUNDED") return false;
+        if (filter === "FUNDED" && !isFunded(acc.stage)) return false;
 
         if (searchTerm.trim()) {
           const q = searchTerm.toLowerCase();
@@ -149,13 +162,9 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
       });
   }, [accounts, filter, searchTerm, sortBy]);
 
-  const activeCount = accounts.filter(
-    (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  ).length;
-  const failedCount = accounts.filter(
-    (a) => a.stage === "FAILED" || a.stage === "BREACHED" || a.stage === "CLOSED"
-  ).length;
-  const fundedCount = accounts.filter((a) => a.stage === "FUNDED").length;
+  const activeCount = accounts.filter((a) => isTradingActive(a.stage)).length;
+  const failedCount = accounts.filter((a) => isAccountFailed(a.stage)).length;
+  const fundedCount = accounts.filter((a) => isFunded(a.stage)).length;
 
   return (
     <div className="space-y-4">
@@ -242,58 +251,52 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
       </div>
 
       {/* ─── Consolidated Accounts Table (Prompt §12 & §13) ───────────── */}
-      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans">
-              <th className="py-2.5 px-3 text-left font-normal">Stage</th>
-              <th className="py-2.5 px-3 text-left font-normal">Account</th>
-              <th className="py-2.5 px-3 text-right font-normal">Starting Capital</th>
-              <th className="py-2.5 px-3 text-right font-normal">Equity</th>
-              <th className="py-2.5 px-3 text-right font-normal">Net P&L</th>
-              <th className="py-2.5 px-3 text-left font-normal">Failure / Target</th>
-              <th className="py-2.5 px-3 text-center font-normal">Action</th>
+      <TableContainer>
+        <thead>
+          <TableHeaderRow>
+            <TableHeaderCell>Stage</TableHeaderCell>
+            <TableHeaderCell>Account</TableHeaderCell>
+            <TableHeaderCell align="right">Starting Capital</TableHeaderCell>
+            <TableHeaderCell align="right">Equity</TableHeaderCell>
+            <TableHeaderCell align="right">Net P&L</TableHeaderCell>
+            <TableHeaderCell>Failure / Target</TableHeaderCell>
+            <TableHeaderCell align="center">Action</TableHeaderCell>
+          </TableHeaderRow>
+        </thead>
+        <TableBody>
+          {filteredAndSortedAccounts.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="py-8 text-center text-zinc-400 font-sans">
+                No accounts match the selected filter.
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">
-            {filteredAndSortedAccounts.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-zinc-500 font-sans">
-                  No accounts match the selected filter.
-                </td>
-              </tr>
-            ) : (
-              filteredAndSortedAccounts.map((acc) => {
-                const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED" || acc.stage === "CLOSED";
-                const isActive = acc.stage === "EVALUATION" || acc.stage === "FUNDED";
-                const startBal = Number(acc.initialBalance || acc.startingBalance || 10000);
-                const currentEq = Number(acc.equity || acc.balance || startBal);
-                const netPnlNum = currentEq - startBal;
-                const pnlPct = startBal > 0 ? (netPnlNum / startBal) * 100 : 0;
-                const isPos = netPnlNum >= 0;
+          ) : (
+            filteredAndSortedAccounts.map((acc) => {
+              const isFailed = isAccountFailed(acc.stage);
+              const isActive = isTradingActive(acc.stage);
+              const startBal = Number(acc.initialBalance || acc.startingBalance || 10000);
+              const currentEq = Number(acc.equity || acc.balance || startBal);
+              const netPnlNum = currentEq - startBal;
+              const pnlPct = startBal > 0 ? (netPnlNum / startBal) * 100 : 0;
+              const isPos = netPnlNum >= 0;
 
-                return (
-                  <tr
-                    key={acc.accountId}
-                    className="hover:bg-white/[0.02] transition-colors"
-                  >
-                    {/* Column 1: Stage (Prompt §18: standardized dot + text) */}
-                    <td className="py-2.5 px-3 text-left whitespace-nowrap font-sans">
-                      {isFailed ? (
-                        <span className="inline-flex items-center gap-1.5 text-red-400 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                          <span>Failed</span>
-                        </span>
-                      ) : acc.stage === "FUNDED" ? (
-                        <span className="inline-flex items-center gap-1.5 text-zinc-300 font-medium">
-                          <span>Funded</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-zinc-400 font-medium">
-                          <span>Evaluation</span>
-                        </span>
-                      )}
-                    </td>
+              return (
+                <tr
+                  key={acc.accountId}
+                  className="hover:bg-white/[0.02] transition-colors"
+                >
+                  {/* Column 1: Stage (Prompt §18: standardized dot + text) */}
+                  <td className="py-2.5 px-3 text-left whitespace-nowrap font-sans">
+                    {isFailed ? (
+                      <StatusBadge label="Failed" tone="red" />
+                    ) : isFunded(acc.stage) ? (
+                      <StatusBadge label="Funded" tone="zinc" dot={false} />
+                    ) : isPassed(acc.stage) ? (
+                      <StatusBadge label="Passed" tone="green" />
+                    ) : (
+                      <StatusBadge label="Evaluation" tone="neutral" dot={false} />
+                    )}
+                  </td>
 
                     {/* Column 2: Account Identifier + Challenge Tier (Prompt §19: clean ID + hover copy) */}
                     <td className="py-2.5 px-3 text-left group">
@@ -302,8 +305,9 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                         <button
                           type="button"
                           onClick={(e) => copyToClipboard(acc.accountId, e)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-zinc-500 hover:text-zinc-200 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-zinc-400 hover:text-zinc-200 transition-opacity"
                           title="Copy account ID"
+                          aria-label="Copy account ID"
                         >
                           {copiedId === acc.accountId ? (
                             <Check size={11} className="text-emerald-400" />
@@ -318,26 +322,26 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     </td>
 
                     {/* Column 3: Starting Capital (Right-aligned) */}
-                    <td className="py-2.5 px-3 text-right text-zinc-400 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right text-zinc-400 whitespace-nowrap font-mono font-medium">
                       {formatUSD(startBal)}
                     </td>
 
                     {/* Column 4: Current / Ending Equity (Right-aligned) */}
-                    <td className="py-2.5 px-3 text-right font-semibold text-zinc-100 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-medium text-zinc-100">
                       {formatUSD(currentEq)}
                     </td>
 
-                    {/* Column 5: Net PnL (Right-aligned) */}
-                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                    {/* Column 5: Net PnL (Financial Monospace + Green/Red Sign) */}
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono">
                       <span className={`font-semibold ${isPos ? "text-emerald-400" : "text-red-400"}`}>
-                        {isPos ? `+${formatUSD(netPnlNum)}` : `-${formatUSD(Math.abs(netPnlNum))}`}
+                        {isPos ? "+" : ""}{formatUSD(netPnlNum)}
                       </span>
-                      <span className={`text-[10px] block ${isPos ? "text-emerald-400/80" : "text-red-400/80"}`}>
-                        {isPos ? "+" : ""}{formatPercent(pnlPct, 2)}
+                      <span className={`text-[11px] block ${isPos ? "text-emerald-400/80" : "text-red-400/80"}`}>
+                        {isPos ? "+" : ""}{pnlPct.toFixed(2)}%
                       </span>
                     </td>
 
-                    {/* Column 6: Failure Trigger / Target Progress (Left-aligned) */}
+                    {/* Column 5: Failure Trigger / Target Progress (Left-aligned) */}
                     <td className="py-2.5 px-3 text-left font-sans">
                       {acc.failureReason ? (
                         <span className="text-xs text-zinc-400">
@@ -373,9 +377,8 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                 );
               })
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </TableContainer>
 
       {/* ─── Slide-out Account Detail & Trade History Drawer (Prompt Requirement §10) ─── */}
       {drawerAccount && (

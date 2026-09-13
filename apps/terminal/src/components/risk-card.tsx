@@ -1,5 +1,6 @@
 import React from "react";
 import type { AccountSnapshot } from "@/lib/types";
+import { isAccountFailed } from "@propr/data-model";
 import { formatUSD, formatPercent, formatShortId, cn } from "@/lib/utils";
 
 interface RiskCardProps {
@@ -25,7 +26,7 @@ export function RiskCard({ account, rank }: RiskCardProps) {
 
   // Semantic Risk State Determination (Prompt §6: Safe / Caution / Critical / Failed in sentence case)
   let riskStatus: "Safe" | "Caution" | "Critical" | "Failed" = "Safe";
-  if (account.stage === "BREACHED" || account.stage === "FAILED") {
+  if (isAccountFailed(account.stage)) {
     riskStatus = "Failed";
   } else if (dailyRoomPct <= 25 || bufferRemainingPct <= 25 || ddConsumedPct >= 75 || dailyConsumedPct >= 75) {
     riskStatus = "Critical";

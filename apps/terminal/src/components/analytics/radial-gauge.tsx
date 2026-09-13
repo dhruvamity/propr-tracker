@@ -85,7 +85,7 @@ export function WinRateArc({ wins, losses, size = 52 }: WinRateArcProps) {
           className="transition-all duration-500 ease-out"
         />
       </svg>
-      <div className="flex items-center gap-1.5 text-[10px] font-mono font-medium -mt-1">
+      <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium -mt-1">
         <span className="text-emerald-400">{wins}</span>
         <span className="text-red-400">{losses}</span>
       </div>

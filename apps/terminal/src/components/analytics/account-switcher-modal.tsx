@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { AccountSnapshot } from "@/lib/types";
+import { isTradingActive, isAccountFailed } from "@propr/data-model";
 import { formatUSD, formatShortId, formatAccountTag } from "@/lib/utils";
 import { Star, X, Check } from "lucide-react";
 
@@ -27,7 +28,7 @@ export function AccountSwitcherModal({
     // Default favorite is the active explorer account
     const fav = new Set<string>();
     accounts.forEach((a) => {
-      if (a.stage === "EVALUATION" || a.stage === "FUNDED") fav.add(a.accountId);
+      if (isTradingActive(a.stage)) fav.add(a.accountId);
     });
     return fav;
   });
@@ -45,7 +46,7 @@ export function AccountSwitcherModal({
   };
 
   const filteredAccounts = accounts.filter((acc) => {
-    const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED" || acc.stage === "CLOSED";
+    const isFailed = isAccountFailed(acc.stage);
     if (activeTab === "FAVORITES") return favorites.has(acc.accountId);
     if (activeTab === "BREACHED") return isFailed;
     if (activeTab === "ARCHIVED") return isFailed;
@@ -60,47 +61,58 @@ export function AccountSwitcherModal({
         onClick={onClose}
       />
 
-      {/* Modal Content */}
-      <div className="relative w-full max-w-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150 font-sans">
-        {/* Header Tabs & Close Button */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-subtle)]">
-          <div className="flex items-center gap-1 text-xs">
-            {(["ALL", "FAVORITES", "BREACHED", "ARCHIVED"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1 rounded-md transition-colors capitalize ${
-                  activeTab === tab
-                    ? "bg-zinc-800 text-white font-medium"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                {tab.toLowerCase()}
-              </button>
-            ))}
+      {/* Modal Dialog */}
+      <div className="relative w-full max-w-xl rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden z-10 flex flex-col max-h-[85vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Select Account</h2>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Switch trading account context across all analytical views
+            </p>
           </div>
-
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
             aria-label="Close modal"
+            className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50">
+          {(["ALL", "FAVORITES", "BREACHED", "ARCHIVED"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                activeTab === tab
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              {tab === "ALL" && `All (${accounts.length})`}
+              {tab === "FAVORITES" && `Favorites (${favorites.size})`}
+              {tab === "BREACHED" && "Breached"}
+              {tab === "ARCHIVED" && "Archived"}
+            </button>
+          ))}
+        </div>
+
         {/* Account List */}
-        <div className="divide-y divide-[var(--border-subtle)] max-h-96 overflow-y-auto">
+        <div className="overflow-y-auto divide-y divide-[var(--border-subtle)] flex-1">
           {filteredAccounts.length === 0 ? (
-            <div className="p-8 text-center text-xs text-zinc-500">
-              No accounts in this view.
+            <div className="py-12 text-center text-xs text-zinc-400">
+              No accounts match the selected filter.
             </div>
           ) : (
             filteredAccounts.map((acc) => {
               const isSelected = acc.accountId === selectedAccountId;
               const isFav = favorites.has(acc.accountId);
-              const isFailed = acc.stage === "FAILED" || acc.stage === "BREACHED" || acc.stage === "CLOSED";
+              const isFailed = isAccountFailed(acc.stage);
               const tag = formatAccountTag(acc.accountId);
               const equity = Number(acc.equity || acc.balance || acc.initialBalance || 0);
 
@@ -115,13 +127,14 @@ export function AccountSwitcherModal({
                     isSelected ? "bg-white/[0.04]" : ""
                   }`}
                 >
+                  {/* Left: Star + Icon + Name + Tag */}
                   <div className="flex items-center gap-3">
-                    {/* Star toggle */}
                     <button
                       type="button"
                       onClick={(e) => toggleFavorite(acc.accountId, e)}
+                      aria-label={isFav ? "Remove favorite" : "Add to favorites"}
                       className={`p-1 rounded transition-colors ${
-                        isFav ? "text-amber-400" : "text-zinc-600 hover:text-zinc-400"
+                        isFav ? "text-amber-400" : "text-zinc-400 hover:text-zinc-200"
                       }`}
                       title={isFav ? "Remove favorite" : "Favorite"}
                     >
@@ -129,7 +142,7 @@ export function AccountSwitcherModal({
                     </button>
 
                     {/* Propr geometric glyph */}
-                    <div className="w-5 h-5 rounded bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center text-emerald-400 text-[10px] font-bold">
+                    <div className="w-5 h-5 rounded bg-emerald-950/60 border border-emerald-800/40 flex items-center justify-center text-emerald-400 text-xs font-bold">
                       P
                     </div>
 
@@ -143,16 +156,18 @@ export function AccountSwitcherModal({
                           {tag}
                         </span>
                         {isFailed ? (
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-red-950/60 text-red-400 border border-red-800/50 uppercase">
-                            BREACHED
+                          <span className="inline-flex items-center gap-1 text-[11px] font-sans font-medium text-red-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                            Failed
                           </span>
                         ) : (
-                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 uppercase">
-                            PAPER
+                          <span className="inline-flex items-center gap-1 text-[11px] font-sans font-medium text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            Active
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] font-mono text-zinc-500 block">
+                      <span className="text-[11px] font-mono text-zinc-400 block">
                         {formatShortId(acc.accountId)}
                       </span>
                     </div>

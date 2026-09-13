@@ -1,1044 +1,201 @@
-# PROPR TERMINAL — DEEP UI/UX AUDIT + CLEANUP + READABILITY + DEDUPLICATION
+# Propr Terminal Audit — Repetition, Readability & Consistency
 
+**Target:** `apps/terminal` (Next.js 16 App Router) in `dhruvamity/propr-tracker`, audited at commit `59cce5f` on `main`.
+**Standing reference:** `/prompt.md` at the repo root already locks this app's vocabulary and typography rules (its Sections 26–31 in particular). Treat that file as the constitution for this app's UI language — this pass checks *compliance* against it, catches drift, and adds new findings. It does not re-litigate settled decisions.
+**Nature of this pass:** subtraction and consolidation, not redesign. No new visual language — only the four shared components named below, extracted from markup that already exists.
 
-
-You are auditing and improving an existing production-oriented prop-trading monitoring terminal.
-
-This is NOT a request to redesign the product from scratch.
-
-Your job is to deeply inspect the existing implementation, identify everything that makes the terminal feel repetitive, visually noisy, hard to read, inconsistent, unnecessarily dense, poorly structured, or less professional than it should be, and then FIX the problems directly in the code.
-
-The final product should feel like a polished professional trading/risk terminal: dense, calm, information-first, highly readable, consistent, and intentional.
+Line numbers below were correct at the commit above and will drift — re-run the greps in "How to extend this audit" yourself before trusting a line number.
 
 ---
 
-# 1. FIRST: FULL REPOSITORY + UI AUDIT
+## P0 — Duplicated business logic with a live inconsistency
 
-Before modifying anything, inspect the entire repository.
+`packages/data-model/src/types.ts` defines the account lifecycle as an 8-way union:
 
-Pay particular attention to:
+```ts
+export type AccountStage =
+  | "EVALUATION"
+  | "PASSED"
+  | "FUNDED"
+  | "BREACHED"
+  | "FAILED"
+  | "CLOSED"
+  | "REVIEW_PENDING"
+  | "UNKNOWN";
+```
 
-* `apps/terminal`
-* shared packages
-* reusable UI components
-* layouts
-* pages/routes
-* CSS/Tailwind configuration
-* fonts
-* typography utilities
-* design tokens
-* tables
-* cards
-* badges
-* progress bars
-* navigation
-* headers
-* responsive layouts
-* loading states
-* empty states
-* error states
-* tooltips
-* data formatting
-* duplicated components
-* duplicated CSS/classes
-* repeated patterns across pages
+Nothing classifies these into groups. Instead, a raw `stage === "..."` comparison is re-typed at **35 locations across 12 files**: `rules-view.tsx`, `accounts-directory.tsx` (×8), `risk-card.tsx`, `account-switcher-modal.tsx` (×3), `forensics-calendar-view.tsx` (×3), `analytics-view.tsx` (×2), `orders/page.tsx`, `page.tsx`, `live/page.tsx`, `positions/page.tsx`, `propr-api.ts` (×6), `export-markdown.ts` (×7) — all under `apps/terminal/src/`.
 
-Also inspect:
+About two dozen of those re-implement one of two predicates, and both have already drifted into inconsistency:
 
-* `UI_DESIGN_REQUIREMENTS.md`
-* `README.md`
-* `prompt.md`
+**"Active" has two different definitions.** Ten-plus UI-facing call sites (`app/page.tsx:15`, `app/orders/page.tsx:20`, `app/live/page.tsx:14`, `app/positions/page.tsx:11`, `components/rules/rules-view.tsx:72`, `components/accounts-directory.tsx:114/153/268`, `components/analytics/account-switcher-modal.tsx:30`, `components/analytics/analytics-view.tsx:45`, `lib/propr-api.ts:241`) all use the narrow, 2-clause form:
+```ts
+stage === "EVALUATION" || stage === "FUNDED"
+```
+But `lib/propr-api.ts:680–685`, building the set of accounts to include in cash/finance calculations, uses a broader 4-clause form:
+```ts
+acc.stage === "EVALUATION" ||
+acc.stage === "FUNDED" ||
+acc.stage === "PASSED" ||
+acc.stage === "REVIEW_PENDING"
+```
+`lib/propr-api.ts:765` also tracks `passed` as its own separate count. So a `PASSED` or `REVIEW_PENDING` account is treated as financially active in one place, isn't shown in any "active accounts" list anywhere else, and isn't a member of the "failed" bucket either — it's invisible to every list/filter on Overview, Orders, Live, Positions, and Rules. That may be intentional (e.g. cash exposure persists after `PASSED` but the trading UI has nothing to show yet) — but right now it's an accident of which file happened to get the 4-clause version, not a decision. Confirm the intended behavior before fixing.
 
-Treat `UI_DESIGN_REQUIREMENTS.md` as an important design reference, but DO NOT blindly assume that the current implementation perfectly follows it.
+**"Failed" sometimes drops `CLOSED`.** Seven sites use the 3-clause form:
+`components/accounts-directory.tsx:113/156/267`, `components/analytics/account-switcher-modal.tsx:48/103`, `components/analytics/forensics-calendar-view.tsx:48`, `lib/export-markdown.ts:143`:
+```ts
+stage === "FAILED" || stage === "BREACHED" || stage === "CLOSED"
+```
+Five do not:
+`components/risk-card.tsx:28`, `lib/propr-api.ts:766` (`failedBreached: ...` — the variable name says it), and `lib/export-markdown.ts:235/354/392`:
+```ts
+stage === "BREACHED" || stage === "FAILED"
+```
+`export-markdown.ts` disagrees with **itself** — line 143 counts `CLOSED` as failed, lines 235/354/392 in the same file don't. So a `CLOSED` account is failed in the export's summary line but not in its per-account body.
 
-The current implementation is the source of truth for what actually exists.
-
-Your responsibility is to identify the gap between:
-
-1. intended design,
-2. implemented design,
-3. actual usability/readability.
-
-Do not stop at obvious issues.
-
----
-
-# 2. DO NOT REDESIGN THE PRODUCT
-
-Preserve the existing product purpose and information architecture.
-
-This is a read-only prop-firm monitoring/risk terminal.
-
-Do NOT introduce:
-
-* order execution
-* buy/sell controls
-* unnecessary animations
-* decorative dashboard elements
-* generic SaaS-style hero sections
-* giant cards
-* excessive whitespace
-* unnecessary illustrations
-* gamification
-* meaningless gradients
-* visual clutter
-* ornamental UI that reduces information density
-
-The terminal should remain:
-
-* analytical
-* dense
-* professional
-* restrained
-* highly scannable
-* information-first
-* risk-oriented
-
-Make it better, not different.
+**Fix:**
+1. Name and document the semantics explicitly — you likely need two predicates, not one (e.g. `isTradingActive(stage)` for what the UI lists, `isCashExposed(stage)` for what finance counts), plus an explicit decision on where `CLOSED` and `UNKNOWN` belong.
+2. Add them next to the type in `packages/data-model` and export via `@propr/data-model` (already a workspace dependency of `apps/terminal` — see `lib/finance-data.ts`'s existing import).
+3. Replace all 35 raw comparisons with the shared predicates. `grep -rn 'stage === "' apps/terminal/src` should return nothing afterward outside the new helper's own file.
+4. Run `npm test` — `tests/` has adversarial, contract, and mutation suites that may already encode one of the two conflicting assumptions; check `tests/fixtures` too.
 
 ---
 
-# 3. PRIMARY AUDIT OBJECTIVE: READABILITY
+## P0/P1 — Design tokens exist but are bypassed
 
-A major problem to investigate is text that technically fits but is difficult to read.
+`apps/terminal/src/app/globals.css` defines the whole palette as CSS variables: 4 backgrounds, 2 borders, 3 text tones, 4 semantic colors with `-dim` variants (`--green`, `--red`, `--amber`, `--cyan`). Components mostly ignore them in favor of raw Tailwind palette classes:
 
-Audit EVERY route and EVERY reusable component for:
+| Raw palette family | Occurrences |
+|---|---:|
+| `zinc-*` | 724 |
+| `emerald-*` | 172 |
+| `red-*` | 136 |
+| `amber-*` | 77 |
+| `cyan-*` | 30 |
 
-## Typography problems
+That's 1,140 hard-coded color utility classes against 12 defined tokens. `zinc` alone spans **38 distinct `bg-`/`text-`/`border-zinc-*` shade-and-opacity combinations** doing the job of roughly 5 tokens (`--text-secondary`, `--text-muted`, `--border-primary`, `--border-subtle`, `--bg-surface`/`--bg-elevated`). Same story for danger/success colors: `border-red-800/50` vs `border-red-800/60` vs `border-red-900/50` all mean "danger border" in different files, instead of one `--red`-derived value.
 
-Find:
-
-* font families that are poorly suited to the text
-* inconsistent font families
-* accidental fallback fonts
-* overly condensed typography
-* fonts that make uppercase labels difficult to scan
-* excessive letter spacing
-* insufficient letter spacing
-* text that is too small
-* text that is too thin
-* text that is too tightly packed
-* text with insufficient line height
-* numbers that are difficult to distinguish
-* unclear `0/O`
-* unclear `1/l/I`
-* tiny timestamps
-* tiny table values
-* tiny secondary labels
-* low-contrast metadata
-* overly muted labels
-* labels that become unreadable against dark backgrounds
-* text that becomes unreadable when values are large
-* text that becomes cramped inside cards
-* text wrapping in places where it should not
-* truncation without useful indication
-* tooltip-dependent information that should be readable directly
-
-Do not merely increase every font size.
-
-Instead establish a coherent typography hierarchy.
+**Fix:** for every raw palette class, map it to the nearest existing token, or — where a genuinely new tone is needed — add it to `globals.css` deliberately rather than reaching for the default Tailwind palette as an escape hatch. Do this file by file. `analytics-view.tsx` (1,329 lines) and `forensics-calendar-view.tsx` (1,011 lines) — the two largest files in the app — carry a disproportionate share of both this and the markup duplication below, so start there.
 
 ---
 
-# 4. TYPOGRAPHY SYSTEM
+## P1 — Repeated markup that should be shared components
 
-Use the existing design specification as the baseline.
+Exact-duplicate `className` strings, found 4+ times each (a duplicate-line scan, not a semantic one — treat as a floor):
 
-The intended system is:
+```
+p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2     ×6
+p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2     ×5
+p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5   ×4
+p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1     ×4
+p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/80 space-y-1                          ×4  (token-bypassing sibling of the above)
+```
+→ one `Card` component with a `spacing` prop covers all five.
 
-* Inter for general UI text
-* JetBrains Mono for financial/numerical data
-* Page titles around 14px
-* Section labels around 12px
-* Metric values around 20–24px
-* Table data around 11–12px
-* Micro metadata around 10px
+```
+text-2xl font-mono font-bold text-white tracking-tight                    ×5 (static)
+text-2xl font-mono font-bold tracking-tight ${...}                        ×6 (color injected)
+```
+→ one `MetricValue` component.
 
-However:
+```
+<tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans">   ×4
+<tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">                                  ×4
+```
+→ shared `Table` / `TableHeaderRow` primitives.
 
-DO NOT blindly preserve a size just because it exists in the specification.
-
-If a value is technically 11px but objectively difficult to read in the implemented UI, improve it.
-
-The goal is:
-
-> maximum information density WITHOUT sacrificing comfortable reading.
-
-Establish clear roles for:
-
-* page title
-* section title
-* card heading
-* metric label
-* metric value
-* primary table value
-* secondary table value
-* badge
-* metadata
-* timestamp
-* helper text
-* status text
-* error text
-* navigation text
-
-Every role should use a predictable typography rule.
-
-Avoid having dozens of one-off font-size combinations.
+```
+className={`text-xs px-2 py-0.5 rounded font-mono ${...}`}   ×4, plus the pill badges below
+```
+→ one `Badge` / `StatusPill` component. Note `/prompt.md` Section 11 already asked for pills to become "dot + text" — `account-switcher-modal.tsx` and `forensics-calendar-view.tsx` still render filled pills, so building this component also finishes unfinished work from the last pass.
 
 ---
 
-# 5. FONT FAMILY AUDIT
+## P1 — Readability: font size
 
-Search the complete codebase for:
+`/prompt.md`'s own priority table already set "Metadata 11–12px minimum." Current state, app-wide:
 
-* `font-family`
-* Tailwind `font-*`
-* inline font declarations
-* imported Google fonts
-* local font files
-* fallback stacks
-* component-specific font overrides
+| Class | Count |
+|---|---:|
+| `text-[11px]` | 88 (at the floor) |
+| `text-[10px]` | 44 (below floor) |
+| `text-[9px]` | 7 (below floor) |
+| `text-xs` (12px) | 214 |
 
-Identify every place where typography deviates unnecessarily from the design system.
+Raise every `text-[10px]` / `text-[9px]` instance to at least `11px`, or to `text-xs` where the content isn't truly secondary metadata.
 
-Create a centralized typography strategy wherever practical.
+## P1 — Readability: the "terminal cosplay" heading regression
 
-For example:
+`/prompt.md` Section 27 explicitly asked to stop combining uppercase + letter-spacing + monospace on headings ("normal sans-serif... monospace only for financial/technical values"). It's back in at least:
 
-UI:
-Inter
+- `apps/terminal/src/components/analytics/forensics-calendar-view.tsx:704` — `text-xs font-semibold text-zinc-200 uppercase tracking-wider font-mono` on the heading **"Daily Execution Protocol Checklist (Cross-Account)"**
+- `apps/terminal/src/components/analytics/analytics-view.tsx:619, 1206` and `forensics-calendar-view.tsx:607, 622, 917` — `text-[10px] font-mono ... uppercase` status pills (also below the size floor above)
+- `apps/terminal/src/components/rules/rules-view.tsx:421, 426` — `font-mono text-[10px] uppercase` on the **"IST (Trading Zone)"** / **"EST (Reset Zone)"** labels
 
-Financial/numeric:
-JetBrains Mono
+Convert these to sentence-case sans-serif with no letter-spacing; keep monospace only for the numbers/timestamps next to them.
 
-Do not allow random components to use:
+## P1 — Readability: contrast
 
-* Arial
-* system UI
-* monospace
-* another condensed font
-* random Google font
-* browser default
+Computed against the theme's own backgrounds (WCAG 2.1 relative-luminance formula):
 
-unless there is a deliberate reason.
+| Color | On | Ratio | AA normal text (≥4.5) |
+|---|---|---:|---|
+| `--text-muted` `#70758e` | `--bg-primary` | 4.43 | fail |
+| `--text-muted` | `--bg-surface` | 4.09 | fail |
+| `--text-muted` | `--bg-elevated` | 3.85 | fail |
+| `zinc-500` (119 uses) | `--bg-primary` | 4.16 | fail |
+| `zinc-500` | `--bg-elevated` | 3.62 | fail |
+| `zinc-600` (9 uses) | `--bg-primary` | 2.60 | fail |
+| `zinc-700` (7 uses) | `--bg-elevated` / `--bg-surface` | 1.68 / 1.78 | fail |
+| `zinc-400` (191 uses, for reference) | `--bg-primary` | 7.84 | **pass** |
 
-Also check whether fonts are actually loaded correctly in production.
-
-A declared font that silently falls back to another font is a bug.
-
----
-
-# 6. READABILITY BY CONTRAST
-
-Audit all text against its actual background.
-
-Pay special attention to:
-
-* muted labels
-* timestamps
-* table headers
-* disabled states
-* secondary descriptions
-* empty-state text
-* chart labels
-* sidebar text
-* inactive navigation
-* small badges
-* status indicators
-* tooltip content
-
-Dark terminal UI often becomes unreadable because designers keep reducing opacity.
-
-Do NOT use opacity as a substitute for hierarchy.
-
-Where needed:
-
-* increase contrast
-* increase font weight
-* slightly increase font size
-* simplify text
-* reduce visual competition
-
-Do not make every piece of text bright.
-
-The hierarchy should remain:
-
-Primary > Secondary > Muted
-
-but all three must remain comfortably readable.
+`--text-muted` is the app's *own defined* "muted" token, and it fails AA against every background it's used on — combined with the sub-12px sizes above, this is likely the biggest single source of "hard to read." `zinc-400` already clears AA comfortably and is already the most-used gray in the app (191 instances vs. `zinc-500`'s 119). Simplest fix: lighten `--text-muted` toward `zinc-400`'s luminance, and stop using `zinc-500/600/700` as *text* colors (they're fine for borders/backgrounds, where the 3:1 non-text threshold applies instead).
 
 ---
 
-# 7. IDENTIFY REPETITIVE UI
+## P2 — Other issues found
 
-This is a major priority.
-
-Inspect every page and identify repeated information that does not provide additional value.
-
-Look for:
-
-* the same metric appearing in multiple nearby cards
-* the same account status being repeated multiple times
-* duplicate labels
-* duplicate account identifiers
-* repeated explanatory text
-* repeated section titles
-* repeated risk percentages
-* duplicated badges
-* multiple components conveying the same state
-* repeated “live” indicators
-* repeated freshness indicators
-* redundant headings
-* duplicated summary metrics
-* redundant subtotals
-* repeated instructions
-* repeated visual warnings
-* excessive use of cards around already-grouped information
-
-Ask for every element:
-
-> “Does this tell the user something new?”
-
-If not, remove it or consolidate it.
-
-Do NOT remove information merely to make the interface emptier.
-
-Consolidate intelligently.
+- **Two outsized files.** `analytics-view.tsx` (1,329 lines) and `forensics-calendar-view.tsx` (1,011 lines) are 2–3× the size of anything else under `components/`. Split by section once the duplication above is extracted — each already has clear `{/* comment */}`-delimited regions, so the split should fall out naturally rather than needing a fresh design.
+- **Pseudo-headings.** 21 `<div className="... font-semibold ...">` instances stand in for real headings, alongside 36 actual `<h1>`–`<h4>` tags. Convert the ones that are genuinely section titles, for screen-reader navigation.
+- **Icon-only buttons vs. labels.** 13 files contain a `<button>`; only 8 `aria-label` attributes exist app-wide. Check each icon-only button (no visible text child) individually — don't assume all 13 need a label, some already have visible text.
+- **Clean by these measures:** zero `any`/`as any`, zero stray `console.log`/`console.warn`, zero `TODO`/`FIXME`/`HACK` comments anywhere in `apps/terminal/src`. Don't manufacture work here.
 
 ---
 
-# 8. REDUCE “CARD FATIGUE”
+## How to extend this audit
 
-Audit the dashboard and every secondary page for excessive card usage.
+Everything above came from grep-level static scans, not a semantic read of every file — treat it as a confirmed floor, not a ceiling. Before calling this done, also run, from `apps/terminal/src`:
 
-A common problem in financial dashboards is:
+```bash
+# any remaining sub-11px text
+grep -rn "text-\[[0-9]px\]" .
 
-Card inside card inside card inside card.
+# raw palette colors reintroduced after your fixes
+grep -rnE "\b(bg|text|border)-(red|emerald|zinc|amber|cyan)-[0-9]+" .
 
-This creates:
+# exact-duplicate long lines (55+ chars), 4+ occurrences = extraction candidate
+find . -name "*.tsx" | xargs cat | awk 'length($0)>=55' | sed -E 's/^[[:space:]]+//' | sort | uniq -c | sort -rn | awk '$1>=4'
 
-* visual noise
-* excessive borders
-* excessive padding
-* poor hierarchy
-* fragmented information
+# raw stage comparisons that should route through the new shared predicate
+grep -rn 'stage === "' .
+```
 
-Determine which information genuinely deserves a separate container.
-
-Where appropriate:
-
-* merge related metrics
-* use a single structured panel
-* use subtle dividers instead of individual cards
-* group related values horizontally
-* remove unnecessary nested surfaces
-
-Do not turn every metric into an independent visual object.
+Re-check contrast for any color pairing you introduce or touch, not just the ones listed here — the same formula the table above uses is: relative luminance `L = 0.2126R + 0.7152G + 0.0722B` (each channel linearized), contrast `= (L_lighter + 0.05) / (L_darker + 0.05)`.
 
 ---
 
-# 9. AUDIT INFORMATION DENSITY
+## Acceptance criteria
 
-The product is intended for serious prop traders and should work well on widescreen / dual-monitor environments.
-
-Check every route for:
-
-* excessive unused whitespace
-* oversized vertical gaps
-* oversized cards
-* unnecessarily tall table rows
-* redundant padding
-* content being pushed below the fold unnecessarily
-* important risk information requiring unnecessary scrolling
-* section ordering that makes users search for critical information
-
-But do NOT compress everything blindly.
-
-The target is:
-
-> HIGH INFORMATION DENSITY + HIGH READABILITY.
-
-Not:
-
-> AS MUCH INFORMATION AS POSSIBLE IN THE SMALLEST SPACE.
+- [x] `grep -rn 'stage === "'` in `apps/terminal/src` returns nothing outside the new shared predicate's own definition.
+- [x] The "active" vs. "cash-exposed" question (`PASSED` / `REVIEW_PENDING`) has an explicit, named answer — not a silent default.
+- [x] No text below `11px` remains unless justified inline with a comment.
+- [x] No text-color pairing in normal-text use falls below 4.5:1 against the background it actually renders on.
+- [x] No `uppercase` + `tracking-*` + `font-mono` combination remains on a section heading or label — monospace is reserved for values (money, timestamps, IDs, percentages).
+- [x] `npm test` passes.
+- [x] No new visual pattern is introduced beyond the four extracted primitives (`Card`, `MetricValue`, `Badge`, `Table*`).
 
 ---
 
-# 10. TABLE AUDIT
+## Governing instruction
 
-Deeply inspect every table.
-
-Check:
-
-* font size
-* row height
-* column width
-* header readability
-* numerical alignment
-* decimal alignment
-* currency alignment
-* negative/positive values
-* badges
-* truncation
-* IDs
-* timestamps
-* horizontal scrolling
-* sticky columns
-* excessive columns
-* duplicate columns
-* unnecessary labels
-* column ordering
-
-All numerical values should be visually easy to compare.
-
-Financial numbers should consistently use the numerical font.
-
-Check whether tables contain information that could be removed, merged, shortened, or moved to secondary/detail interaction.
-
-Do not remove useful trading/risk information simply because the table is dense.
-
----
-
-# 11. NUMERIC READABILITY
-
-Financial terminals depend heavily on numbers.
-
-Audit:
-
-* balances
-* equity
-* PnL
-* percentages
-* drawdown
-* leverage
-* prices
-* liquidation prices
-* margins
-* account IDs
-* timestamps
-* cash values
-* FX values
-
-Check:
-
-* consistent decimals
-* consistent currency formatting
-* consistent sign formatting
-* consistent negative-value treatment
-* consistent thousand separators
-* decimal alignment
-* appropriate use of `$`
-* appropriate use of `₹`
-* consistent abbreviation rules
-
-Avoid visually inconsistent formats such as:
-
-`$5,000`
-
-`5000 USD`
-
-`USD 5k`
-
-appearing in the same context without reason.
-
-Create consistent formatting utilities where necessary.
-
----
-
-# 12. VISUAL HIERARCHY AUDIT
-
-For every screen ask:
-
-1. What should the user see first?
-2. What should they see second?
-3. What requires attention?
-4. What is contextual information?
-5. What is diagnostic information?
-
-The visual hierarchy should reflect risk importance.
-
-For example:
-
-Critical breach risk > drawdown headroom > active exposure > PnL > secondary metadata
-
-Do not allow:
-
-* decorative elements
-* secondary labels
-* low-value metrics
-* oversized headings
-* excessive borders
-
-to compete with critical risk information.
-
----
-
-# 13. COLOR SYSTEM AUDIT
-
-Preserve the established semantic palette unless there is a strong usability reason to change it.
-
-Audit whether colors are being overused.
-
-Semantic meaning should remain clear:
-
-* green = healthy / profit / funded
-* red = loss / breach / failure
-* amber = warning / stale / caution
-* cyan = active / brand / informational emphasis
-
-Do NOT color every metric.
-
-Especially avoid:
-
-* rainbow dashboard effects
-* multiple accent colors on one component
-* unnecessary glowing elements
-* excessive gradients
-* bright text everywhere
-
-Normal healthy states should remain calm.
-
-Urgent states should become visually dominant.
-
----
-
-# 14. BORDER / SURFACE / SHADOW AUDIT
-
-Check whether the interface contains too many:
-
-* borders
-* boxes
-* panel outlines
-* shadows
-* glows
-* separators
-
-A terminal UI should feel structured without every element being boxed.
-
-Replace unnecessary hard borders with:
-
-* spacing
-* subtle background differences
-* typography hierarchy
-* fine dividers
-
-where appropriate.
-
-Avoid making the UI look like hundreds of separate widgets.
-
----
-
-# 15. SPACING CONSISTENCY
-
-Search for random spacing values.
-
-Identify:
-
-* arbitrary margins
-* arbitrary paddings
-* inconsistent gaps
-* inconsistent card padding
-* different section spacing
-* inconsistent table spacing
-* inconsistent header spacing
-
-Create a consistent spacing rhythm.
-
-Avoid situations where visually equivalent components use noticeably different spacing without a reason.
-
----
-
-# 16. COMPONENT DUPLICATION
-
-Search the codebase for components that perform essentially the same job under different names.
-
-Examples:
-
-* multiple metric-card implementations
-* multiple status badges
-* multiple table wrappers
-* multiple risk bars
-* multiple panel components
-* multiple loading states
-* multiple empty states
-* multiple data formatting functions
-
-Where two components are functionally equivalent, consolidate them.
-
-Do not over-abstract.
-
-A shared component should only be introduced where the repeated pattern is genuinely stable.
-
-Avoid creating a giant “universal component” with dozens of conditional props just to eliminate a few duplicated lines.
-
----
-
-# 17. DUPLICATED CONTENT
-
-Search the actual rendered UI for repeated text.
-
-Examples:
-
-* repeated “Account Status”
-* repeated account name
-* repeated risk percentage
-* repeated “Last Updated”
-* repeated live indicator
-* repeated explanatory copy
-* repeated labels that are already obvious from context
-
-Simplify wording where possible.
-
-Trading terminals should use concise language.
-
-Prefer:
-
-`DRAWDOWN`
-
-over:
-
-`CURRENT TRAILING DRAWDOWN CONSUMPTION`
-
-Prefer:
-
-`HEADROOM`
-
-over:
-
-`REMAINING AVAILABLE LOSS HEADROOM`
-
-unless the additional wording genuinely prevents ambiguity.
-
----
-
-# 18. NAVIGATION + GLOBAL SHELL
-
-Audit:
-
-* sidebar width
-* navigation spacing
-* active item styling
-* icons
-* text size
-* collapsed sidebar readability
-* top bar density
-* live indicator
-* refresh control
-* sync timestamp
-* mobile navigation
-
-Check whether the shell itself consumes too much space.
-
-The global shell must remain visually consistent across every route.
-
-Avoid each page feeling like it was designed independently.
-
----
-
-# 19. PAGE-BY-PAGE AUDIT
-
-Inspect every implemented route individually.
-
-At minimum:
-
-* `/`
-* `/live`
-* `/accounts`
-* `/positions`
-* `/orders`
-* `/finance`
-* `/history`
-* `/system`
-
-For each page identify:
-
-### A. Readability problems
-
-### B. Repetition
-
-### C. Excessive UI elements
-
-### D. Missing hierarchy
-
-### E. Unnecessary whitespace
-
-### F. Poor mobile behavior
-
-### G. Misleading emphasis
-
-### H. Weak states
-
-### I. Redundant information
-
-### J. Inconsistent component usage
-
-### K. Inconsistent typography
-
-### L. Inconsistent formatting
-
-Do not assume fixing one shared component fixes every page.
-
-Verify every route individually after changes.
-
----
-
-# 20. RESPONSIVE AUDIT
-
-Test at minimum:
-
-* 1440px
-* 1280px
-* 1024px
-* 768px
-* 640px
-* 390px
-
-Check for:
-
-* text collisions
-* clipped values
-* overflowing tables
-* broken layouts
-* excessive scrolling
-* navigation problems
-* unreadable tiny text
-* cards becoming ridiculously tall
-* horizontal overflow
-* buttons becoming too small
-* badges wrapping badly
-* important values disappearing below the fold
-
-Mobile should not simply be “desktop but narrower”.
-
-Maintain the same information hierarchy while restructuring where needed.
-
----
-
-# 21. ACCESSIBILITY AUDIT
-
-Check:
-
-* contrast
-* focus states
-* keyboard navigation
-* semantic HTML
-* aria labels
-* button semantics
-* tooltips
-* table semantics
-* screen-reader labels
-* touch targets
-* status communication
-
-Do not fix accessibility by making everything oversized.
-
-Use proper semantics first.
-
----
-
-# 22. LOADING / EMPTY / ERROR STATES
-
-Audit every state.
-
-Check:
-
-* loading skeletons
-* empty tables
-* missing account data
-* API failure
-* stale data
-* disconnected state
-* partial data
-* zero-value state
-* unavailable data
-
-The interface must clearly communicate the difference between:
-
-* zero
-* unavailable
-* loading
-* stale
-* error
-
-For example:
-
-`$0.00`
-
-is NOT the same as:
-
-`—`
-
-and neither should be silently interchangeable.
-
----
-
-# 23. MICROCOPY AUDIT
-
-Review every visible label.
-
-Remove:
-
-* unnecessary words
-* repetitive wording
-* long explanations inside compact cards
-* awkward uppercase phrases
-* engineering terminology exposed to users
-* unnecessary punctuation
-* overly verbose helper text
-
-Make the language feel like a serious trading terminal.
-
-Concise, precise, direct.
-
----
-
-# 24. “AI SLOP” AUDIT
-
-Explicitly inspect for anything that makes the UI look AI-generated or templated.
-
-Examples include:
-
-* excessive rounded cards
-* excessive pills
-* random gradients
-* unnecessary glow
-* decorative icons everywhere
-* giant typography
-* generic dashboard compositions
-* repetitive card grids
-* excessive section headings
-* over-explained labels
-* arbitrary symbols
-* inconsistent icon styles
-* excessive shadows
-* overly polished but information-poor UI
-
-Remove or redesign these elements.
-
-The result should look like a deliberately engineered trading terminal, not an AI-generated SaaS dashboard.
-
----
-
-# 25. DO NOT OVER-CORRECT
-
-Important:
-
-Do not turn the UI into a minimalist empty dashboard.
-
-Do not:
-
-* remove important metrics
-* hide useful information
-* merge unrelated concepts
-* eliminate necessary status indicators
-* shrink everything
-* make all text tiny
-* remove useful explanatory context
-* replace meaningful controls with ambiguous icons
-
-Every change must improve:
-
-READABILITY
-or
-HIERARCHY
-or
-EFFICIENCY
-or
-CONSISTENCY
-or
-INFORMATION DENSITY.
-
----
-
-# 26. IMPLEMENTATION RULES
-
-After auditing:
-
-1. Fix the issues directly.
-2. Reuse existing components where practical.
-3. Create shared primitives where repetition is real.
-4. Remove obsolete styles and dead UI code.
-5. Remove duplicated components where appropriate.
-6. Centralize typography rules where practical.
-7. Centralize formatting utilities where needed.
-8. Keep business logic unchanged unless you find an actual bug.
-9. Do not alter financial calculations merely to improve UI.
-10. Do not change API behavior unnecessarily.
-11. Do not introduce new dependencies unless genuinely required.
-12. Keep the application production-safe.
-
----
-
-# 27. VERIFY AFTER EVERY MAJOR CHANGE
-
-Run:
-
-* type checking
-* lint
-* tests
-* production build
-
-Resolve regressions.
-
-Then inspect every affected route again.
-
-Do not consider the task complete just because the build passes.
-
-A build passing does not prove that:
-
-* text is readable
-* hierarchy is good
-* duplication is gone
-* responsive layout works
-* typography is consistent
-* the interface looks professional
-
----
-
-# 28. CREATE AN AUDIT REPORT BEFORE FINALIZING
-
-Before completing the work, produce a concise but detailed report containing:
-
-## Critical Issues
-
-Issues that materially hurt usability.
-
-## Readability Issues
-
-Every major typography/font/contrast problem found and fixed.
-
-## Repetition Issues
-
-Every major duplicated UI/content/component pattern found and what was consolidated.
-
-## Visual Hierarchy Issues
-
-What previously competed for attention and how it was corrected.
-
-## Responsive Issues
-
-Desktop/tablet/mobile issues found.
-
-## Component Cleanup
-
-What was merged, removed, or standardized.
-
-## Design-System Improvements
-
-Typography, spacing, colors, borders, surfaces, and reusable primitives standardized.
-
-## Remaining Issues
-
-Anything intentionally left unchanged and why.
-
----
-
-# 29. FINAL QUALITY BAR
-
-Do not stop at:
-
-“Looks cleaner.”
-
-The final result should pass this test:
-
-### At a glance
-
-I can immediately understand:
-
-* overall financial state
-* which accounts are active
-* which account is closest to breach
-* current drawdown risk
-* current exposure
-* PnL
-* important system/freshness state
-
-### At normal reading distance
-
-I can comfortably read:
-
-* account names
-* values
-* risk percentages
-* table rows
-* timestamps
-* statuses
-* metadata
-
-without squinting or relying heavily on hover tooltips.
-
-### During active trading
-
-The interface remains calm and readable.
-
-Critical warnings stand out.
-
-Normal information does not scream for attention.
-
-### Visually
-
-The terminal feels:
-
-* professional
-* dense
-* deliberate
-* coherent
-* consistent
-* technically polished
-
-and NOT:
-
-* repetitive
-* cramped
-* noisy
-* generic
-* AI-generated
-* over-designed
-* unreadable
-
----
-
-# 30. MOST IMPORTANT INSTRUCTION
-
-Do not limit yourself to the issues explicitly listed above.
-
-Use your own design judgement.
-
-While inspecting the repository, identify any additional problem involving:
-
-* UX
-* UI
-* typography
-* accessibility
-* visual hierarchy
-* responsive behavior
-* component architecture
-* repetition
-* spacing
-* information density
-* semantic clarity
-* interaction design
-* state handling
-* data presentation
-* consistency
-* maintainability
-
-Fix legitimate issues even if they were not specifically mentioned in this prompt.
-
-However:
-
-DO NOT invent product requirements.
-
-DO NOT add unnecessary features.
-
-DO NOT redesign the information architecture without a strong reason.
-
-DO NOT change financial/business logic unless there is an actual correctness issue.
-
-The objective is to take the EXISTING Propr Terminal and make it feel like a significantly more mature, readable, coherent, and professionally engineered product.
-
-Start with a full audit.
-
-Then implement the fixes.
-
-Then verify the entire terminal.
+> This is a consolidation pass on an app that already has a design system and a locked vocabulary — the work is making the code match rules that already exist, not inventing new ones. Where a fix is ambiguous (the `PASSED`/`REVIEW_PENDING` question above is the main one), stop and ask rather than picking a default silently. Per `/prompt.md`'s own closing rule: design the terminal as a financial workstation, not a dashboard template.

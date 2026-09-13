@@ -63,18 +63,18 @@ export function BankRefBadge({ reference }: BankRefBadgeProps) {
 
       {/* Floating Tooltip */}
       <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-50">
-        <div className="px-2.5 py-1.5 rounded bg-zinc-950/95 border border-zinc-700/80 shadow-2xl backdrop-blur-sm text-[10px] font-mono whitespace-nowrap">
+        <div className="px-2.5 py-1.5 rounded bg-zinc-950/95 border border-zinc-700/80 shadow-2xl backdrop-blur-sm text-[11px] font-mono whitespace-nowrap">
           <div className="text-zinc-200 font-medium">
             {copied ? (
               <span className="text-[var(--green)] flex items-center gap-1">
-                <Check size={10} /> Copied to clipboard!
+                <Check size={11} /> Copied to clipboard!
               </span>
             ) : (
               reference
             )}
           </div>
           {!copied && (
-            <div className="text-[9px] text-zinc-500 mt-0.5 text-center">
+            <div className="text-[11px] text-zinc-400 mt-0.5 text-center">
               Click to copy full reference
             </div>
           )}

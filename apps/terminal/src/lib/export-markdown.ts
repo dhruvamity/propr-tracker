@@ -1,4 +1,5 @@
 import type { DashboardData, AccountSnapshot, TradeData } from "./types";
+import { isTradingActive, isAccountFailed, isFunded } from "@propr/data-model";
 import { formatUSD, formatINR, formatPercent, formatShortId, formatAccountTag } from "./utils";
 import { analyzeTradeForensics } from "./forensics";
 
@@ -136,12 +137,8 @@ export function generateMarkdownExport(data: DashboardData): string {
   // Compute metrics for every account dynamically
   const computedList: ComputedAccountMetrics[] = accounts.map(computeMetrics);
 
-  const activeMetrics = computedList.filter(
-    (m) => m.account.stage === "EVALUATION" || m.account.stage === "FUNDED"
-  );
-  const breachedMetrics = computedList.filter(
-    (m) => m.account.stage === "BREACHED" || m.account.stage === "FAILED" || m.account.stage === "CLOSED"
-  );
+  const activeMetrics = computedList.filter((m) => isTradingActive(m.account.stage));
+  const breachedMetrics = computedList.filter((m) => isAccountFailed(m.account.stage));
 
   // Financial calculations dynamically aggregated from finance & ledger
   const totalSpentINR = Number(finance.totalActualCashCostINR || finance.totalInvestedINR || 0);
@@ -232,9 +229,9 @@ export function generateMarkdownExport(data: DashboardData): string {
     const windowStr = `${startStr} → ${endStr}`;
 
     let outcomeStr = "Active";
-    if (acc.stage === "BREACHED" || acc.stage === "FAILED") {
+    if (isAccountFailed(acc.stage)) {
       outcomeStr = `Breached: \`${acc.failureReason || "rule_violation"}\``;
-    } else if (acc.stage === "FUNDED") {
+    } else if (isFunded(acc.stage)) {
       outcomeStr = "Funded";
     }
 
@@ -351,9 +348,9 @@ export function generateMarkdownExport(data: DashboardData): string {
     const tCount = m.tradesCount;
 
     let statusCol = "Active Evaluation";
-    if (acc.stage === "BREACHED" || acc.stage === "FAILED") {
+    if (isAccountFailed(acc.stage)) {
       statusCol = `Breached: \`${acc.failureReason || "limit_exceeded"}\``;
-    } else if (acc.stage === "FUNDED") {
+    } else if (isFunded(acc.stage)) {
       statusCol = "Funded Account Active";
     } else if (acc.profitTargetPct) {
       statusCol = `In Progress: ${formatPercent(acc.profitTargetPct, 2)}`;
@@ -389,7 +386,7 @@ export function generateMarkdownExport(data: DashboardData): string {
     const forensics = analyzeTradeForensics(trades, m.initialBal);
     lines.push(`- **Discipline Forensics:** Discipline Score: ${forensics.disciplineScore.toFixed(1)}% (${forensics.compliantTrades}/${forensics.totalTrades} compliant) · Cost of Rule Violations: ${forensics.totalViolationCostUSD > 0 ? `-${formatUSD(forensics.totalViolationCostUSD)}` : "$0.00"} · Potential Clean PnL: ${forensics.cleanNetPnl >= 0 ? "+" : ""}${formatUSD(forensics.cleanNetPnl)}`);
 
-    if (acc.stage === "BREACHED" || acc.stage === "FAILED") {
+    if (isAccountFailed(acc.stage)) {
       lines.push(`- **Breach Diagnostic:**`);
       lines.push(`  - **Failure Reason:** \`${acc.failureReason || "rule_violation"}\``);
       if (acc.failureDetails) {

@@ -1,15 +1,20 @@
 import { fetchDashboardData } from "@/lib/propr-api";
+import { isTradingActive } from "@propr/data-model";
 import { TrendingUp } from "lucide-react";
 import { formatUSD, formatAccountTag, formatPercent } from "@/lib/utils";
 import Link from "next/link";
+import {
+  TableContainer,
+  TableHeaderRow,
+  TableHeaderCell,
+  TableBody,
+} from "@/components/ui";
 
 export const revalidate = 15;
 
 export default async function PositionsPage() {
   const { allPositions, accounts } = await fetchDashboardData();
-  const activeAccounts = accounts.filter(
-    (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  );
+  const activeAccounts = accounts.filter((a) => isTradingActive(a.stage));
 
   return (
     <div className="space-y-6 font-sans">
@@ -18,7 +23,7 @@ export default async function PositionsPage() {
         <h2 className="text-sm font-semibold text-zinc-200">
           Open positions
         </h2>
-        <span className="text-xs text-zinc-500 font-mono">
+        <span className="text-xs text-zinc-400 font-mono">
           {allPositions.length} active
         </span>
       </div>
@@ -48,23 +53,22 @@ export default async function PositionsPage() {
         </div>
       ) : (
         /* Compact Table with Fixed Numeric Alignment (Prompt §16) */
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans">
-                <th className="py-2.5 px-3 font-normal w-24">Account</th>
-                <th className="py-2.5 px-3 font-normal w-20">Asset</th>
-                <th className="py-2.5 px-3 font-normal w-16">Side</th>
-                <th className="py-2.5 px-3 text-right font-normal">Size</th>
-                <th className="py-2.5 px-3 text-right font-normal">Entry</th>
-                <th className="py-2.5 px-3 text-right font-normal">Mark</th>
-                <th className="py-2.5 px-3 text-right font-normal">Liq</th>
-                <th className="py-2.5 px-3 text-right font-normal">Margin</th>
-                <th className="py-2.5 px-3 text-right font-normal">uPnL</th>
-                <th className="py-2.5 px-3 text-right font-normal">ROE</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">
+        <TableContainer>
+          <thead>
+            <TableHeaderRow>
+              <TableHeaderCell className="w-24">Account</TableHeaderCell>
+              <TableHeaderCell className="w-20">Asset</TableHeaderCell>
+              <TableHeaderCell className="w-16">Side</TableHeaderCell>
+              <TableHeaderCell align="right">Size</TableHeaderCell>
+              <TableHeaderCell align="right">Entry</TableHeaderCell>
+              <TableHeaderCell align="right">Mark</TableHeaderCell>
+              <TableHeaderCell align="right">Liq</TableHeaderCell>
+              <TableHeaderCell align="right">Margin</TableHeaderCell>
+              <TableHeaderCell align="right">uPnL</TableHeaderCell>
+              <TableHeaderCell align="right">ROE</TableHeaderCell>
+            </TableHeaderRow>
+          </thead>
+          <TableBody>
               {allPositions.map((pos) => {
                 const uPnlNum = Number(pos.unrealizedPnl || 0);
                 const isPos = uPnlNum >= 0;
@@ -112,9 +116,8 @@ export default async function PositionsPage() {
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </TableContainer>
       )}
     </div>
   );

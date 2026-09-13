@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import type { DashboardData } from "@/lib/types";
+import { isTradingActive } from "@propr/data-model";
 import { formatAccountTag } from "@/lib/utils";
 import {
   ShieldAlert,
@@ -18,6 +19,7 @@ import {
   VolumeX,
   Play,
 } from "lucide-react";
+import { Card } from "@/components/ui";
 
 // Web Audio API pure synthesizer chime for 45-min cooldown completion
 function playCooldownChime() {
@@ -69,7 +71,7 @@ export function RulesView({ data }: RulesViewProps) {
 
   // Selected account for account-specific rule checks (defaults to first active)
   const defaultAccount =
-    accounts.find((a) => a.stage === "EVALUATION" || a.stage === "FUNDED") ||
+    accounts.find((a) => isTradingActive(a.stage)) ||
     accounts[0];
 
   const [selectedAccountId, setSelectedAccountId] = useState<string>(
@@ -533,7 +535,7 @@ export function RulesView({ data }: RulesViewProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Rule 1 Card */}
-          <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
+          <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock size={16} className="text-cyan-400" />
@@ -556,10 +558,10 @@ export function RulesView({ data }: RulesViewProps) {
               <span>{nextWindowText}</span>
               <span className="text-zinc-200 font-bold">{sessionCountdown}</span>
             </div>
-          </div>
+          </Card>
 
           {/* Rule 2 Card */}
-          <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
+          <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={16} className="text-amber-400" />
@@ -578,10 +580,10 @@ export function RulesView({ data }: RulesViewProps) {
                 {weekendReason}
               </span>
             </div>
-          </div>
+          </Card>
 
           {/* Rule 3 Card */}
-          <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
+          <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Flame size={16} className="text-cyan-400" />
@@ -601,10 +603,10 @@ export function RulesView({ data }: RulesViewProps) {
                 </span>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Rule 4 Card */}
-          <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
+          <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShieldAlert size={16} className="text-cyan-400" />
@@ -621,10 +623,10 @@ export function RulesView({ data }: RulesViewProps) {
               <span>Account: {formatAccountTag(selectedAccount?.accountId)} ({is10k ? "10K" : "5K"})</span>
               <span className="text-emerald-400 font-bold">${currentMaxRiskUSD.toFixed(2)} Cap</span>
             </div>
-          </div>
+          </Card>
 
           {/* Rule 5 Card */}
-          <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
+          <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={16} className="text-red-400" />
@@ -647,10 +649,10 @@ export function RulesView({ data }: RulesViewProps) {
               <span>Daily Loss Room: <strong className="text-zinc-200">${lossRoomRemainingUSD.toFixed(2)}</strong></span>
               <span>Reset in: <strong className="text-zinc-300">{nextResetCountdown}</strong></span>
             </div>
-          </div>
+          </Card>
 
           {/* Rule 6 Card */}
-          <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-2">
+          <Card rounded="xl" spacing="2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-amber-400" />
@@ -675,11 +677,11 @@ export function RulesView({ data }: RulesViewProps) {
                 {isTargetProtectionActive ? "Risk reduced to $25/$50" : "Arms at +7.50%"}
               </span>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Rule 7 Card (Full Width) */}
-        <div className="p-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-3">
+        <Card rounded="xl" spacing="3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Layers size={16} className="text-cyan-400" />
@@ -738,7 +740,7 @@ export function RulesView({ data }: RulesViewProps) {
                 ) : (
                   <span className="text-emerald-400">✓ Cooldown satisfied (&gt;45m)</span>
                 )}
-                <span className="text-[10px] text-zinc-500">
+                <span className="text-[11px] text-zinc-400">
                   {audioEnabled ? "Chime on" : "Muted"}
                 </span>
               </div>
@@ -754,7 +756,7 @@ export function RulesView({ data }: RulesViewProps) {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

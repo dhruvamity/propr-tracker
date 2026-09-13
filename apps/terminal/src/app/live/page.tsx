@@ -1,4 +1,5 @@
 import { fetchDashboardData } from "@/lib/propr-api";
+import { isTradingActive } from "@propr/data-model";
 import { ShieldCheck, Activity } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
@@ -10,9 +11,7 @@ export default async function LiveMonitorPage() {
   const data = await fetchDashboardData();
   const { accounts, allPositions } = data;
 
-  const liveAccounts = accounts.filter(
-    (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
-  );
+  const liveAccounts = accounts.filter((a) => isTradingActive(a.stage));
 
   // Risk Ranking: Sort by active breach proximity (lowest effective failure room first)
   const rankedAccounts = [...liveAccounts].sort((a, b) => {
@@ -110,7 +109,7 @@ export default async function LiveMonitorPage() {
                       <span className="font-semibold text-zinc-100 text-sm">{pos.asset}</span>
                       <span className="text-zinc-500">/</span>
                       <span
-                        className={`text-xs font-semibold uppercase ${
+                        className={`text-xs font-semibold capitalize ${
                           pos.positionSide === "long" ? "text-emerald-400" : "text-red-400"
                         }`}
                       >

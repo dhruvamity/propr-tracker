@@ -36,8 +36,8 @@ export function TrendSparkline({
 
   if (activeTrades.length === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
-        <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
+      <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
         <span>No trades today</span>
       </div>
     );
@@ -174,7 +174,7 @@ export function TrendSparkline({
 
         {showInsight && (
           <span
-            className={`text-[10px] font-mono leading-none ${
+            className={`text-[11px] font-mono leading-none ${
               isNetNegative ? "text-red-400 font-medium" : "text-emerald-400"
             }`}
             title={`Trajectory: ${tooltipSummary}`}

@@ -68,7 +68,7 @@ export function TradeDrawer({ trades, initialBalance, endingBalance }: TradeDraw
 
   if (!trades || trades.length === 0) {
     return (
-      <span className="text-[10px] text-[var(--text-muted)] italic">No trades</span>
+      <span className="text-[11px] text-[var(--text-muted)] italic">No trades</span>
     );
   }
 
@@ -99,16 +99,16 @@ export function TradeDrawer({ trades, initialBalance, endingBalance }: TradeDraw
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-mono">
               <thead>
-                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-zinc-400 uppercase text-[11px]">
-                  <th className="py-2 px-2.5">Time</th>
-                  <th className="py-2 px-2.5">Asset</th>
-                  <th className="py-2 px-2.5">Side</th>
-                  <th className="py-2 px-2.5">Type</th>
-                  <th className="py-2 px-2.5 text-right">Price</th>
-                  <th className="py-2 px-2.5 text-right">Qty</th>
-                  <th className="py-2 px-2.5 text-right">Fee</th>
-                  <th className="py-2 px-2.5 text-right">Realized PnL</th>
-                  <th className="py-2 px-2.5">Liq.</th>
+                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-zinc-400 font-sans text-xs">
+                  <th className="py-2 px-2.5 font-normal">Time</th>
+                  <th className="py-2 px-2.5 font-normal">Asset</th>
+                  <th className="py-2 px-2.5 font-normal">Side</th>
+                  <th className="py-2 px-2.5 font-normal">Type</th>
+                  <th className="py-2 px-2.5 text-right font-normal">Price</th>
+                  <th className="py-2 px-2.5 text-right font-normal">Qty</th>
+                  <th className="py-2 px-2.5 text-right font-normal">Fee</th>
+                  <th className="py-2 px-2.5 text-right font-normal">Realized PnL</th>
+                  <th className="py-2 px-2.5 font-normal">Liq.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -128,7 +128,7 @@ export function TradeDrawer({ trades, initialBalance, endingBalance }: TradeDraw
                           trade.side === "buy" ? "text-emerald-400" : "text-red-400"
                         }`}>
                           {trade.side === "buy" ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                          {trade.side.toUpperCase()}
+                          {trade.side === "buy" ? "Buy" : "Sell"}
                         </span>
                       </td>
                       <td className="py-2 px-2.5 text-zinc-400">
@@ -149,7 +149,7 @@ export function TradeDrawer({ trades, initialBalance, endingBalance }: TradeDraw
                         {rpnlPositive ? "+" : ""}{formatUSD(trade.realizedPnl)}
                       </td>
                       <td className="py-2 px-2.5">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        <span className={`px-1.5 py-0.5 rounded text-[11px] font-sans font-medium capitalize ${
                           trade.liquidityType === "maker"
                             ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/30"
                             : "bg-amber-950/40 text-amber-400 border border-amber-800/30"

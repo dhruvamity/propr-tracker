@@ -62,3 +62,41 @@ describe("Account Lifecycle & State Machine Transitions", () => {
     expect(canTransition("FAILED", "FUNDED")).toBe(false);
   });
 });
+
+describe("Account Stage Lifecycle Predicates (@propr/data-model)", () => {
+  it("correctly identifies trading-active accounts", async () => {
+    const { isTradingActive } = await import("@propr/data-model");
+    expect(isTradingActive("EVALUATION")).toBe(true);
+    expect(isTradingActive("FUNDED")).toBe(true);
+    expect(isTradingActive("PASSED")).toBe(false);
+    expect(isTradingActive("REVIEW_PENDING")).toBe(false);
+    expect(isTradingActive("BREACHED")).toBe(false);
+    expect(isTradingActive("FAILED")).toBe(false);
+    expect(isTradingActive("CLOSED")).toBe(false);
+    expect(isTradingActive("UNKNOWN")).toBe(false);
+  });
+
+  it("correctly identifies cash-exposed accounts", async () => {
+    const { isCashExposed } = await import("@propr/data-model");
+    expect(isCashExposed("EVALUATION")).toBe(true);
+    expect(isCashExposed("FUNDED")).toBe(true);
+    expect(isCashExposed("PASSED")).toBe(true);
+    expect(isCashExposed("REVIEW_PENDING")).toBe(true);
+    expect(isCashExposed("BREACHED")).toBe(false);
+    expect(isCashExposed("FAILED")).toBe(false);
+    expect(isCashExposed("CLOSED")).toBe(false);
+    expect(isCashExposed("UNKNOWN")).toBe(false);
+  });
+
+  it("correctly identifies failed and archived accounts", async () => {
+    const { isAccountFailed } = await import("@propr/data-model");
+    expect(isAccountFailed("FAILED")).toBe(true);
+    expect(isAccountFailed("BREACHED")).toBe(true);
+    expect(isAccountFailed("CLOSED")).toBe(true);
+    expect(isAccountFailed("EVALUATION")).toBe(false);
+    expect(isAccountFailed("FUNDED")).toBe(false);
+    expect(isAccountFailed("PASSED")).toBe(false);
+    expect(isAccountFailed("REVIEW_PENDING")).toBe(false);
+    expect(isAccountFailed("UNKNOWN")).toBe(false);
+  });
+});
