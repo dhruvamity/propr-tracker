@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { Server, Radio, Database, Shield, Terminal, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/empty-state";
 import { SystemTerminalStream } from "./system-terminal-stream";
 
 interface SystemHealthData {
@@ -34,6 +36,17 @@ const RECENT_EVENTS: RecentEvent[] = [
 
 export function SystemView({ health }: SystemViewProps) {
   const [showRawStream, setShowRawStream] = useState(false);
+
+  if (!health) {
+    return (
+      <EmptyState
+        icon={Server}
+        title="System telemetry unavailable"
+        description="Health probes and system metrics could not be loaded."
+      />
+    );
+  }
+
   const isWsConnected = health.wsStatus === "CONNECTED";
 
   return (
@@ -41,7 +54,7 @@ export function SystemView({ health }: SystemViewProps) {
       {/* ─── 1. Health Summary (Prompt §24: Much quieter, dot + state + metric) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: REST API */}
-        <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
+        <Card spacing="1.5">
           <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
             <Server size={13} className="text-zinc-400" />
             <span>REST API</span>
@@ -55,10 +68,10 @@ export function SystemView({ health }: SystemViewProps) {
           <div className="text-xs text-zinc-400 font-mono">
             38ms latency
           </div>
-        </div>
+        </Card>
 
         {/* Card 2: WebSocket Stream */}
-        <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
+        <Card spacing="1.5">
           <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
             <Radio size={13} className="text-zinc-400" />
             <span>WebSocket</span>
@@ -72,10 +85,10 @@ export function SystemView({ health }: SystemViewProps) {
           <div className="text-xs text-zinc-400 font-sans">
             {isWsConnected ? "Realtime stream" : "Polling every 15s"}
           </div>
-        </div>
+        </Card>
 
         {/* Card 3: Data */}
-        <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
+        <Card spacing="1.5">
           <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
             <Database size={13} className="text-zinc-400" />
             <span>Data</span>
@@ -87,10 +100,10 @@ export function SystemView({ health }: SystemViewProps) {
           <div className="text-xs text-zinc-400 font-sans">
             {health.accountCount} accounts monitored
           </div>
-        </div>
+        </Card>
 
         {/* Card 4: Security (Prompt §23 & §24) */}
-        <div className="p-4 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-1.5">
+        <Card spacing="1.5">
           <div className="text-xs text-zinc-400 font-medium flex items-center gap-1.5 font-sans">
             <Shield size={13} className="text-zinc-400" />
             <span>Security</span>
@@ -102,7 +115,7 @@ export function SystemView({ health }: SystemViewProps) {
           <div className="text-xs text-zinc-400 font-sans">
             0 mutations permitted
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* ─── 2. Data Flow Summary ─── */}
@@ -115,12 +128,12 @@ export function SystemView({ health }: SystemViewProps) {
             <span className="text-[var(--cyan)] font-bold text-sm block font-sans">REST API</span>
             <span className="text-[11px] text-zinc-400 font-mono">api.propr.xyz</span>
           </div>
-          <ArrowRight size={14} className="text-zinc-500" />
+          <ArrowRight size={14} className="text-zinc-400" />
           <div className="text-center">
             <span className="text-white font-bold text-sm block font-sans">CACHE</span>
             <span className="text-[11px] text-zinc-400 font-sans">15s ISR</span>
           </div>
-          <ArrowRight size={14} className="text-zinc-500" />
+          <ArrowRight size={14} className="text-zinc-400" />
           <div className="text-center">
             <span className="text-emerald-400 font-bold text-sm block font-sans">CLIENT</span>
             <span className="text-[11px] text-zinc-400 font-sans">Decimal.js</span>

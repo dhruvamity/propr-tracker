@@ -22,7 +22,7 @@ export default async function AccountsPage() {
       </div>
 
       {/* Interactive Accounts Directory with filter strip, sorting, search, and expandable inspection */}
-      <Suspense fallback={<div className="p-8 text-center text-zinc-500 font-sans text-xs">Loading accounts...</div>}>
+      <Suspense fallback={<div className="p-8 text-center text-zinc-400 font-sans text-xs">Loading accounts...</div>}>
         <AccountsDirectory accounts={accounts} />
       </Suspense>
     </div>

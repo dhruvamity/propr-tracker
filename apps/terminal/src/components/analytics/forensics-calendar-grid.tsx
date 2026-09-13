@@ -188,7 +188,7 @@ export function ForensicsCalendarGrid({
                       ? "border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/60 hover:border-zinc-700"
                       : cell.isCurrentMonth
                       ? "border-zinc-900 bg-zinc-950/40 text-zinc-400 hover:border-zinc-800 hover:text-zinc-200"
-                      : "border-transparent bg-transparent text-zinc-600 opacity-40"
+                      : "border-transparent bg-transparent text-zinc-400 opacity-40"
                   } ${cell.isWeekend && !hasTrades ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(245,158,11,0.03)_6px,rgba(245,158,11,0.03)_12px)]" : ""}`}
                 >
                   <div className="flex items-center justify-between">
@@ -200,7 +200,7 @@ export function ForensicsCalendarGrid({
                           ? hasTrades
                             ? "text-zinc-200"
                             : "text-zinc-400"
-                          : "text-zinc-600"
+                          : "text-zinc-400/50"
                       }`}
                     >
                       {cell.dayNumber}
@@ -245,7 +245,7 @@ export function ForensicsCalendarGrid({
                       Weekend Freeze
                     </div>
                   ) : (
-                    <div className="my-auto text-center text-xs text-zinc-500 font-mono">
+                    <div className="my-auto text-center text-xs text-zinc-400 font-mono">
                       —
                     </div>
                   )}

@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { formatUSD, formatINR, formatShortId, formatAccountTag } from "@/lib/utils";
-import { CheckCircle2, Copy, Check, X } from "lucide-react";
+import { CheckCircle2, Copy, Check, X, Receipt } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 
 export interface TransactionItem {
   id: string;
@@ -45,67 +46,77 @@ export function FinanceLedger({ ledger }: FinanceLedgerProps) {
         </div>
 
         <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans">
-                <th className="py-2.5 px-3 text-left font-normal">Date</th>
-                <th className="py-2.5 px-3 text-left font-normal">Firm</th>
-                <th className="py-2.5 px-3 text-left font-normal">Challenge</th>
-                <th className="py-2.5 px-3 text-left font-normal">Account</th>
-                <th className="py-2.5 px-3 text-right font-normal">USD Cost</th>
-                <th className="py-2.5 px-3 text-right font-normal">Bank Debit (INR)</th>
-                <th className="py-2.5 px-3 text-center font-normal">Verified</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">
-              {ledger.map((tx) => (
-                <tr
-                  key={tx.id}
-                  onClick={() => setSelectedTx(tx)}
-                  className="hover:bg-white/[0.03] cursor-pointer transition-colors"
-                >
-                  <td className="py-2.5 px-3 text-zinc-400 whitespace-nowrap font-sans">
-                    {new Date(tx.date).toLocaleDateString("en-IN", {
-                      timeZone: "Asia/Kolkata",
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="py-2.5 px-3 font-sans">
-                    <span
-                      className={`font-semibold ${
-                        tx.firm.toLowerCase() === "breakout" ? "text-amber-400" : "text-zinc-200"
-                      }`}
-                    >
-                      {tx.firm}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-zinc-100 font-sans font-medium">
-                    {tx.challengeName}
-                  </td>
-                  <td className="py-2.5 px-3 text-zinc-300">
-                    {tx.accountId ? (
-                      <span className="font-mono">{formatAccountTag(tx.accountId)}</span>
-                    ) : (
-                      <span className="text-zinc-500 font-sans">—</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-zinc-300">
-                    {tx.amountUSD && Number(tx.amountUSD) > 0 ? formatUSD(tx.amountUSD) : "—"}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-semibold text-white">
-                    {formatINR(tx.actualCashCostINR || tx.amountINR)}
-                  </td>
-                  <td className="py-2.5 px-3 text-center">
-                    <div className="flex items-center justify-center text-emerald-400" title="Bank Settled">
-                      <CheckCircle2 size={14} />
-                    </div>
-                  </td>
+          {ledger.length === 0 ? (
+            <div className="p-8">
+              <EmptyState
+                icon={Receipt}
+                title="No Reconciled Transactions"
+                description="Purchase invoices, challenge registrations, and bank debits will appear here once recorded."
+              />
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-[var(--border-primary)] bg-[var(--bg-secondary)] text-zinc-400 font-sans">
+                  <th className="py-2.5 px-3 text-left font-normal">Date</th>
+                  <th className="py-2.5 px-3 text-left font-normal">Firm</th>
+                  <th className="py-2.5 px-3 text-left font-normal">Challenge</th>
+                  <th className="py-2.5 px-3 text-left font-normal">Account</th>
+                  <th className="py-2.5 px-3 text-right font-normal">USD Cost</th>
+                  <th className="py-2.5 px-3 text-right font-normal">Bank Debit (INR)</th>
+                  <th className="py-2.5 px-3 text-center font-normal">Verified</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)] font-mono text-xs">
+                {ledger.map((tx) => (
+                  <tr
+                    key={tx.id}
+                    onClick={() => setSelectedTx(tx)}
+                    className="hover:bg-white/[0.03] cursor-pointer transition-colors"
+                  >
+                    <td className="py-2.5 px-3 text-zinc-400 whitespace-nowrap font-sans">
+                      {new Date(tx.date).toLocaleDateString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="py-2.5 px-3 font-sans">
+                      <span
+                        className={`font-semibold ${
+                          tx.firm.toLowerCase() === "breakout" ? "text-amber-400" : "text-zinc-200"
+                        }`}
+                      >
+                        {tx.firm}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-zinc-100 font-sans font-medium">
+                      {tx.challengeName}
+                    </td>
+                    <td className="py-2.5 px-3 text-zinc-300">
+                      {tx.accountId ? (
+                        <span className="font-mono">{formatAccountTag(tx.accountId)}</span>
+                      ) : (
+                        <span className="text-zinc-400 font-sans">—</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-zinc-300">
+                      {tx.amountUSD && Number(tx.amountUSD) > 0 ? formatUSD(tx.amountUSD) : "—"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-semibold text-white">
+                      {formatINR(tx.actualCashCostINR || tx.amountINR)}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      <div className="flex items-center justify-center text-emerald-400" title="Bank Settled">
+                        <CheckCircle2 size={14} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -194,6 +205,7 @@ export function FinanceLedger({ ledger }: FinanceLedgerProps) {
                       }
                       className="p-1 rounded text-zinc-400 hover:text-white shrink-0"
                       title="Copy bank reference"
+                      aria-label="Copy bank reference"
                     >
                       {copiedRef ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                     </button>

@@ -1,7 +1,17 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export type StatusTone = "green" | "red" | "amber" | "cyan" | "zinc" | "neutral";
+export type StatusTone =
+  | "green"
+  | "red"
+  | "amber"
+  | "cyan"
+  | "zinc"
+  | "neutral"
+  | "buy"
+  | "sell"
+  | "long"
+  | "short";
 
 interface StatusBadgeProps {
   label: string;
@@ -35,6 +45,22 @@ const TONE_STYLES: Record<StatusTone, { text: string; dot: string }> = {
   neutral: {
     text: "text-zinc-400",
     dot: "bg-zinc-500",
+  },
+  buy: {
+    text: "text-emerald-400",
+    dot: "bg-emerald-500",
+  },
+  sell: {
+    text: "text-red-400",
+    dot: "bg-red-500",
+  },
+  long: {
+    text: "text-emerald-400",
+    dot: "bg-emerald-500",
+  },
+  short: {
+    text: "text-red-400",
+    dot: "bg-red-500",
   },
 };
 

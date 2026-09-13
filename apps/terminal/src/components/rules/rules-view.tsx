@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import type { DashboardData } from "@/lib/types";
 import { isTradingActive } from "@propr/data-model";
-import { formatAccountTag } from "@/lib/utils";
+import { formatAccountTag, cn } from "@/lib/utils";
+import { EmptyState } from "@/components/empty-state";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -20,6 +21,8 @@ import {
   Play,
 } from "lucide-react";
 import { Card } from "@/components/ui";
+
+const RULE_BADGE_BASE = "text-xs px-2 py-0.5 rounded font-mono border";
 
 // Web Audio API pure synthesizer chime for 45-min cooldown completion
 function playCooldownChime() {
@@ -377,6 +380,18 @@ export function RulesView({ data }: RulesViewProps) {
     }
   }, [isCooldownActive, minutesSinceLastTrade, audioEnabled]);
 
+  if (accounts.length === 0) {
+    return (
+      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8">
+        <EmptyState
+          icon={ShieldAlert}
+          title="No Accounts Configured"
+          description="Connect or select a trading account to evaluate pre-flight rules, circuit breakers, and discipline protocol."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12 font-sans">
       {/* ─── Top Master Gate Status Banner ─────────────────────────────────── */}
@@ -452,9 +467,10 @@ export function RulesView({ data }: RulesViewProps) {
           </div>
 
           <span
-            className={`text-xs px-2 py-0.5 rounded font-mono ${
-              is10k ? "bg-purple-950/60 text-purple-300 border border-purple-800/40" : "bg-blue-950/60 text-blue-300 border border-blue-800/40"
-            }`}
+            className={cn(
+              RULE_BADGE_BASE,
+              is10k ? "bg-purple-950/60 text-purple-300 border-purple-800/40" : "bg-blue-950/60 text-blue-300 border-blue-800/40"
+            )}
           >
             {is10k ? "10K Turbo Tier" : "5K Turbo Tier"}
           </span>
@@ -469,13 +485,13 @@ export function RulesView({ data }: RulesViewProps) {
               <span className="text-[11px] text-amber-400 ml-1">(De-risked)</span>
             )}
           </div>
-          <div className="text-zinc-700">|</div>
+          <div className="text-zinc-400 select-none">|</div>
           <div>
             <span className="text-zinc-400">Circuit Breaker: </span>
             <span className="text-zinc-200 font-bold">${circuitBreakerCeiling}</span>
             <span className="text-zinc-300 text-[11px] ml-1">(${lossRoomRemainingUSD.toFixed(2)} room)</span>
           </div>
-          <div className="text-zinc-700">|</div>
+          <div className="text-zinc-400 select-none">|</div>
           <div>
             <span className="text-zinc-400">Target Progress: </span>
             <span className={`font-bold ${profitPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
@@ -542,11 +558,12 @@ export function RulesView({ data }: RulesViewProps) {
                 <h4 className="text-sm font-semibold text-white">1. Trading Hours Window</h4>
               </div>
               <span
-                className={`text-xs px-2 py-0.5 rounded font-mono font-medium ${
+                className={cn(
+                  RULE_BADGE_BASE,
                   isTradingHoursOpen
-                    ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/40"
-                    : "bg-red-950/60 text-red-300 border border-red-800/40"
-                }`}
+                    ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
+                    : "bg-red-950/60 text-red-300 border-red-800/40"
+                )}
               >
                 {isTradingHoursOpen ? "● Open" : "● Closed"}
               </span>
@@ -567,7 +584,7 @@ export function RulesView({ data }: RulesViewProps) {
                 <AlertTriangle size={16} className="text-amber-400" />
                 <h4 className="text-sm font-semibold text-white">2. Weekend Trading Restrictions</h4>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
+              <span className={cn(RULE_BADGE_BASE, "bg-zinc-800 text-zinc-300 border-zinc-700")}>
                 {isWeekend ? "Weekend Active" : "Weekday Normal"}
               </span>
             </div>
@@ -589,7 +606,7 @@ export function RulesView({ data }: RulesViewProps) {
                 <Flame size={16} className="text-cyan-400" />
                 <h4 className="text-sm font-semibold text-white">3. Allowed Assets Whitelist</h4>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+              <span className={cn(RULE_BADGE_BASE, "bg-emerald-950/60 text-emerald-300 border-emerald-800/40")}>
                 6 Assets
               </span>
             </div>
@@ -612,7 +629,7 @@ export function RulesView({ data }: RulesViewProps) {
                 <ShieldAlert size={16} className="text-cyan-400" />
                 <h4 className="text-sm font-semibold text-white">4. Single-Trade Risk Limit</h4>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded font-mono bg-cyan-950/60 text-cyan-300 border border-cyan-800/40">
+              <span className={cn(RULE_BADGE_BASE, "bg-cyan-950/60 text-cyan-300 border-cyan-800/40")}>
                 ${currentMaxRiskUSD} Max
               </span>
             </div>
@@ -633,11 +650,12 @@ export function RulesView({ data }: RulesViewProps) {
                 <h4 className="text-sm font-semibold text-white">5. Intraday Circuit Breaker</h4>
               </div>
               <span
-                className={`text-xs px-2 py-0.5 rounded font-mono ${
+                className={cn(
+                  RULE_BADGE_BASE,
                   isCircuitBreakerTripped
-                    ? "bg-red-950 text-red-300 border border-red-800"
-                    : "bg-emerald-950/60 text-emerald-300 border border-emerald-800/40"
-                }`}
+                    ? "bg-red-950 text-red-300 border-red-800"
+                    : "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
+                )}
               >
                 {isCircuitBreakerTripped ? "● Tripped" : "● Operational"}
               </span>
@@ -659,11 +677,12 @@ export function RulesView({ data }: RulesViewProps) {
                 <h4 className="text-sm font-semibold text-white">6. Target Proximity De-Risking</h4>
               </div>
               <span
-                className={`text-xs px-2 py-0.5 rounded font-mono ${
+                className={cn(
+                  RULE_BADGE_BASE,
                   isTargetProtectionActive
-                    ? "bg-amber-950 text-amber-300 border border-amber-800"
-                    : "bg-zinc-800 text-zinc-400"
-                }`}
+                    ? "bg-amber-950 text-amber-300 border-amber-800"
+                    : "bg-zinc-800 text-zinc-300 border-zinc-700"
+                )}
               >
                 {isTargetProtectionActive ? "ARMED (≥7.5%)" : "Standard"}
               </span>
@@ -673,7 +692,7 @@ export function RulesView({ data }: RulesViewProps) {
             </p>
             <div className="pt-2 border-t border-zinc-800/80 text-xs font-mono text-zinc-400 flex justify-between">
               <span>Current Profit: {profitPercent >= 0 ? "+" : ""}{profitPercent.toFixed(2)}%</span>
-              <span className={isTargetProtectionActive ? "text-amber-400 font-bold" : "text-zinc-500"}>
+              <span className={isTargetProtectionActive ? "text-amber-400 font-bold" : "text-zinc-400"}>
                 {isTargetProtectionActive ? "Risk reduced to $25/$50" : "Arms at +7.50%"}
               </span>
             </div>
@@ -688,11 +707,12 @@ export function RulesView({ data }: RulesViewProps) {
               <h4 className="text-sm font-semibold text-white">7. Parallel Trading & Discipline Protocol</h4>
             </div>
             <span
-              className={`text-xs px-2 py-0.5 rounded font-mono ${
+              className={cn(
+                RULE_BADGE_BASE,
                 !hasParallelViolation && !isCooldownActive
-                  ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/40"
-                  : "bg-amber-950/60 text-amber-300 border border-amber-800/40"
-              }`}
+                  ? "bg-emerald-950/60 text-emerald-300 border-emerald-800/40"
+                  : "bg-amber-950/60 text-amber-300 border-amber-800/40"
+              )}
             >
               {openPositionsCount}/1 Open Trades
             </span>
@@ -718,8 +738,9 @@ export function RulesView({ data }: RulesViewProps) {
                   <button
                     onClick={() => setAudioEnabled(!audioEnabled)}
                     title={audioEnabled ? "Audio chime enabled" : "Audio chime muted"}
+                    aria-label={audioEnabled ? "Disable cooldown reset chime" : "Enable cooldown reset chime"}
                     className={`p-1 rounded text-xs transition-colors cursor-pointer ${
-                      audioEnabled ? "text-cyan-400 hover:text-cyan-300" : "text-zinc-600 hover:text-zinc-400"
+                      audioEnabled ? "text-cyan-400 hover:text-cyan-300" : "text-zinc-400 hover:text-zinc-200"
                     }`}
                   >
                     {audioEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
@@ -727,6 +748,7 @@ export function RulesView({ data }: RulesViewProps) {
                   <button
                     onClick={() => playCooldownChime()}
                     title="Test cooldown reset chime"
+                    aria-label="Test cooldown reset chime"
                     className="p-1 rounded text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
                   >
                     <Play size={11} />

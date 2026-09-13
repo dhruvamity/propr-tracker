@@ -81,7 +81,7 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         <div>
           <div className="flex items-center gap-2">
             {rank !== undefined && (
-              <span className="text-zinc-500 font-sans text-xs font-semibold">
+              <span className="text-zinc-400 font-sans text-xs font-semibold">
                 #{rank}
               </span>
             )}

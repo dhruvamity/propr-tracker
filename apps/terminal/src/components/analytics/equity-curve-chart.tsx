@@ -325,7 +325,7 @@ export function EquityCurveChart({
         {activePoint && (
           <div className="absolute top-2 left-16 bg-zinc-950/90 border border-zinc-800 rounded px-2.5 py-1 text-xs font-sans pointer-events-none shadow-lg">
             <span className="text-zinc-400">{activePoint.label}</span>
-            <span className="mx-1.5 text-zinc-600">·</span>
+            <span className="mx-1.5 text-zinc-400">·</span>
             <span className="font-mono font-bold text-white">
               {chartMode === "EQUITY" ? formatUSD(activePoint.equity) : `${(activePoint.drawdownPct || 0).toFixed(2)}% DD`}
             </span>

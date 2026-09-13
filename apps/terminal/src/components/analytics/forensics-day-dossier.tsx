@@ -124,12 +124,12 @@ export function ForensicsDayDossier({
         <div className="p-4 rounded-lg bg-emerald-950/30 border border-emerald-800/60 flex items-start sm:items-center gap-3">
           <ShieldCheck size={24} className="text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
           <div>
-            <div className="text-sm font-semibold text-emerald-300 font-sans flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-emerald-300 font-sans flex items-center gap-2">
               <span>Flawless protocol execution (100% discipline)</span>
               <span className="px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-emerald-900/80 text-emerald-200 border border-emerald-700/60">
                 Pass
               </span>
-            </div>
+            </h4>
             <div className="text-xs text-emerald-400/80 mt-0.5">
               All {selectedDaySummary.totalTrades} executions across all active accounts adhered strictly to approved assets, stop-loss caps, and cooldown windows.
             </div>
@@ -139,12 +139,12 @@ export function ForensicsDayDossier({
         <div className="p-4 rounded-lg bg-red-950/30 border border-red-800/60 flex items-start sm:items-center gap-3">
           <ShieldAlert size={24} className="text-red-400 shrink-0 mt-0.5 sm:mt-0" />
           <div>
-            <div className="text-sm font-semibold text-red-300 font-sans flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-red-300 font-sans flex items-center gap-2">
               <span>Protocol breach detected ({selectedDaySummary.violationsCount} violations)</span>
               <span className="px-2 py-0.5 rounded text-[11px] font-sans font-medium bg-red-900/80 text-red-200 border border-red-700/60">
                 Score: {selectedDaySummary.disciplineScore}%
               </span>
-            </div>
+            </h4>
             <div className="text-xs text-red-400/80 mt-0.5">
               Rule violations on this day caused{" "}
               <strong className="text-white">
@@ -222,73 +222,59 @@ export function ForensicsDayDossier({
           Daily Execution Protocol Checklist (Cross-Account)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          {/* Rule 1: Approved Whitelist */}
-          <div className="p-3 rounded bg-zinc-950/60 border border-zinc-800/70 flex items-start gap-2.5">
-            {selectedDaySummary.checklist.whitelistApproved ? (
-              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-            )}
-            <div>
-              <h4 className="font-semibold text-zinc-200">Asset Whitelist</h4>
-              <div className="text-[11px] text-zinc-400">
-                {selectedDaySummary.checklist.whitelistApproved
-                  ? "All fills in approved assets"
-                  : "Trade on unapproved symbol"}
+          {[
+            {
+              id: "whitelist",
+              title: "Asset Whitelist",
+              passed: selectedDaySummary.checklist.whitelistApproved,
+              passText: "All fills in approved assets",
+              failText: "Trade on unapproved symbol",
+              amber: false,
+            },
+            {
+              id: "risk-cap",
+              title: "Risk Limit Cap",
+              passed: selectedDaySummary.checklist.riskCapRespected,
+              passText: "No trade loss exceeded cap",
+              failText: "Over-risk violation recorded",
+              amber: false,
+            },
+            {
+              id: "cooldown",
+              title: "45-Min Cooldown",
+              passed: selectedDaySummary.checklist.cooldownObserved,
+              passText: "Proper reset observed",
+              failText: "Entered within 45m of loss",
+              amber: true,
+            },
+            {
+              id: "weekend",
+              title: "Weekend Freeze",
+              passed: selectedDaySummary.checklist.weekendFreezeRespected,
+              passText: "Zero weekend freeze trades",
+              failText: "Executed during freeze",
+              amber: false,
+            },
+          ].map((item) => (
+            <div
+              key={item.id}
+              className="p-3 rounded bg-zinc-950/60 border border-zinc-800/70 flex items-start gap-2.5"
+            >
+              {item.passed ? (
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+              ) : item.amber ? (
+                <XCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              ) : (
+                <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <h4 className="font-semibold text-zinc-200">{item.title}</h4>
+                <div className="text-[11px] text-zinc-400">
+                  {item.passed ? item.passText : item.failText}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Rule 2: Single-Trade Risk Cap */}
-          <div className="p-3 rounded bg-zinc-950/60 border border-zinc-800/70 flex items-start gap-2.5">
-            {selectedDaySummary.checklist.riskCapRespected ? (
-              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-            )}
-            <div>
-              <h4 className="font-semibold text-zinc-200">Risk Limit Cap</h4>
-              <div className="text-[11px] text-zinc-400">
-                {selectedDaySummary.checklist.riskCapRespected
-                  ? "No trade loss exceeded cap"
-                  : "Over-risk violation recorded"}
-              </div>
-            </div>
-          </div>
-
-          {/* Rule 3: 45-Min Cooldown Gate */}
-          <div className="p-3 rounded bg-zinc-950/60 border border-zinc-800/70 flex items-start gap-2.5">
-            {selectedDaySummary.checklist.cooldownObserved ? (
-              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
-            )}
-            <div>
-              <h4 className="font-semibold text-zinc-200">45-Min Cooldown</h4>
-              <div className="text-[11px] text-zinc-400">
-                {selectedDaySummary.checklist.cooldownObserved
-                  ? "Proper reset observed"
-                  : "Entered within 45m of loss"}
-              </div>
-            </div>
-          </div>
-
-          {/* Rule 4: Weekend Freeze */}
-          <div className="p-3 rounded bg-zinc-950/60 border border-zinc-800/70 flex items-start gap-2.5">
-            {selectedDaySummary.checklist.weekendFreezeRespected ? (
-              <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-            )}
-            <div>
-              <h4 className="font-semibold text-zinc-200">Weekend Freeze</h4>
-              <div className="text-[11px] text-zinc-400">
-                {selectedDaySummary.checklist.weekendFreezeRespected
-                  ? "Zero weekend freeze trades"
-                  : "Executed during freeze"}
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

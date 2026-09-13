@@ -10,6 +10,7 @@ import {
 } from "@/lib/forensics";
 import { Calendar as CalendarIcon, Filter } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import { ForensicsCalendarGrid } from "./forensics-calendar-grid";
 import { ForensicsDayDossier } from "./forensics-day-dossier";
 
@@ -238,6 +239,18 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
     const d = new Date(targetDateKey);
     setViewYearMonth({ year: d.getFullYear(), month: d.getMonth() });
   };
+
+  if (accounts.length === 0) {
+    return (
+      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8 font-sans">
+        <EmptyState
+          icon={CalendarIcon}
+          title="No Forensics Data"
+          description="Connect or activate trading accounts to review cross-account trade forensics, discipline scores, and daily execution logs."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 font-sans">

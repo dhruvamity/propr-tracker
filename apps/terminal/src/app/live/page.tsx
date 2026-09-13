@@ -82,9 +82,9 @@ export default async function LiveMonitorPage() {
                   <Activity size={16} />
                 </div>
                 <div>
-                  <div className="font-semibold text-zinc-200">
+                  <h3 className="font-semibold text-zinc-200">
                     Flat
-                  </div>
+                  </h3>
                   <p className="text-zinc-400 mt-0.5">
                     {liveAccounts.length} active accounts · Zero open exposure
                   </p>
@@ -107,7 +107,7 @@ export default async function LiveMonitorPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-sans">
                       <span className="font-semibold text-zinc-100 text-sm">{pos.asset}</span>
-                      <span className="text-zinc-500">/</span>
+                      <span className="text-zinc-400">/</span>
                       <span
                         className={`text-xs font-semibold capitalize ${
                           pos.positionSide === "long" ? "text-emerald-400" : "text-red-400"

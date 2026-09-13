@@ -17,7 +17,7 @@ interface DailyPnlChartProps {
 export function DailyPnlChart({ dailyData, height = 176 }: DailyPnlChartProps) {
   if (dailyData.length === 0) {
     return (
-      <div style={{ height }} className="flex items-center justify-center text-xs text-zinc-500 font-sans">
+      <div style={{ height }} className="flex items-center justify-center text-xs text-zinc-400 font-sans">
         No daily trade history available for this account.
       </div>
     );
@@ -39,7 +39,7 @@ export function DailyPnlChart({ dailyData, height = 176 }: DailyPnlChartProps) {
                 <span className={isPos ? "text-emerald-400 font-semibold" : "text-red-400 font-semibold"}>
                   {isPos ? `+${formatUSD(item.pnl)}` : `-${formatUSD(Math.abs(item.pnl))}`}
                 </span>
-                <span className="text-zinc-500 ml-1">({item.tradesCount}t)</span>
+                <span className="text-zinc-400 ml-1">({item.tradesCount}t)</span>
               </div>
 
               {/* Bar */}

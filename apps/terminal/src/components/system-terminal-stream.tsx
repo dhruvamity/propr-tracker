@@ -151,7 +151,7 @@ function JsonHighlight({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
   return (
     <span className="font-mono text-xs bg-zinc-950/90 px-2 py-0.5 rounded border border-zinc-800/80 inline-block ml-2 select-text">
-      <span className="text-zinc-500">{"{"}</span>
+      <span className="text-zinc-400">{"{"}</span>
       {entries.map(([key, val], idx) => {
         let valColor = "text-zinc-200";
         if (typeof val === "number" || (!isNaN(Number(val)) && !isNaN(parseFloat(String(val))))) {
@@ -169,15 +169,15 @@ function JsonHighlight({ data }: { data: Record<string, unknown> }) {
         return (
           <span key={key}>
             <span className="text-zinc-400 font-normal">&quot;{key}&quot;</span>
-            <span className="text-zinc-500">: </span>
+            <span className="text-zinc-400">: </span>
             <span className={`${valColor} font-medium`}>
               {typeof val === "string" ? `"${val}"` : String(val)}
             </span>
-            {idx < entries.length - 1 && <span className="text-zinc-500">, </span>}
+            {idx < entries.length - 1 && <span className="text-zinc-400">, </span>}
           </span>
         );
       })}
-      <span className="text-zinc-500">{"}"}</span>
+      <span className="text-zinc-400">{"}"}</span>
     </span>
   );
 }
@@ -274,10 +274,10 @@ export function SystemTerminalStream() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
             <span className="w-2.5 h-2.5 rounded-full bg-green-500/80 inline-block" />
           </div>
-          <div className="flex items-center gap-2 text-zinc-200 font-semibold text-xs font-mono">
+          <h3 className="flex items-center gap-2 text-zinc-200 font-semibold text-xs font-mono">
             <Terminal size={14} className="text-zinc-400" />
             <span>propr-ws-gateway / event-stream.log</span>
-          </div>
+          </h3>
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
             <Wifi size={11} className="text-emerald-400 animate-pulse" />
             <span>wss://api.propr.xyz/ws (20s heartbeat)</span>
@@ -331,6 +331,7 @@ export function SystemTerminalStream() {
           <button
             type="button"
             onClick={() => setAutoScroll(!autoScroll)}
+            aria-label={autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"}
             className={`p-1.5 rounded border text-xs transition-colors ${
               autoScroll
                 ? "bg-zinc-800 text-white border-zinc-700"
@@ -345,6 +346,7 @@ export function SystemTerminalStream() {
           <button
             type="button"
             onClick={() => setLogs([])}
+            aria-label="Clear console"
             className="p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-red-400 transition-colors"
             title="Clear Console"
           >

@@ -186,7 +186,7 @@ export default async function OverviewPage() {
           <h2 className="text-sm font-semibold text-zinc-200 font-sans">
             Active accounts
           </h2>
-          <span className="text-xs font-sans text-zinc-500">
+          <span className="text-xs font-sans text-zinc-400">
             {rankedActiveAccounts.length} active
           </span>
         </div>

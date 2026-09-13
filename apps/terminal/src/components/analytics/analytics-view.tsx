@@ -19,7 +19,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Calendar,
+  BarChart3,
 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import {
   analyzeTradeForensics,
   type ForensicsSummary,
@@ -455,6 +457,18 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
     link.click();
     document.body.removeChild(link);
   };
+
+  if (accounts.length === 0) {
+    return (
+      <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8 font-sans">
+        <EmptyState
+          icon={BarChart3}
+          title="No Analytics Available"
+          description="Connect or activate a trading account to view performance metrics, trade forensics, and execution analytics."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 font-sans">

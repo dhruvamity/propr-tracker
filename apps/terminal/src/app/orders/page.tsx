@@ -3,6 +3,7 @@ import { isTradingActive } from "@propr/data-model";
 import { ListOrdered } from "lucide-react";
 import { formatUSD, formatAccountTag } from "@/lib/utils";
 import Link from "next/link";
+import { EmptyState } from "@/components/empty-state";
 import {
   TableContainer,
   TableHeaderRow,
@@ -51,16 +52,12 @@ export default async function OrdersPage() {
 
       {/* Orders Table or Empty State */}
       {allOrders.length === 0 ? (
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-12 text-center space-y-3 font-sans">
-          <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-400">
-            <ListOrdered size={20} />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-zinc-200">No Working Orders</h3>
-            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-              No open limit or trigger orders are active on Hyperliquid. When orders are placed, they will appear here in real time.
-            </p>
-          </div>
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6">
+          <EmptyState
+            icon={ListOrdered}
+            title="No Working Orders"
+            description="No open limit or trigger orders are active on Hyperliquid. When orders are placed, they will appear here in real time."
+          />
         </div>
       ) : (
         <TableContainer>
@@ -86,13 +83,11 @@ export default async function OrdersPage() {
                   {formatAccountTag(ord.accountId)}
                 </td>
                 <td className="py-2.5 px-3 font-sans">
-                  <span
-                    className={`text-xs font-medium ${
-                      ord.side === "buy" ? "text-emerald-400" : "text-red-400"
-                    }`}
-                  >
-                    {ord.side === "buy" ? "Buy" : "Sell"}
-                  </span>
+                  <StatusBadge
+                    label={ord.side === "buy" ? "Buy" : "Sell"}
+                    tone={ord.side === "buy" ? "buy" : "sell"}
+                    dot={false}
+                  />
                 </td>
                 <td className="py-2.5 px-3 text-zinc-300 font-sans">
                   {formatOrderType(ord.type)}

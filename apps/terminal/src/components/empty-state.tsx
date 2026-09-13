@@ -8,6 +8,8 @@ interface EmptyStateProps {
   description: string;
   statusBadge?: string;
   className?: string;
+  action?: React.ReactNode;
+  children?: React.ReactNode;
   metrics?: {
     activeAccounts?: number;
     openPositions?: number;
@@ -22,6 +24,8 @@ export function EmptyState({
   description,
   statusBadge,
   className,
+  action,
+  children,
   metrics,
 }: EmptyStateProps) {
   return (
@@ -85,6 +89,12 @@ export function EmptyState({
           <span>{statusBadge}</span>
         </div>
       )}
+
+      {/* Optional Action / Links */}
+      {action && <div className="mt-3.5">{action}</div>}
+
+      {/* Optional Children */}
+      {children && <div className="mt-3.5 w-full">{children}</div>}
     </div>
   );
 }

@@ -15,7 +15,9 @@ import {
   Check,
   X,
   ExternalLink,
+  History,
 } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import {
   TableContainer,
   TableHeaderRow,
@@ -223,7 +225,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
           <div className="relative flex-1 md:w-56">
             <Search
               size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
             />
             <input
               type="text"
@@ -266,8 +268,16 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
         <TableBody>
           {filteredAndSortedAccounts.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-8 text-center text-zinc-400 font-sans">
-                No accounts match the selected filter.
+              <td colSpan={7} className="py-6 text-center font-sans">
+                <EmptyState
+                  icon={Search}
+                  title="No Matching Accounts"
+                  description={
+                    searchTerm
+                      ? `No accounts found matching "${searchTerm}". Try adjusting your search query.`
+                      : "No accounts found for the selected stage filter."
+                  }
+                />
               </td>
             </tr>
           ) : (
@@ -350,7 +360,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                       ) : isActive ? (
                         <div className="text-zinc-300 text-xs">
                           <span className="font-mono font-medium text-zinc-100">{formatPercent(acc.profitTargetPct, 2)}</span>
-                          <span className="text-zinc-500 ml-1">/ {acc.profitTargetPercent || "9"}% target</span>
+                          <span className="text-zinc-400 ml-1">/ {acc.profitTargetPercent || "9"}% target</span>
                           {acc.toTargetAmount && Number(acc.toTargetAmount) > 0 && (
                             <span className="text-zinc-400 block text-[11px] font-mono">
                               ({formatUSD(acc.toTargetAmount)} left)
@@ -358,7 +368,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-500 text-xs">Archived</span>
+                        <span className="text-zinc-400 text-xs">Archived</span>
                       )}
                     </td>
 
@@ -402,7 +412,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
                     {drawerAccount.stage?.toLowerCase()}
                   </span>
                 </div>
-                <p className="text-xs font-mono text-zinc-500 mt-1">
+                <p className="text-xs font-mono text-zinc-400 mt-1">
                   {drawerAccount.accountId}
                 </p>
               </div>
@@ -448,8 +458,12 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
               </div>
 
               {!drawerAccount.trades || drawerAccount.trades.length === 0 ? (
-                <div className="p-8 text-center text-zinc-500 text-xs rounded border border-zinc-800">
-                  No trade history recorded for this account.
+                <div className="rounded border border-zinc-800 p-6 bg-zinc-950/40">
+                  <EmptyState
+                    icon={History}
+                    title="No Trade History"
+                    description="No trade history recorded for this account."
+                  />
                 </div>
               ) : (
                 <div className="rounded border border-zinc-800 overflow-x-auto">
@@ -472,7 +486,7 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
 
                         return (
                           <tr key={t.tradeId || idx} className="hover:bg-white/[0.02]">
-                            <td className="py-2 px-3 text-zinc-500 whitespace-nowrap">
+                            <td className="py-2 px-3 text-zinc-400 whitespace-nowrap">
                               {t.executedAt ? new Date(t.executedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric" }) : "—"}
                             </td>
                             <td className="py-2 px-3 font-semibold text-white">

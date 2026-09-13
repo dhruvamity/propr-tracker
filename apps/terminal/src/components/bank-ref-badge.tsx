@@ -57,7 +57,7 @@ export function BankRefBadge({ reference }: BankRefBadgeProps) {
         {copied ? (
           <Check size={11} className="text-[var(--green)] shrink-0 animate-in fade-in" />
         ) : (
-          <Copy size={11} className="text-zinc-500 group-hover:text-cyan-400 shrink-0 transition-colors" />
+          <Copy size={11} className="text-zinc-400 group-hover:text-cyan-400 shrink-0 transition-colors" />
         )}
       </button>
 

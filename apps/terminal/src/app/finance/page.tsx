@@ -80,7 +80,7 @@ export default async function FinancePage() {
                 <span className="font-mono text-zinc-100 font-semibold">
                   {formatINR(finance.proprActualCashCostINR)}
                 </span>
-                <span className="font-mono text-[11px] text-zinc-500">
+                <span className="font-mono text-[11px] text-zinc-400">
                   {((Number(finance.proprActualCashCostINR) / Math.max(1, totalSpentINR)) * 100).toFixed(0)}%
                 </span>
               </div>
@@ -100,7 +100,7 @@ export default async function FinancePage() {
                 <span className="font-mono text-zinc-100 font-semibold">
                   {formatINR(finance.breakoutActualCashCostINR)}
                 </span>
-                <span className="font-mono text-[11px] text-zinc-500">
+                <span className="font-mono text-[11px] text-zinc-400">
                   {((Number(finance.breakoutActualCashCostINR) / Math.max(1, totalSpentINR)) * 100).toFixed(0)}%
                 </span>
               </div>

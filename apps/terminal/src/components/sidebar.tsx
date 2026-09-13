@@ -154,7 +154,7 @@ export function Sidebar() {
         <div className="p-2 border-t border-zinc-900">
           <button
             onClick={toggleCollapsed}
-            className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors w-full px-2.5 py-2 rounded"
+            className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-200 transition-colors w-full px-2.5 py-2 rounded"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <ChevronLeft className={cn("h-4 w-4 transition-transform shrink-0", collapsed && "rotate-180")} />
