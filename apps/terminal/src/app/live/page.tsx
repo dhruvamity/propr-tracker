@@ -6,49 +6,6 @@ import { formatUSD, formatAccountTag } from "@/lib/utils";
 
 export const revalidate = 15;
 
-const MARKET_SPECS = [
-  {
-    symbol: "BTC",
-    name: "Bitcoin",
-    markPrice: "$68,432.50",
-    change24h: "+2.45%",
-    isPositive: true,
-    maxLeverage: "10x",
-    tickSize: "0.10",
-    funding8h: "+0.0100%",
-  },
-  {
-    symbol: "ETH",
-    name: "Ethereum",
-    markPrice: "$3,542.80",
-    change24h: "+1.82%",
-    isPositive: true,
-    maxLeverage: "10x",
-    tickSize: "0.01",
-    funding8h: "+0.0085%",
-  },
-  {
-    symbol: "SOL",
-    name: "Solana",
-    markPrice: "$178.45",
-    change24h: "+4.12%",
-    isPositive: true,
-    maxLeverage: "2x",
-    tickSize: "0.01",
-    funding8h: "+0.0120%",
-  },
-  {
-    symbol: "SUI",
-    name: "Sui",
-    markPrice: "$1.84",
-    change24h: "-0.65%",
-    isPositive: false,
-    maxLeverage: "2x",
-    tickSize: "0.001",
-    funding8h: "-0.0025%",
-  },
-];
-
 export default async function LiveMonitorPage() {
   const data = await fetchDashboardData();
   const { accounts, allPositions } = data;
@@ -200,40 +157,6 @@ export default async function LiveMonitorPage() {
             })}
           </div>
         )}
-      </div>
-
-      {/* ─── 4. Markets (Prompt §13 & §29: No duplicate descriptor) ─── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-zinc-200 font-sans">
-            Markets
-          </h2>
-        </div>
-
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] overflow-hidden">
-          <div className="divide-y divide-[var(--border-subtle)] text-xs font-sans">
-            {MARKET_SPECS.map((spec) => (
-              <div
-                key={spec.symbol}
-                className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-zinc-100 font-sans">{spec.symbol}</span>
-                </div>
-                <div className="flex items-center gap-6">
-                  <span className="font-mono font-semibold text-zinc-100">{spec.markPrice}</span>
-                  <span
-                    className={`font-mono font-semibold w-16 text-right ${
-                      spec.isPositive ? "text-emerald-400" : "text-red-400"
-                    }`}
-                  >
-                    {spec.change24h}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

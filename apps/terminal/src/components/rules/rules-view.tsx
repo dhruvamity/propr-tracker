@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import type { DashboardData } from "@/lib/types";
 import { formatAccountTag } from "@/lib/utils";
 import {
@@ -15,19 +15,54 @@ import {
   Layers,
   Sparkles,
   ChevronDown,
+  Volume2,
+  VolumeX,
+  Play,
 } from "lucide-react";
+
+// Web Audio API pure synthesizer chime for 45-min cooldown completion
+function playCooldownChime() {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+
+    const playTone = (freq: number, start: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + duration);
+    };
+
+    // Ascending celebratory chime (E5 -> A5 -> C#6)
+    playTone(659.25, 0, 0.22);
+    playTone(880.00, 0.16, 0.22);
+    playTone(1108.73, 0.32, 0.45);
+  } catch {
+    // AudioContext blocked or user interaction needed
+  }
+}
 
 interface RulesViewProps {
   data: DashboardData;
 }
 
 const ALLOWED_ASSETS = [
-  { symbol: "BTC", name: "Bitcoin", defaultPrice: 68430 },
-  { symbol: "Gold", ticker: "PAXG", name: "Gold / PAXG", defaultPrice: 2510 },
-  { symbol: "NEAR", name: "Near Protocol", defaultPrice: 4.85 },
-  { symbol: "ENA", name: "Ethena", defaultPrice: 0.58 },
-  { symbol: "HYPE", name: "Hyperliquid", defaultPrice: 14.5 },
-  { symbol: "ZEC", name: "Zcash", defaultPrice: 34.8 },
+  { symbol: "BTC", name: "Bitcoin", defaultPrice: 68430, leverage: 10 },
+  { symbol: "Gold", ticker: "PAXG", name: "Gold / PAXG", defaultPrice: 2510, leverage: 10 },
+  { symbol: "NEAR", name: "Near Protocol", defaultPrice: 4.85, leverage: 2 },
+  { symbol: "ENA", name: "Ethena", defaultPrice: 0.58, leverage: 2 },
+  { symbol: "HYPE", name: "Hyperliquid", defaultPrice: 14.5, leverage: 2 },
+  { symbol: "ZEC", name: "Zcash", defaultPrice: 34.8, leverage: 2 },
 ];
 
 export function RulesView({ data }: RulesViewProps) {
@@ -228,6 +263,7 @@ export function RulesView({ data }: RulesViewProps) {
     activePositionAsset,
     isCooldownActive,
     cooldownRemainingText,
+    minutesSinceLastTrade,
   } = useMemo(() => {
     const openCount = allPositions.length;
     const hasParallel = openCount >= 1;
@@ -324,24 +360,54 @@ export function RulesView({ data }: RulesViewProps) {
   const canTradeNow = preFlightChecks.every((c) => c.passed);
   const activeBlockers = preFlightChecks.filter((c) => !c.passed);
 
+  // Audio alert state for 45-min cooldown completion
+  const hasPlayedChimeRef = useRef<boolean>(false);
+  const [audioEnabled, setAudioEnabled] = useState<boolean>(true);
+
+  // Auto-play chime when 45-min cooldown transitions from active to satisfied
+  useEffect(() => {
+    if (!isCooldownActive && !hasPlayedChimeRef.current && minutesSinceLastTrade < 60 && minutesSinceLastTrade >= 45) {
+      if (audioEnabled) {
+        playCooldownChime();
+      }
+      hasPlayedChimeRef.current = true;
+    } else if (isCooldownActive) {
+      hasPlayedChimeRef.current = false;
+    }
+  }, [isCooldownActive, minutesSinceLastTrade, audioEnabled]);
+
   // ─── 7. Interactive Position Sizing Calculator (Rules 3 & 4) ────────────────
   const [calcAsset, setCalcAsset] = useState<string>("BTC");
   const [entryPriceInput, setEntryPriceInput] = useState<string>("68430");
   const [stopLossInput, setStopLossInput] = useState<string>("67900");
+  const [riskMultiplier, setRiskMultiplier] = useState<number>(1.0); // 1.0 (Full), 0.5 (Half)
 
   const calcResults = useMemo(() => {
     const entry = parseFloat(entryPriceInput) || 0;
     const sl = parseFloat(stopLossInput) || 0;
     const distance = Math.abs(entry - sl);
-    const maxRisk = currentMaxRiskUSD;
+    const maxRisk = currentMaxRiskUSD * riskMultiplier;
+
+    const currentAssetSpec = ALLOWED_ASSETS.find((a) => a.symbol === calcAsset) || ALLOWED_ASSETS[0];
+    const leverage = currentAssetSpec.leverage || 2;
 
     if (entry <= 0 || sl <= 0 || distance <= 0) {
-      return { isValid: false, sizeUnits: 0, notionalUSD: 0, stopDistanceUSD: 0, stopDistancePct: 0 };
+      return {
+        isValid: false,
+        sizeUnits: 0,
+        notionalUSD: 0,
+        stopDistanceUSD: 0,
+        stopDistancePct: 0,
+        estMarginUSD: 0,
+        leverage,
+        actualDollarRisk: maxRisk,
+      };
     }
 
     const sizeUnits = maxRisk / distance;
     const notionalUSD = sizeUnits * entry;
     const stopDistancePct = (distance / entry) * 100;
+    const estMarginUSD = notionalUSD / leverage;
 
     return {
       isValid: true,
@@ -349,8 +415,11 @@ export function RulesView({ data }: RulesViewProps) {
       notionalUSD: Number(notionalUSD.toFixed(2)),
       stopDistanceUSD: Number(distance.toFixed(2)),
       stopDistancePct: Number(stopDistancePct.toFixed(2)),
+      estMarginUSD: Number(estMarginUSD.toFixed(2)),
+      leverage,
+      actualDollarRisk: Number(maxRisk.toFixed(2)),
     };
-  }, [entryPriceInput, stopLossInput, currentMaxRiskUSD]);
+  }, [entryPriceInput, stopLossInput, currentMaxRiskUSD, riskMultiplier, calcAsset]);
 
   const handleAssetSelect = (asset: (typeof ALLOWED_ASSETS)[0]) => {
     setCalcAsset(asset.symbol);
@@ -549,6 +618,31 @@ export function RulesView({ data }: RulesViewProps) {
           </div>
         </div>
 
+        {/* Quick Risk Presets */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-zinc-800 text-xs">
+          <span className="text-zinc-500 font-mono text-[11px]">Risk Preset:</span>
+          <button
+            onClick={() => setRiskMultiplier(1.0)}
+            className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors cursor-pointer border ${
+              riskMultiplier === 1.0
+                ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-300"
+                : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
+            }`}
+          >
+            Full Risk (${currentMaxRiskUSD.toFixed(2)})
+          </button>
+          <button
+            onClick={() => setRiskMultiplier(0.5)}
+            className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors cursor-pointer border ${
+              riskMultiplier === 0.5
+                ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-300"
+                : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
+            }`}
+          >
+            Conservative 50% (${(currentMaxRiskUSD * 0.5).toFixed(2)})
+          </button>
+        </div>
+
         {/* Calculator Inputs & Output Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
           <div>
@@ -576,7 +670,7 @@ export function RulesView({ data }: RulesViewProps) {
           </div>
 
           {/* Sizing Output Box */}
-          <div className="p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 space-y-1.5 font-mono text-xs">
+          <div className="p-3.5 rounded-lg bg-zinc-900/90 border border-zinc-800 space-y-1.5 font-mono text-xs">
             <div className="text-[10px] uppercase text-zinc-500">Calculated Position Sizing</div>
             {calcResults.isValid ? (
               <>
@@ -596,8 +690,12 @@ export function RulesView({ data }: RulesViewProps) {
                   <span>Notional Exposure:</span>
                   <span>${calcResults.notionalUSD.toLocaleString()}</span>
                 </div>
-                <div className="text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
-                  ✓ If stopped out, loss is exactly ${currentMaxRiskUSD.toFixed(2)} (Rule 4/6 compliant).
+                <div className="flex justify-between items-center text-zinc-400 text-[11px]">
+                  <span>Est. Margin ({calcResults.leverage}x):</span>
+                  <span>${calcResults.estMarginUSD.toFixed(2)}</span>
+                </div>
+                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800">
+                  ✓ If stopped out, loss is exactly ${calcResults.actualDollarRisk.toFixed(2)} (Risk Rule compliant).
                 </div>
               </>
             ) : (
@@ -793,15 +891,38 @@ export function RulesView({ data }: RulesViewProps) {
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-1">
-              <div className="text-zinc-400 font-medium">45-Minute Cooldown Gap</div>
+            <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="text-zinc-400 font-medium">45-Minute Cooldown Gap</div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setAudioEnabled(!audioEnabled)}
+                    title={audioEnabled ? "Audio chime enabled" : "Audio chime muted"}
+                    className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                      audioEnabled ? "text-cyan-400 hover:text-cyan-300" : "text-zinc-600 hover:text-zinc-400"
+                    }`}
+                  >
+                    {audioEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                  </button>
+                  <button
+                    onClick={() => playCooldownChime()}
+                    title="Test cooldown reset chime"
+                    className="p-1 rounded text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    <Play size={11} />
+                  </button>
+                </div>
+              </div>
               <div className="text-zinc-300 text-[11px]">Maintain minimum 45-minute pause between trades.</div>
-              <div className="pt-1 font-mono text-[11px]">
+              <div className="pt-1 font-mono text-[11px] flex items-center justify-between">
                 {isCooldownActive ? (
                   <span className="text-amber-400">⏳ {cooldownRemainingText}</span>
                 ) : (
                   <span className="text-emerald-400">✓ Cooldown satisfied (&gt;45m)</span>
                 )}
+                <span className="text-[10px] text-zinc-500">
+                  {audioEnabled ? "Chime on" : "Muted"}
+                </span>
               </div>
             </div>
 

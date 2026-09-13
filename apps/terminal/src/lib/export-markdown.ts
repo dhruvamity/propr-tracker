@@ -1,5 +1,6 @@
 import type { DashboardData, AccountSnapshot, TradeData } from "./types";
 import { formatUSD, formatINR, formatPercent, formatShortId, formatAccountTag } from "./utils";
+import { analyzeTradeForensics } from "./forensics";
 
 interface ComputedAccountMetrics {
   account: AccountSnapshot;
@@ -385,6 +386,8 @@ export function generateMarkdownExport(data: DashboardData): string {
     lines.push(`- **Profit Target:** ${m.targetPct}% (Goal: ${formatUSD(m.targetBalance)} | Peak Distance: Left by ${m.peakDistancePct.toFixed(2)}%)`);
     lines.push(`- **Risk Policies:** ${formatPercent(acc.maxDrawdownPercent, 1)} Max Drawdown (Floor: ${formatUSD(acc.breachFloor)}) · ${formatPercent(acc.maxDailyLossPercent, 1)} Daily Loss Allowance (Floor: ${formatUSD(acc.dailyLossFloor)})`);
     lines.push(`- **Performance Stats:** ${m.tradesCount} trades · Win Rate: ${m.winRate.toFixed(1)}% (${m.winsCount}W/${m.lossesCount}L) · Profit Factor: ${m.profitFactor > 50 ? ">50" : m.profitFactor.toFixed(2)} · Avg Win: ${formatUSD(m.avgWin)} · Avg Loss: ${formatUSD(m.avgLoss)} · Gross Wins: ${formatUSD(m.grossProfit)} · Gross Losses: ${formatUSD(m.grossLoss)} · Total Fees: ${formatUSD(m.totalFees)} · Net PnL: ${m.netPnL >= 0 ? "+" : ""}${formatUSD(m.netPnL)}`);
+    const forensics = analyzeTradeForensics(trades, m.initialBal);
+    lines.push(`- **Discipline Forensics:** Discipline Score: ${forensics.disciplineScore.toFixed(1)}% (${forensics.compliantTrades}/${forensics.totalTrades} compliant) · Cost of Rule Violations: ${forensics.totalViolationCostUSD > 0 ? `-${formatUSD(forensics.totalViolationCostUSD)}` : "$0.00"} · Potential Clean PnL: ${forensics.cleanNetPnl >= 0 ? "+" : ""}${formatUSD(forensics.cleanNetPnl)}`);
 
     if (acc.stage === "BREACHED" || acc.stage === "FAILED") {
       lines.push(`- **Breach Diagnostic:**`);
@@ -403,8 +406,10 @@ export function generateMarkdownExport(data: DashboardData): string {
       lines.push("*No trade executions recorded for this account.*");
       lines.push("");
     } else {
-      lines.push("| # | Executed At (UTC) | Asset | Side | Quantity | Price | Notional ($) | Fee ($) | Gross PnL ($) | Net PnL ($) | Status | Fills | Trade ID |");
-      lines.push("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |");
+      lines.push("| # | Executed At (UTC) | Asset | Side | Quantity | Price | Notional ($) | Fee ($) | Gross PnL ($) | Net PnL ($) | Status | Rule Audit | Fills | Trade ID |");
+      lines.push("| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |");
+
+      const taggedTradesMap = new Map(forensics.taggedTrades.map((tt) => [tt.trade.tradeId, tt]));
 
       trades.forEach((t: TradeData, tIdx: number) => {
         const dateStr = t.executedAt ? new Date(t.executedAt).toISOString().replace("T", " ").replace("Z", " UTC") : "—";
@@ -415,8 +420,12 @@ export function generateMarkdownExport(data: DashboardData): string {
         const isWin = netPnl >= 0;
         const netStr = isWin ? `+${formatUSD(netPnl)}` : `-${formatUSD(Math.abs(netPnl))}`;
         const grossStr = rPnl >= 0 ? `+${formatUSD(rPnl)}` : `-${formatUSD(Math.abs(rPnl))}`;
+        const tagged = taggedTradesMap.get(t.tradeId);
+        const auditStr = tagged && tagged.violations.length > 0
+          ? `⚠️ ${tagged.violations.map((v) => v.label).join(", ")}`
+          : "✓ Clean";
 
-        lines.push(`| ${tIdx + 1} | ${dateStr} | **${t.asset}** | \`${sideStr}\` | ${t.quantity} | ${formatUSD(t.price)} | ${formatUSD(t.quoteQuantity)} | -${formatUSD(fee)} | ${grossStr} | **${netStr}** | \`${isWin ? "WIN" : "LOSS"}\` | ${t.fillsCount || 1} | \`${formatShortId(t.tradeId)}\` |`);
+        lines.push(`| ${tIdx + 1} | ${dateStr} | **${t.asset}** | \`${sideStr}\` | ${t.quantity} | ${formatUSD(t.price)} | ${formatUSD(t.quoteQuantity)} | -${formatUSD(fee)} | ${grossStr} | **${netStr}** | \`${isWin ? "WIN" : "LOSS"}\` | \`${auditStr}\` | ${t.fillsCount || 1} | \`${formatShortId(t.tradeId)}\` |`);
       });
       lines.push("");
     }

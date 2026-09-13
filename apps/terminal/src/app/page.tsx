@@ -1,6 +1,6 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { formatUSD, formatINR } from "@/lib/utils";
-import { ArrowUpRight, TrendingUp } from "lucide-react";
+import { ArrowUpRight, TrendingUp, ShieldCheck, ShieldAlert } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { RiskCard } from "@/components/risk-card";
 import Link from "next/link";
@@ -47,6 +47,44 @@ export default async function OverviewPage() {
     return dailyBurn >= 75 || dailyRoom <= 35;
   });
 
+  // Rule Gate Pre-flight status synthesis (Rules 1, 5, 7)
+  const now = new Date();
+  const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+  const istDate = new Date(istString);
+  const istMinutes = istDate.getDay() * 1440 + istDate.getHours() * 60 + istDate.getMinutes();
+  const isMarketOpen = istMinutes >= 1830 && istMinutes < 8670;
+  const hasOpenPositions = allPositions.length > 0;
+
+  let latestTradeTs = 0;
+  for (const acc of accounts) {
+    if (acc.trades) {
+      for (const t of acc.trades) {
+        const ts = new Date(t.executedAt || "").getTime();
+        if (ts > latestTradeTs) latestTradeTs = ts;
+      }
+    }
+  }
+  const cooldownElapsedMin = latestTradeTs > 0 ? Math.floor((now.getTime() - latestTradeTs) / 60000) : 999;
+  const isCooldownRunning = cooldownElapsedMin < 45;
+
+  let isGateClear = true;
+  let gateStatusTitle = "Pre-Flight Gate: Clear to trade";
+  let gateStatusSubtitle = "Market window open · 0 open positions · Cooldown satisfied";
+
+  if (!isMarketOpen) {
+    isGateClear = false;
+    gateStatusTitle = "Pre-Flight Gate: Locked";
+    gateStatusSubtitle = "Weekend market closed (Opens Monday 6:30 AM IST)";
+  } else if (hasOpenPositions) {
+    isGateClear = false;
+    gateStatusTitle = "Pre-Flight Gate: Locked";
+    gateStatusSubtitle = `1 trade already active (${allPositions[0].asset}) — Max 1 parallel trade`;
+  } else if (isCooldownRunning) {
+    isGateClear = false;
+    gateStatusTitle = "Pre-Flight Gate: Locked";
+    gateStatusSubtitle = `45m post-trade cooldown active (${45 - cooldownElapsedMin}m remaining)`;
+  }
+
   return (
     <div className="space-y-6">
       {/* ─── Attention: Quiet state line when healthy, real alert only when danger (Prompt §3) ─── */}
@@ -77,6 +115,31 @@ export default async function OverviewPage() {
           </div>
         </div>
       )}
+
+      {/* ─── Pre-Flight Trading Gate Status (Phase 2) ─── */}
+      <div className={`p-3.5 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans text-xs transition-colors ${
+        isGateClear
+          ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-300"
+          : "bg-zinc-900/80 border-zinc-800 text-zinc-300"
+      }`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`p-1.5 rounded-md shrink-0 ${
+            isGateClear ? "bg-emerald-500/15 text-emerald-400" : "bg-zinc-800 text-amber-400"
+          }`}>
+            {isGateClear ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+          </div>
+          <div>
+            <span className="font-semibold text-zinc-100">{gateStatusTitle}</span>
+            <span className="text-zinc-400 block sm:inline sm:ml-2">· {gateStatusSubtitle}</span>
+          </div>
+        </div>
+        <Link
+          href="/rules"
+          className="text-xs text-[var(--cyan)] hover:text-white transition-colors font-medium shrink-0 flex items-center gap-1"
+        >
+          <span>Pre-flight rules & sizer →</span>
+        </Link>
+      </div>
 
       {/* ─── 1. Cash: 3 clean metrics, no secondary breakdown (Prompt §4) ─── */}
       <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 md:p-6 space-y-4">

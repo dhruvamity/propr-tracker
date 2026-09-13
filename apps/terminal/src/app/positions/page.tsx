@@ -24,60 +24,26 @@ export default async function PositionsPage() {
       </div>
 
       {allPositions.length === 0 ? (
-        <div className="space-y-4">
-          {/* Compact Flat State */}
-          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6 md:p-8 text-center space-y-3 font-sans">
-            <div className="w-10 h-10 mx-auto rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
-              <TrendingUp size={20} />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-semibold text-zinc-100">
-                No Open Positions
-              </h3>
-              <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                {activeAccounts.length} active accounts · flat
-              </p>
-            </div>
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8 text-center space-y-3 font-sans">
+          <div className="w-10 h-10 mx-auto rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+            <TrendingUp size={20} />
           </div>
-
-          {/* Contextual Account Risk Row */}
-          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 space-y-2.5">
-            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-xs font-sans">
-              <span className="font-semibold text-zinc-200">Account Risk</span>
-              <span className="text-zinc-500">Nearest Limit</span>
-            </div>
-            <div className="divide-y divide-zinc-800/60 font-sans text-xs">
-              {activeAccounts.map((acc) => {
-                const dailyRoom = Number(acc.dailyLossRemaining || 0);
-                const ddBuffer = Number(acc.drawdownRemaining || 0);
-                const dailyLimit = Number(acc.dailyLossLimitAmount || 0);
-                const dailyUsed = Number(acc.dailyLossUsedAmount || 0);
-                const dailyBurn = dailyLimit > 0 ? (dailyUsed / dailyLimit) * 100 : 0;
-                const isDaily = dailyBurn >= 70 || (dailyRoom > 0 && dailyRoom < ddBuffer);
-                const room = isDaily ? dailyRoom : ddBuffer;
-                const ruleName = isDaily ? "daily loss" : "drawdown";
-
-                return (
-                  <div key={acc.accountId} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-zinc-100">{acc.challengeName}</span>
-                      <span className="font-mono text-zinc-400 text-xs">{formatAccountTag(acc.accountId)}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-zinc-300 font-sans">
-                        <span className="font-mono font-medium text-zinc-100">{formatUSD(room)}</span> to {ruleName}
-                      </span>
-                      <Link
-                        href="/live"
-                        className="text-[var(--cyan)] hover:text-white transition-colors"
-                      >
-                        View risk →
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-semibold text-zinc-100">
+              No Open Positions
+            </h3>
+            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+              Flat across {activeAccounts.length} active accounts
+            </p>
+          </div>
+          <div className="pt-2 flex items-center justify-center gap-4 text-xs">
+            <Link href="/live" className="text-[var(--cyan)] hover:text-white transition-colors">
+              Risk monitor →
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <Link href="/rules" className="text-zinc-400 hover:text-zinc-200 transition-colors">
+              Trading rules →
+            </Link>
           </div>
         </div>
       ) : (

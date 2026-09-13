@@ -1,6 +1,7 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { ListOrdered } from "lucide-react";
 import { formatUSD, formatAccountTag } from "@/lib/utils";
+import Link from "next/link";
 
 export const revalidate = 15;
 
@@ -14,7 +15,7 @@ function formatOrderType(type: string): string {
 }
 
 export default async function OrdersPage() {
-  const { allOrders, accounts, allPositions } = await fetchDashboardData();
+  const { allOrders, accounts } = await fetchDashboardData();
   const activeAccounts = accounts.filter(
     (a) => a.stage === "EVALUATION" || a.stage === "FUNDED"
   );
@@ -32,50 +33,26 @@ export default async function OrdersPage() {
       </div>
 
       {allOrders.length === 0 ? (
-        <div className="space-y-4">
-          {/* Compact Empty State */}
-          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-6 md:p-8 text-center space-y-3 font-sans">
-            <div className="w-10 h-10 mx-auto rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
-              <ListOrdered size={20} />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-sm sm:text-base font-semibold text-zinc-100">
-                No Active Orders
-              </h3>
-              <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                {activeAccounts.length} active accounts · no pending orders or protective stops
-              </p>
-            </div>
+        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-8 text-center space-y-3 font-sans">
+          <div className="w-10 h-10 mx-auto rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+            <ListOrdered size={20} />
           </div>
-
-          {/* Account Order & Stop Status */}
-          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 space-y-2.5">
-            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2 text-xs font-sans">
-              <span className="font-semibold text-zinc-200">Account Status</span>
-              <span className="text-zinc-500">Stops</span>
-            </div>
-            <div className="divide-y divide-zinc-800/60 font-sans text-xs">
-              {activeAccounts.map((acc) => {
-                const accPositions = allPositions.filter((p) => p.accountId === acc.accountId);
-                const accOrders = allOrders.filter((o) => o.accountId === acc.accountId);
-
-                return (
-                  <div key={acc.accountId} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-zinc-100">{acc.challengeName}</span>
-                      <span className="font-mono text-zinc-400 text-xs">{formatAccountTag(acc.accountId)}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-zinc-400">
-                      <span>{accPositions.length === 0 ? "flat" : `${accPositions.length} open`}</span>
-                      <span className="text-zinc-700">•</span>
-                      <span className="text-zinc-300 font-medium">
-                        {accOrders.length === 0 ? "0 stops" : `${accOrders.length} active`}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-semibold text-zinc-100">
+              No Active Orders
+            </h3>
+            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
+              No resting limit orders or protective stops across {activeAccounts.length} active accounts
+            </p>
+          </div>
+          <div className="pt-2 flex items-center justify-center gap-4 text-xs">
+            <Link href="/live" className="text-[var(--cyan)] hover:text-white transition-colors">
+              Risk monitor →
+            </Link>
+            <span className="text-zinc-700">•</span>
+            <Link href="/positions" className="text-zinc-400 hover:text-zinc-200 transition-colors">
+              View positions →
+            </Link>
           </div>
         </div>
       ) : (

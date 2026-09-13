@@ -12,7 +12,16 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
+import {
+  analyzeTradeForensics,
+  type ForensicsSummary,
+  type TaggedTrade,
+} from "@/lib/forensics";
 import { EquityCurveChart, type DataPoint } from "./equity-curve-chart";
 import {
   DailyPnlChart,
@@ -93,6 +102,22 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
 
     return rawTrades.filter((t) => new Date(t.executedAt).getTime() >= cutoff);
   }, [rawTrades, timeFilter]);
+
+  // ─── Trade Forensics & Discipline Engine (Phase 4) ─────────────────────────
+  const forensics: ForensicsSummary = useMemo(() => {
+    return analyzeTradeForensics(
+      filteredTrades,
+      Number(currentAccount?.initialBalance || 10000)
+    );
+  }, [filteredTrades, currentAccount]);
+
+  const taggedTradesMap = useMemo(() => {
+    const map = new Map<string, TaggedTrade>();
+    for (const tt of forensics.taggedTrades) {
+      map.set(tt.trade.tradeId, tt);
+    }
+    return map;
+  }, [forensics]);
 
   // ─── Metrics Computation ───────────────────────────────────────────────────
 
@@ -387,19 +412,32 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
       "Fee",
       "Realized PnL",
       "Net PnL",
+      "Discipline Status",
+      "Violations",
+      "Violation Cost USD",
     ];
-    const rows = rawTrades.map((t) => [
-      t.tradeId,
-      t.executedAt,
-      t.asset,
-      t.side,
-      t.quantity,
-      t.price,
-      t.quoteQuantity,
-      t.fee,
-      t.realizedPnl,
-      (Number(t.realizedPnl || 0) - Number(t.fee || 0)).toFixed(2),
-    ]);
+    const rows = rawTrades.map((t) => {
+      const net = (Number(t.realizedPnl || 0) - Number(t.fee || 0)).toFixed(2);
+      const tagged = taggedTradesMap.get(t.tradeId);
+      const isCompliant = tagged ? tagged.isCompliant : true;
+      const violationLabels = tagged?.violations.map((v) => v.label).join(" | ") || "None";
+      const cost = tagged ? tagged.costOfViolationUSD.toFixed(2) : "0.00";
+      return [
+        t.tradeId,
+        t.executedAt,
+        t.asset,
+        t.side,
+        t.quantity,
+        t.price,
+        t.quoteQuantity,
+        t.fee,
+        t.realizedPnl,
+        net,
+        isCompliant ? "COMPLIANT" : "BREACH",
+        `"${violationLabels}"`,
+        cost,
+      ];
+    });
 
     const csvContent =
       "data:text/csv;charset=utf-8," +
@@ -542,6 +580,135 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                 {metrics.sharpe.toFixed(2)}
               </div>
             </div>
+          </div>
+
+          {/* Discipline Forensics & Rule Compliance Bar (Phase 4) */}
+          <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-4 sm:p-5 font-sans">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3">
+                <div
+                  className={`p-2.5 rounded-lg shrink-0 ${
+                    forensics.disciplineScore >= 90
+                      ? "bg-emerald-950/60 border border-emerald-800/60 text-emerald-400"
+                      : forensics.disciplineScore >= 75
+                      ? "bg-amber-950/60 border border-amber-800/60 text-amber-400"
+                      : "bg-red-950/60 border border-red-800/60 text-red-400"
+                  }`}
+                >
+                  {forensics.disciplineScore >= 90 ? (
+                    <ShieldCheck size={22} />
+                  ) : (
+                    <ShieldAlert size={22} />
+                  )}
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-200">
+                      Discipline Forensics & Rule Audit
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                        forensics.disciplineScore >= 90
+                          ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60"
+                          : forensics.disciplineScore >= 75
+                          ? "bg-amber-950 text-amber-400 border border-amber-800/60"
+                          : "bg-red-950 text-red-400 border border-red-800/60"
+                      }`}
+                    >
+                      {forensics.disciplineScore >= 90
+                        ? "Strict Compliance"
+                        : forensics.disciplineScore >= 75
+                        ? "Discipline Warning"
+                        : "Rule Breaches Detected"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-zinc-500 mt-1">
+                    {forensics.compliantTrades} of {forensics.totalTrades} trades adhered strictly to account limits, weekend freeze, and cooldown protocols.
+                  </div>
+                </div>
+              </div>
+
+              {/* Forensics Key Figures */}
+              <div className="flex flex-wrap items-center gap-5 sm:gap-7 border-t lg:border-t-0 border-zinc-800/80 pt-3 lg:pt-0">
+                <div>
+                  <div className="text-[11px] text-zinc-400">Discipline Score</div>
+                  <div
+                    className={`text-2xl font-mono font-bold tracking-tight ${
+                      forensics.disciplineScore >= 90
+                        ? "text-emerald-400"
+                        : forensics.disciplineScore >= 75
+                        ? "text-amber-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {forensics.disciplineScore.toFixed(1)}%
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-zinc-400">Cost of Violations</div>
+                  <div
+                    className={`text-2xl font-mono font-bold tracking-tight ${
+                      forensics.totalViolationCostUSD > 0
+                        ? "text-red-400"
+                        : "text-zinc-200"
+                    }`}
+                  >
+                    {forensics.totalViolationCostUSD > 0
+                      ? `-${formatUSD(forensics.totalViolationCostUSD)}`
+                      : "$0.00"}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-zinc-400">Potential Clean P&L</div>
+                  <div className="text-2xl font-mono font-bold text-zinc-100 tracking-tight">
+                    {forensics.cleanNetPnl >= 0
+                      ? `+${formatUSD(forensics.cleanNetPnl)}`
+                      : `-${formatUSD(Math.abs(forensics.cleanNetPnl))}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Violation Category Pill Breakdown */}
+            {forensics.violatingTrades > 0 && (
+              <div className="mt-3.5 pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-[11px] font-medium text-zinc-500">Breaches Tagged:</span>
+                {forensics.violationsByType.WEEKEND_TRADE.count > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
+                    <AlertTriangle size={11} />
+                    {forensics.violationsByType.WEEKEND_TRADE.count} Weekend Trade
+                    {forensics.violationsByType.WEEKEND_TRADE.costUSD > 0 &&
+                      ` (-${formatUSD(forensics.violationsByType.WEEKEND_TRADE.costUSD)})`}
+                  </span>
+                )}
+                {forensics.violationsByType.COOLDOWN_BREACH.count > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/50 border border-amber-900/50 text-[11px] font-mono text-amber-400">
+                    <AlertTriangle size={11} />
+                    {forensics.violationsByType.COOLDOWN_BREACH.count} Cooldown Breach
+                    {forensics.violationsByType.COOLDOWN_BREACH.costUSD > 0 &&
+                      ` (-${formatUSD(forensics.violationsByType.COOLDOWN_BREACH.costUSD)})`}
+                  </span>
+                )}
+                {forensics.violationsByType.OVER_RISK.count > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
+                    <AlertTriangle size={11} />
+                    {forensics.violationsByType.OVER_RISK.count} Over-Risk
+                    {forensics.violationsByType.OVER_RISK.costUSD > 0 &&
+                      ` (-${formatUSD(forensics.violationsByType.OVER_RISK.costUSD)})`}
+                  </span>
+                )}
+                {forensics.violationsByType.UNAUTHORIZED_ASSET.count > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/50 border border-amber-900/50 text-[11px] font-mono text-amber-400">
+                    <AlertTriangle size={11} />
+                    {forensics.violationsByType.UNAUTHORIZED_ASSET.count} Unauthorized Asset
+                    {forensics.violationsByType.UNAUTHORIZED_ASSET.costUSD > 0 &&
+                      ` (-${formatUSD(forensics.violationsByType.UNAUTHORIZED_ASSET.costUSD)})`}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Main 2-Column: Left Large Chart + Right Clean Risk Panel (Prompt §14) */}
@@ -912,12 +1079,13 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                     <th className="py-2.5 px-3">Net P&L</th>
                     <th className="py-2.5 px-3">Hold</th>
                     <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3">Rule Audit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border-subtle)]">
                   {filteredTrades.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-12 text-center text-zinc-500">
+                      <td colSpan={13} className="py-12 text-center text-zinc-500">
                         No closed trades found for this account.
                       </td>
                     </tr>
@@ -939,6 +1107,8 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
 
                       const sideIsLong =
                         trade.side === "buy" || trade.positionSide === "long";
+
+                      const tagged = taggedTradesMap.get(trade.tradeId);
 
                       return (
                         <React.Fragment key={trade.tradeId}>
@@ -1023,12 +1193,37 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                                 {isWin ? "Win" : "Loss"}
                               </span>
                             </td>
+                            <td className="py-2.5 px-3">
+                              {tagged && tagged.violations.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {tagged.violations.map((v, idx) => (
+                                    <span
+                                      key={idx}
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
+                                        v.severity === "critical"
+                                          ? "bg-red-950/80 text-red-400 border border-red-800/50"
+                                          : "bg-amber-950/80 text-amber-400 border border-amber-800/50"
+                                      }`}
+                                      title={v.description}
+                                    >
+                                      <AlertTriangle size={10} />
+                                      {v.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-900/30">
+                                  <CheckCircle2 size={10} />
+                                  Clean
+                                </span>
+                              )}
+                            </td>
                           </tr>
 
                           {/* Expandable Details Drawer */}
                           {isExpanded && (
                             <tr className="bg-zinc-900/40 border-b border-[var(--border-subtle)]">
-                              <td colSpan={12} className="p-4">
+                              <td colSpan={13} className="p-4 space-y-3">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-sans">
                                   <div>
                                     <span className="text-zinc-500 block">Trade ID</span>
@@ -1055,6 +1250,39 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                                     </span>
                                   </div>
                                 </div>
+
+                                {/* Forensics Audit Drawer Section */}
+                                {tagged && tagged.violations.length > 0 ? (
+                                  <div className="p-3 rounded-md bg-red-950/30 border border-red-900/40 space-y-1.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-red-400">
+                                      <AlertTriangle size={13} />
+                                      <span>Trade Forensics — Rule Violations Tagged ({tagged.violations.length})</span>
+                                    </div>
+                                    <div className="space-y-1 text-xs">
+                                      {tagged.violations.map((v, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-zinc-300"
+                                        >
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-red-400 font-mono text-[11px]">• [{v.label}]</span>
+                                            <span>{v.description}</span>
+                                          </div>
+                                          {v.costUSD > 0 && (
+                                            <span className="font-mono text-red-400 font-medium text-[11px]">
+                                              Cost: -{formatUSD(v.costUSD)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-2.5 rounded-md bg-emerald-950/20 border border-emerald-900/30 flex items-center gap-2 text-xs text-emerald-400">
+                                    <CheckCircle2 size={14} />
+                                    <span>Protocol Compliant: Executed strictly within approved asset universe, risk limits, and cooldown window.</span>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           )}
