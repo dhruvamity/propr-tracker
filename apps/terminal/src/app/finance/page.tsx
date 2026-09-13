@@ -1,7 +1,7 @@
 import { fetchDashboardData } from "@/lib/propr-api";
 import { formatINR } from "@/lib/utils";
 import { FinanceLedger } from "@/components/finance-ledger";
-import { Target, Calendar, Sparkles } from "lucide-react";
+import { Target } from "lucide-react";
 
 export const revalidate = 15;
 
@@ -176,20 +176,6 @@ export default async function FinancePage() {
             <p className="text-[11px] text-zinc-300 leading-relaxed">
               1 funded payout on 5K account (8% target = $320 payout) recovers <strong className="text-cyan-300">106.5%</strong> of all historical prop spend with <strong className="text-white">+₹1,645 net cash profit</strong>.
             </p>
-          </div>
-        </div>
-
-        {/* Payout Schedule & Challenge Discount Tracking */}
-        <div className="p-3.5 rounded-lg bg-zinc-900/70 border border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            <Calendar size={15} className="text-zinc-400 shrink-0" />
-            <span className="text-zinc-300">
-              Propr Payout Schedule: Processed bi-weekly on the <strong>1st</strong> and <strong>15th</strong> of each month.
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-zinc-400 shrink-0 font-mono text-[11px]">
-            <Sparkles size={13} className="text-amber-400" />
-            <span>20% Discount Window active on challenges</span>
           </div>
         </div>
       </div>

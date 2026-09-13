@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   analyzeTradeForensics,
+  groupTradesByDay,
   isWeekendTradingWindow,
   normalizeAssetSymbol,
 } from "../../apps/terminal/src/lib/forensics";
@@ -176,6 +177,93 @@ describe("Trade Forensics & Discipline Engine", () => {
       expect(result.disciplineScore).toBe(66.7);
       expect(result.violationsByType.COOLDOWN_BREACH.count).toBe(1);
       expect(result.totalViolationCostUSD).toBe(31); // t2 loss + fee
+    });
+  });
+
+  describe("groupTradesByDay", () => {
+    it("groups trades across multiple calendar days and computes day-level checklist and discipline", () => {
+      const trades: TradeData[] = [
+        // Day 1: 2026-03-04 (Wednesday) - 2 compliant trades
+        {
+          tradeId: "t1",
+          accountId: "acc-1",
+          asset: "BTC",
+          side: "buy",
+          positionSide: "long",
+          quantity: "0.1",
+          price: "65000",
+          quoteQuantity: "6500",
+          fee: "1.0",
+          realizedPnl: "50.0",
+          executedAt: "2026-03-04T10:00:00Z",
+          createdAt: "2026-03-04T09:50:00Z",
+          type: "market",
+          liquidityType: "taker",
+          base: "BTC",
+          quote: "USD",
+        },
+        {
+          tradeId: "t2",
+          accountId: "acc-1",
+          asset: "PAXG",
+          side: "buy",
+          positionSide: "long",
+          quantity: "1.0",
+          price: "2500",
+          quoteQuantity: "2500",
+          fee: "0.5",
+          realizedPnl: "25.0",
+          executedAt: "2026-03-04T14:00:00Z",
+          createdAt: "2026-03-04T13:50:00Z",
+          type: "market",
+          liquidityType: "taker",
+          base: "PAXG",
+          quote: "USD",
+        },
+        // Day 2: 2026-03-07 (Saturday) - Weekend violation trade
+        {
+          tradeId: "t3",
+          accountId: "acc-1",
+          asset: "BTC",
+          side: "sell",
+          positionSide: "short",
+          quantity: "0.1",
+          price: "65000",
+          quoteQuantity: "6500",
+          fee: "1.0",
+          realizedPnl: "-30.0",
+          executedAt: "2026-03-07T12:00:00Z",
+          createdAt: "2026-03-07T11:50:00Z",
+          type: "market",
+          liquidityType: "taker",
+          base: "BTC",
+          quote: "USD",
+        },
+      ];
+
+      const dayMap = groupTradesByDay(trades, 10000);
+      expect(dayMap.size).toBe(2);
+
+      // Verify Day 1
+      const day1 = dayMap.get("2026-03-04")!;
+      expect(day1).toBeDefined();
+      expect(day1.totalTrades).toBe(2);
+      expect(day1.winningTrades).toBe(2);
+      expect(day1.isFlawless).toBe(true);
+      expect(day1.disciplineScore).toBe(100);
+      expect(day1.checklist.whitelistApproved).toBe(true);
+      expect(day1.checklist.riskCapRespected).toBe(true);
+      expect(day1.checklist.cooldownObserved).toBe(true);
+      expect(day1.checklist.weekendFreezeRespected).toBe(true);
+
+      // Verify Day 2
+      const day2 = dayMap.get("2026-03-07")!;
+      expect(day2).toBeDefined();
+      expect(day2.totalTrades).toBe(1);
+      expect(day2.isFlawless).toBe(false);
+      expect(day2.disciplineScore).toBe(0);
+      expect(day2.checklist.weekendFreezeRespected).toBe(false);
+      expect(day2.costOfViolationsUSD).toBe(31);
     });
   });
 });

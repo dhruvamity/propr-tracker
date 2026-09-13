@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import type { AccountSnapshot } from "@/lib/types";
 import {
   formatUSD,
@@ -16,6 +17,7 @@ import {
   ShieldAlert,
   AlertTriangle,
   CheckCircle2,
+  Calendar,
 } from "lucide-react";
 import {
   analyzeTradeForensics,
@@ -501,6 +503,13 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
               {tab.label}
             </button>
           ))}
+          <Link
+            href="/analytics/forensics"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-[var(--cyan)] transition-colors"
+          >
+            <Calendar size={13} />
+            <span>Forensics Calendar</span>
+          </Link>
         </div>
 
         {/* Right: Timeframe Filters & Export Data Button */}
@@ -667,6 +676,16 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
                       ? `+${formatUSD(forensics.cleanNetPnl)}`
                       : `-${formatUSD(Math.abs(forensics.cleanNetPnl))}`}
                   </div>
+                </div>
+
+                <div className="flex items-center">
+                  <Link
+                    href="/analytics/forensics"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--cyan)]/40 bg-[var(--cyan)]/10 hover:bg-[var(--cyan)]/20 text-xs font-mono text-[var(--cyan)] transition-colors"
+                  >
+                    <Calendar size={13} />
+                    <span>Daily Calendar →</span>
+                  </Link>
                 </div>
               </div>
             </div>

@@ -16,6 +16,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/finance": "Finance",
   "/system": "System",
   "/rules": "Rules",
+  "/analytics/forensics": "Forensics Calendar",
 };
 
 export function TopBar() {

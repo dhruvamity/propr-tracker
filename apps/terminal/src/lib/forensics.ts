@@ -250,3 +250,139 @@ export function analyzeTradeForensics(
     taggedTrades,
   };
 }
+
+export interface DailyForensicsChecklist {
+  whitelistApproved: boolean;
+  riskCapRespected: boolean;
+  cooldownObserved: boolean;
+  weekendFreezeRespected: boolean;
+}
+
+export interface DailyForensicsSummary {
+  dateKey: string; // YYYY-MM-DD
+  dateLabel: string; // e.g. "Fri, Sep 11, 2026"
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  winRate: number;
+  netPnl: number;
+  grossPnl: number;
+  fees: number;
+  disciplineScore: number;
+  isFlawless: boolean;
+  violationsCount: number;
+  costOfViolationsUSD: number;
+  violationsByType: Record<
+    RuleViolationType,
+    { count: number; costUSD: number; label: string }
+  >;
+  taggedTrades: TaggedTrade[];
+  checklist: DailyForensicsChecklist;
+}
+
+/**
+ * Groups analyzed trades into daily buckets with day-level forensics and discipline checklists.
+ */
+export function groupTradesByDay(
+  trades: TradeData[],
+  initialBalance = 10000
+): Map<string, DailyForensicsSummary> {
+  const forensics = analyzeTradeForensics(trades, initialBalance);
+  const dayMap = new Map<string, DailyForensicsSummary>();
+
+  for (const tt of forensics.taggedTrades) {
+    const executedAt = tt.trade.executedAt;
+    const dateObj = new Date(executedAt);
+    if (isNaN(dateObj.getTime())) continue;
+
+    const dateKey = executedAt.slice(0, 10); // YYYY-MM-DD
+    const dateLabel = dateObj.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    if (!dayMap.has(dateKey)) {
+      dayMap.set(dateKey, {
+        dateKey,
+        dateLabel,
+        totalTrades: 0,
+        winningTrades: 0,
+        losingTrades: 0,
+        winRate: 0,
+        netPnl: 0,
+        grossPnl: 0,
+        fees: 0,
+        disciplineScore: 100,
+        isFlawless: true,
+        violationsCount: 0,
+        costOfViolationsUSD: 0,
+        violationsByType: {
+          WEEKEND_TRADE: { count: 0, costUSD: 0, label: "Weekend Trade" },
+          UNAUTHORIZED_ASSET: { count: 0, costUSD: 0, label: "Unauthorized Asset" },
+          OVER_RISK: { count: 0, costUSD: 0, label: "Over-Risk" },
+          COOLDOWN_BREACH: { count: 0, costUSD: 0, label: "Cooldown Breach" },
+        },
+        taggedTrades: [],
+        checklist: {
+          whitelistApproved: true,
+          riskCapRespected: true,
+          cooldownObserved: true,
+          weekendFreezeRespected: true,
+        },
+      });
+    }
+
+    const day = dayMap.get(dateKey)!;
+    const rPnl = Number(tt.trade.realizedPnl || 0);
+    const fee = Number(tt.trade.fee || 0);
+    const net = rPnl - fee;
+
+    day.totalTrades += 1;
+    day.grossPnl += rPnl;
+    day.fees += fee;
+    day.netPnl += net;
+
+    if (net > 0) day.winningTrades += 1;
+    else if (net < 0) day.losingTrades += 1;
+
+    day.violationsCount += tt.violations.length;
+    day.costOfViolationsUSD += tt.costOfViolationUSD;
+
+    for (const v of tt.violations) {
+      if (day.violationsByType[v.type]) {
+        day.violationsByType[v.type].count += 1;
+        day.violationsByType[v.type].costUSD += v.costUSD;
+      }
+
+      if (v.type === "UNAUTHORIZED_ASSET") day.checklist.whitelistApproved = false;
+      if (v.type === "OVER_RISK") day.checklist.riskCapRespected = false;
+      if (v.type === "COOLDOWN_BREACH") day.checklist.cooldownObserved = false;
+      if (v.type === "WEEKEND_TRADE") day.checklist.weekendFreezeRespected = false;
+    }
+
+    day.taggedTrades.push(tt);
+  }
+
+  // Final pass to compute percentages and rounding
+  for (const day of dayMap.values()) {
+    const compliant = day.taggedTrades.filter((t) => t.isCompliant).length;
+    day.disciplineScore =
+      day.totalTrades > 0
+        ? Number(((compliant / day.totalTrades) * 100).toFixed(1))
+        : 100;
+    day.isFlawless = day.totalTrades > 0 && compliant === day.totalTrades;
+    day.winRate =
+      day.totalTrades > 0
+        ? Number(((day.winningTrades / day.totalTrades) * 100).toFixed(1))
+        : 0;
+    day.netPnl = Number(day.netPnl.toFixed(2));
+    day.grossPnl = Number(day.grossPnl.toFixed(2));
+    day.fees = Number(day.fees.toFixed(2));
+    day.costOfViolationsUSD = Number(day.costOfViolationsUSD.toFixed(2));
+  }
+
+  return dayMap;
+}
+
