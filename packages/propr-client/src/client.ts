@@ -505,6 +505,12 @@ export class ProprClient {
     return this.getPayoutHistory();
   }
 
+  // ─── Purchases ──────────────────────────────────────────────────────────────
+
+  async getPurchases(): Promise<unknown[]> {
+    return this.fetchAllPages<unknown>("/purchases");
+  }
+
   // ─── Challenges (public, no auth needed) ────────────────────────────────────
 
   async getChallenges(): Promise<unknown[]> {

@@ -63,7 +63,7 @@ function formatNum(val: string | undefined | null, dp = 4) {
   return n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 }
 
-export function TradeDrawer({ accountId, trades, initialBalance, endingBalance }: TradeDrawerProps) {
+export function TradeDrawer({ trades, initialBalance, endingBalance }: TradeDrawerProps) {
   const [open, setOpen] = useState(false);
 
   if (!trades || trades.length === 0) {

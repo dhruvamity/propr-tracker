@@ -6,7 +6,7 @@ import type {
   PayoutRecord,
   DecimalString,
 } from "@propr/data-model";
-import { ds } from "@propr/data-model";
+import { ds, toDecimal } from "@propr/data-model";
 
 /**
  * Parse a purchase history CSV (Propr export format) into FinanceTransactions.
@@ -281,5 +281,106 @@ export const SEED_PURCHASES: FinanceTransaction[] = [
     accountId: "urn:prp-account:J9wNi8oj3XGK",
   },
 ];
+
+/**
+ * Dynamic reconciliation of raw Propr API purchases with challenge attempts and verified bank transactions.
+ */
+export function reconcileDynamicPurchases(
+  purchasesRaw: Array<Record<string, unknown>>,
+  attemptsRaw: Array<Record<string, unknown>>,
+  effectiveRate: string = "97.82",
+  verifiedTransactions: FinanceTransaction[] = SEED_PURCHASES
+): FinanceTransaction[] {
+  if (!purchasesRaw || purchasesRaw.length === 0) {
+    return verifiedTransactions;
+  }
+
+  const verifiedByPurchaseId = new Map<string, FinanceTransaction>();
+  for (const tx of verifiedTransactions) {
+    if (tx.purchaseId) verifiedByPurchaseId.set(tx.purchaseId, tx);
+    if (tx.id) verifiedByPurchaseId.set(tx.id, tx);
+  }
+
+  // Attempt lookup: purchaseId -> attempt
+  const attemptByPurchaseId = new Map<string, Record<string, unknown>>();
+  for (const a of attemptsRaw) {
+    if (a.purchaseId) {
+      attemptByPurchaseId.set(a.purchaseId as string, a);
+    }
+  }
+
+  const dynamicLedger: FinanceTransaction[] = [];
+  const processedPurchaseIds = new Set<string>();
+
+  for (const p of purchasesRaw) {
+    const purchaseId = p.purchaseId as string;
+    if (!purchaseId) continue;
+    processedPurchaseIds.add(purchaseId);
+
+    const verified = verifiedByPurchaseId.get(purchaseId);
+    const attempt = attemptByPurchaseId.get(purchaseId);
+    const accountId = (attempt?.accountId as string) || verified?.accountId;
+
+    const challenge = (p.product as Record<string, unknown> | undefined)?.challenge as Record<string, unknown> | undefined;
+    const rawName = challenge?.name || (p.product as Record<string, unknown> | undefined)?.name;
+    const challengeName =
+      typeof rawName === "object" && rawName !== null
+        ? (rawName as Record<string, string>).en || Object.values(rawName as Record<string, string>)[0]
+        : (rawName as string) || verified?.challengeName || "Starter 1-Step Turbo";
+
+    const subtotal = String(p.subtotal ?? (p.price as Record<string, unknown> | undefined)?.price ?? verified?.purchaseFaceValueUSD ?? "0");
+    const discount = String(p.discount ?? "0");
+    const total = String(p.total ?? verified?.amountUSD ?? subtotal);
+    const invoiceNumber = (p.invoiceNumber as string) || (p.invoiceId as string) || verified?.invoiceNumber || `INV-${purchaseId.replace("urn:prp-purchase:", "")}`;
+    const date = normalizeDate((p.createdAt as string) || verified?.date || new Date().toISOString());
+
+    if (verified && verified.bankVerified) {
+      // Historical verified purchase: preserve exact bank statement debits
+      dynamicLedger.push({
+        ...verified,
+        purchaseId,
+        accountId: accountId || verified.accountId,
+        challengeName: challengeName || verified.challengeName,
+        purchaseFaceValueUSD: ds(subtotal) as DecimalString,
+        amountUSD: ds(total) as DecimalString,
+        invoiceNumber,
+      });
+    } else {
+      // Dynamically ingested purchase using calibrated effective Paysagi rate
+      const paidUSD = ds(total) as DecimalString;
+      const faceUSD = ds(subtotal) as DecimalString;
+      const computedINR = (toDecimal(total).times(toDecimal(effectiveRate))).toFixed(2) as DecimalString;
+
+      dynamicLedger.push({
+        id: purchaseId,
+        date,
+        cashTransactionDate: date.slice(0, 10),
+        firm: "Propr",
+        accountId,
+        challengeName,
+        type: "purchase",
+        transactionType: "purchase",
+        amountUSD: paidUSD,
+        purchaseFaceValueUSD: faceUSD,
+        amountINR: computedINR,
+        actualCashCostINR: computedINR,
+        bankVerified: false,
+        invoiceNumber,
+        purchaseId,
+        notes: `${challengeName} (${toDecimal(discount).gt(0) ? `$${discount} discount applied - ` : ""}$${total} USD via Paysagi @ ₹${effectiveRate}/USD)`,
+      });
+    }
+  }
+
+  // Preserve non-Propr external transactions (e.g. Breakout) and any verified transactions not returned in the API list
+  for (const tx of verifiedTransactions) {
+    const isPropr = tx.firm.toLowerCase() === "propr";
+    if (!isPropr || (tx.purchaseId && !processedPurchaseIds.has(tx.purchaseId) && !processedPurchaseIds.has(tx.id))) {
+      dynamicLedger.push(tx);
+    }
+  }
+
+  return dynamicLedger;
+}
 
 export { parsePurchaseHistoryCsv as parseCSV };

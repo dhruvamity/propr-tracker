@@ -32,11 +32,11 @@ export function EquityCurveChart({
   // Filter data by time range (Prompt §15: 1D, 7D, 30D, ALL)
   const filteredData = useMemo(() => {
     if (dataPoints.length <= 1) return dataPoints;
-    const now = Date.now();
+    const latestTs = new Date(dataPoints[dataPoints.length - 1].timestamp).getTime();
     let cutoff = 0;
-    if (timeFilter === "1D") cutoff = now - 24 * 60 * 60 * 1000;
-    else if (timeFilter === "7D") cutoff = now - 7 * 24 * 60 * 60 * 1000;
-    else if (timeFilter === "30D") cutoff = now - 30 * 24 * 60 * 60 * 1000;
+    if (timeFilter === "1D") cutoff = latestTs - 24 * 60 * 60 * 1000;
+    else if (timeFilter === "7D") cutoff = latestTs - 7 * 24 * 60 * 60 * 1000;
+    else if (timeFilter === "30D") cutoff = latestTs - 30 * 24 * 60 * 60 * 1000;
 
     if (cutoff === 0) return dataPoints;
     const res = dataPoints.filter((pt) => new Date(pt.timestamp).getTime() >= cutoff);
@@ -78,22 +78,30 @@ export function EquityCurveChart({
   };
 
   // Generate SVG path for line and area
-  const pathD = useMemo(() => {
-    if (points.length === 0) return "";
-    return points.reduce((acc, pt, idx) => {
-      const x = getX(idx);
-      const y = getY(chartMode === "EQUITY" ? pt.equity : pt.drawdownPct || 0);
+  const { pathD, areaD } = useMemo(() => {
+    if (points.length === 0) return { pathD: "", areaD: "" };
+    const pX = (idx: number) => {
+      if (points.length <= 1) return padding.left + chartW / 2;
+      return padding.left + (idx / (points.length - 1)) * chartW;
+    };
+    const pY = (val: number) => {
+      const norm = (val - minVal) / (maxVal - minVal || 1);
+      return padding.top + (1 - norm) * chartH;
+    };
+
+    const d = points.reduce((acc, pt, idx) => {
+      const x = pX(idx);
+      const y = pY(chartMode === "EQUITY" ? pt.equity : pt.drawdownPct || 0);
       return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
     }, "");
-  }, [points, chartMode, minVal, maxVal]);
 
-  const areaD = useMemo(() => {
-    if (points.length === 0) return "";
-    const firstX = getX(0);
-    const lastX = getX(points.length - 1);
+    const firstX = pX(0);
+    const lastX = pX(points.length - 1);
     const bottomY = padding.top + chartH;
-    return `${pathD} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
-  }, [pathD, points]);
+    const a = `${d} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+
+    return { pathD: d, areaD: a };
+  }, [points, chartMode, minVal, maxVal, chartW, chartH, padding.left, padding.top]);
 
   // Horizontal reference line positions
   const breachFloorY = chartMode === "EQUITY" ? getY(breachFloor) : null;
@@ -271,7 +279,6 @@ export function EquityCurveChart({
           {/* Hover Tracker crosshair & interaction areas */}
           {points.map((pt, idx) => {
             const x = getX(idx);
-            const y = getY(chartMode === "EQUITY" ? pt.equity : pt.drawdownPct || 0);
             return (
               <rect
                 key={idx}

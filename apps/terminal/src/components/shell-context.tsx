@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 export interface HealthData {
   restStatus: "HEALTHY" | "ERROR" | "UNKNOWN";
@@ -30,7 +30,7 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
     lastSyncAt: "",
   });
 
-  const fetchHealth = async () => {
+  const fetchHealth = useCallback(async () => {
     try {
       const res = await fetch("/api/health");
       if (res.ok) {
@@ -42,13 +42,18 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setHealth((h) => ({ ...h, restStatus: "ERROR" }));
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void fetchHealth();
+    const timer = setTimeout(() => {
+      void fetchHealth();
+    }, 0);
     const interval = setInterval(fetchHealth, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [fetchHealth]);
 
   return (
     <ShellContext.Provider

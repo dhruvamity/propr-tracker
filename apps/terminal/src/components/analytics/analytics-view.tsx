@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import type { AccountSnapshot, TradeData } from "@/lib/propr-api";
+import type { AccountSnapshot } from "@/lib/propr-api";
 import {
   formatUSD,
   formatPercent,
@@ -86,10 +86,10 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
   // Filter trades by time filter
   const filteredTrades = useMemo(() => {
     if (timeFilter === "ALL" || rawTrades.length === 0) return rawTrades;
-    const now = Date.now();
+    const latestTs = new Date(rawTrades[rawTrades.length - 1].executedAt).getTime();
     let cutoff = 0;
-    if (timeFilter === "7D") cutoff = now - 7 * 24 * 60 * 60 * 1000;
-    else if (timeFilter === "30D") cutoff = now - 30 * 24 * 60 * 60 * 1000;
+    if (timeFilter === "7D") cutoff = latestTs - 7 * 24 * 60 * 60 * 1000;
+    else if (timeFilter === "30D") cutoff = latestTs - 30 * 24 * 60 * 60 * 1000;
 
     return rawTrades.filter((t) => new Date(t.executedAt).getTime() >= cutoff);
   }, [rawTrades, timeFilter]);
@@ -116,10 +116,10 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
     let totalHoldSeconds = 0;
     let holdCount = 0;
     let longCount = 0;
-    let shortCount = 0;
 
     // 24H calculations
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const latestTs = rawTrades.length > 0 ? new Date(rawTrades[rawTrades.length - 1].executedAt).getTime() : 0;
+    const oneDayAgo = latestTs > 0 ? latestTs - 24 * 60 * 60 * 1000 : 0;
     let pnl24h = 0;
 
     // Daily buckets for daily chart & daily stats
@@ -179,7 +179,6 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
       totalVolume += vol;
 
       if (t.side === "buy" || t.positionSide === "long") longCount++;
-      else shortCount++;
 
       if (tTime >= oneDayAgo) {
         pnl24h += tradeNet;
@@ -257,8 +256,8 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
 
     // Daily stats
     const dailyList: DailyPnlItem[] = Array.from(dailyMap.values());
-    let bestDay = dailyList.length > 0 ? Math.max(...dailyList.map((d) => d.pnl)) : 0;
-    let worstDay = dailyList.length > 0 ? Math.min(...dailyList.map((d) => d.pnl)) : 0;
+    const bestDay = dailyList.length > 0 ? Math.max(...dailyList.map((d) => d.pnl)) : 0;
+    const worstDay = dailyList.length > 0 ? Math.min(...dailyList.map((d) => d.pnl)) : 0;
     const profitDays = dailyList.filter((d) => d.pnl > 0);
     const lossDays = dailyList.filter((d) => d.pnl < 0);
     const avgProfitDay =
@@ -372,7 +371,7 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
       durationBuckets,
       weekdayList,
     };
-  }, [currentAccount, filteredTrades]);
+  }, [currentAccount, filteredTrades, rawTrades]);
 
   // Export CSV handler
   const handleExportCSV = () => {
@@ -416,11 +415,6 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
     link.click();
     document.body.removeChild(link);
   };
-
-  const isFailed =
-    currentAccount?.stage === "FAILED" ||
-    currentAccount?.stage === "BREACHED" ||
-    currentAccount?.stage === "CLOSED";
 
   return (
     <div className="space-y-6 pb-12 font-sans">

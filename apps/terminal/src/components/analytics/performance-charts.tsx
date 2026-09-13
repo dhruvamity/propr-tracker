@@ -14,10 +14,10 @@ interface DailyPnlChartProps {
   height?: number;
 }
 
-export function DailyPnlChart({ dailyData, height = 200 }: DailyPnlChartProps) {
+export function DailyPnlChart({ dailyData, height = 176 }: DailyPnlChartProps) {
   if (dailyData.length === 0) {
     return (
-      <div className="h-44 flex items-center justify-center text-xs text-zinc-500 font-sans">
+      <div style={{ height }} className="flex items-center justify-center text-xs text-zinc-500 font-sans">
         No daily trade history available for this account.
       </div>
     );
@@ -27,7 +27,7 @@ export function DailyPnlChart({ dailyData, height = 200 }: DailyPnlChartProps) {
 
   return (
     <div className="space-y-2">
-      <div className="h-44 flex items-end gap-3 pt-6 pb-2 px-2 border-b border-zinc-800">
+      <div style={{ height }} className="flex items-end gap-3 pt-6 pb-2 px-2 border-b border-zinc-800">
         {dailyData.map((item, idx) => {
           const isPos = item.pnl >= 0;
           const heightPct = Math.max(8, (Math.abs(item.pnl) / maxAbs) * 100);

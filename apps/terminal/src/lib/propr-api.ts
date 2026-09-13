@@ -1,12 +1,13 @@
 // ─── Propr API Server-Side Client ─────────────────────────────────────────────
 // This module runs ONLY on the server. API key never reaches the browser.
 
-import { SEED_PURCHASES } from "./finance-data";
+import { SEED_PURCHASES, reconcileDynamicPurchases } from "./finance-data";
 import Decimal from "decimal.js";
 
 const API_KEY = process.env.PROPR_API_KEY || "";
 const BASE_URL = process.env.PROPR_API_URL || "https://api.propr.xyz/v1";
 const USD_TO_INR = process.env.USD_TO_INR || "84.5";
+const PAYSAGI_EFFECTIVE_RATE = process.env.PAYSAGI_EFFECTIVE_RATE || "97.82";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -374,12 +375,30 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
       allIssuancesRaw,
       payoutsRaw,
       challengesRaw,
+      purchasesRaw,
     ] = await Promise.all([
       fetchAllPages<Record<string, unknown>>("/challenge-attempts").catch(() => []),
       fetchAllPages<Record<string, unknown>>("/book-account-issuances").catch(() => []),
       fetchAllPages<Record<string, unknown>>("/payouts/history").catch(() => []),
       fetchAllPages<Record<string, unknown>>("/challenges").catch(() => []),
+      fetchAllPages<Record<string, unknown>>("/purchases").catch(() => []),
     ]);
+
+    // Dynamically reconcile purchases with attempts and bank reference table
+    const ledger = reconcileDynamicPurchases(
+      purchasesRaw,
+      allAttemptsRaw,
+      PAYSAGI_EFFECTIVE_RATE,
+      SEED_PURCHASES
+    );
+
+    const purchaseByAccountId = new Map<string, FinanceTransaction>();
+    const purchaseByPurchaseId = new Map<string, FinanceTransaction>();
+    for (const tx of ledger) {
+      if (tx.accountId) purchaseByAccountId.set(tx.accountId, tx);
+      if (tx.purchaseId) purchaseByPurchaseId.set(tx.purchaseId, tx);
+      if (tx.id) purchaseByPurchaseId.set(tx.id, tx);
+    }
 
     const challengeMap = new Map<string, Record<string, unknown>>();
     for (const ch of challengesRaw) {
@@ -747,6 +766,9 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
         const attemptPnl = attempt?.totalPnl ? d(attempt.totalPnl as string) : undefined;
         const totalPnl = attemptPnl ?? (equity.minus(d(initialBalance)));
 
+        const accPurchase = (purchaseId ? purchaseByPurchaseId.get(purchaseId) : undefined) || purchaseByAccountId.get(accountId);
+        const purchaseCostUSD = accPurchase ? accPurchase.amountUSD : "0";
+
         return {
           account: {
             accountId,
@@ -804,10 +826,10 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
             positions,
             orders,
             trades,
-            purchaseId,
-            purchaseCostUSD: "0",
+            purchaseId: (attempt?.purchaseId as string) || accPurchase?.purchaseId || accPurchase?.id,
+            purchaseCostUSD,
             payoutsWithdrawnUSD: "0",
-            actualCashPnLUSD: "0",
+            actualCashPnLUSD: ds(new Decimal(0).minus(d(purchaseCostUSD))),
             lastUpdatedAt: now,
           },
           positions,
@@ -848,7 +870,6 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
     }));
 
     // Finance calculations (Three-Layer Accounting: Face Value, Actual Cash, Trading Performance)
-    const ledger = SEED_PURCHASES;
     const rate = d(USD_TO_INR);
 
     const activePurchaseIds = new Set<string>();
@@ -878,7 +899,9 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
         const actualINR = d(tx.actualCashCostINR || tx.amountINR || "0");
         const isActive = Boolean(
           (tx.accountId && activeAccountIds.has(tx.accountId)) ||
-          (tx.id && activePurchaseIds.has(tx.id))
+          (tx.id && activePurchaseIds.has(tx.id)) ||
+          (tx.purchaseId && activePurchaseIds.has(tx.purchaseId)) ||
+          (!tx.accountId && isPropr)
         );
 
         if (isPropr) {
@@ -908,12 +931,22 @@ async function _fetchDashboardDataInternal(): Promise<DashboardData> {
 
     let totalPayoutsUSD = new Decimal(0);
     let totalPayoutsINR = new Decimal(0);
+    const payoutsByAccountId = new Map<string, Decimal>();
     for (const p of payouts) {
       if (p.status === "processed") {
         const amtUSD = d(p.userAmount || p.amount);
         totalPayoutsUSD = totalPayoutsUSD.plus(amtUSD);
         totalPayoutsINR = totalPayoutsINR.plus(amtUSD.times(rate));
+        if (p.accountId) {
+          payoutsByAccountId.set(p.accountId, (payoutsByAccountId.get(p.accountId) || new Decimal(0)).plus(amtUSD));
+        }
       }
+    }
+
+    for (const acc of accounts) {
+      const pWithdrawn = payoutsByAccountId.get(acc.accountId) || new Decimal(0);
+      acc.payoutsWithdrawnUSD = ds(pWithdrawn);
+      acc.actualCashPnLUSD = ds(pWithdrawn.minus(d(acc.purchaseCostUSD || "0")));
     }
 
     const actualCashPnLINR = totalPayoutsINR.minus(totalActualCashOutflowINR);

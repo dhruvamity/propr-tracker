@@ -168,7 +168,7 @@ function JsonHighlight({ data }: { data: Record<string, unknown> }) {
 
         return (
           <span key={key}>
-            <span className="text-zinc-400 font-normal">"{key}"</span>
+            <span className="text-zinc-400 font-normal">&quot;{key}&quot;</span>
             <span className="text-zinc-500">: </span>
             <span className={`${valColor} font-medium`}>
               {typeof val === "string" ? `"${val}"` : String(val)}

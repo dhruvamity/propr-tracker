@@ -49,10 +49,9 @@ export function TrendSparkline({
     { x: 0, y: 0, cumPnl: 0, tradePnl: 0, asset: "START", fee: 0 },
   ];
 
-  let lossCount = 0;
-  let winCount = 0;
   let maxSingleLoss = 0;
-  let totalLoss = 0;
+  let winCount = 0;
+  let lossCount = 0;
 
   for (const t of activeTrades) {
     const rpnl = Number(t.realizedPnl || 0);
@@ -63,7 +62,6 @@ export function TrendSparkline({
     if (netTrade < 0) {
       lossCount++;
       const absLoss = Math.abs(netTrade);
-      totalLoss += absLoss;
       if (absLoss > maxSingleLoss) {
         maxSingleLoss = absLoss;
       }

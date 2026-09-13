@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import type { DashboardData, AccountSnapshot, TradeData } from "@/lib/propr-api";
-import { formatUSD, formatAccountTag, formatPercent } from "@/lib/utils";
+import type { DashboardData } from "@/lib/propr-api";
+import { formatAccountTag } from "@/lib/utils";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -61,8 +61,6 @@ export function RulesView({ data }: RulesViewProps) {
       // Get current date representation in IST (Asia/Kolkata)
       const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
       const istDate = new Date(istString);
-
-      const estString = now.toLocaleString("en-US", { timeZone: "America/New_York" });
 
       const day = istDate.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
       const hour = istDate.getHours();
@@ -123,7 +121,7 @@ export function RulesView({ data }: RulesViewProps) {
     }, [now]);
 
   // ─── 2. Weekend Trading Rule (Rule 2) ──────────────────────────────────────
-  const { isWeekend, canWeekendTrade, weekendReason } = useMemo(() => {
+  const { isWeekend, weekendReason } = useMemo(() => {
     const istString = now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
     const istDate = new Date(istString);
     const day = istDate.getDay();
@@ -153,7 +151,7 @@ export function RulesView({ data }: RulesViewProps) {
   }, [now, selectedAccount]);
 
   // ─── 3. Account Tier & Risk Limits (Rule 4 & 6) ───────────────────────────
-  const { is10k, baseMaxRiskUSD, currentMaxRiskUSD, isTargetProtectionActive, profitPercent } =
+  const { is10k, currentMaxRiskUSD, isTargetProtectionActive, profitPercent } =
     useMemo(() => {
       const initialBal = Number(selectedAccount?.initialBalance || selectedAccount?.startingBalance || 10000);
       const currentEq = Number(selectedAccount?.equity || selectedAccount?.balance || initialBal);
@@ -228,8 +226,6 @@ export function RulesView({ data }: RulesViewProps) {
     openPositionsCount,
     hasParallelViolation,
     activePositionAsset,
-    latestTradeTime,
-    minutesSinceLastTrade,
     isCooldownActive,
     cooldownRemainingText,
   } = useMemo(() => {

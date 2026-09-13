@@ -1,19 +1,26 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { formatUSD, formatPercent, formatShortId, formatAccountTag } from "@/lib/utils";
+import { formatUSD, formatPercent, formatAccountTag } from "@/lib/utils";
 import {
   Search,
   Copy,
   Check,
-  ChevronDown,
-  ChevronUp,
   X,
-  ArrowUpRight,
-  ArrowDownRight,
   ExternalLink,
 } from "lucide-react";
+
+export interface AccountTrade {
+  tradeId?: string;
+  executedAt?: string;
+  asset?: string;
+  side?: string;
+  price?: string | number;
+  quantity?: string | number;
+  fee?: string | number;
+  realizedPnl?: string | number;
+}
 
 export interface AccountItem {
   accountId: string;
@@ -55,7 +62,7 @@ export interface AccountItem {
   bestTradeUSD?: string;
   closedTradesCount?: number;
   rawFillsCount?: number;
-  trades?: any[];
+  trades?: AccountTrade[];
 }
 
 interface AccountsDirectoryProps {
@@ -78,25 +85,26 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("RISK");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [drawerAccount, setDrawerAccount] = useState<AccountItem | null>(null);
 
-  useEffect(() => {
+  const [prevTabParam, setPrevTabParam] = useState(tabParam);
+  if (tabParam !== prevTabParam) {
+    setPrevTabParam(tabParam);
     if (tabParam === "archived" || tabParam === "failed" || tabParam === "history") {
       setFilter("ARCHIVED");
+    } else if (tabParam === "active") {
+      setFilter("ACTIVE");
+    } else if (tabParam === "funded") {
+      setFilter("FUNDED");
     }
-  }, [tabParam]);
+  }
 
   const copyToClipboard = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const filteredAndSortedAccounts = useMemo(() => {

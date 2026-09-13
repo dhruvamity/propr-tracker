@@ -26,17 +26,14 @@ export function TopBar() {
   const [relativeTime, setRelativeTime] = useState("now");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isStale, setIsStale] = useState(false);
-  const [isMac, setIsMac] = useState(true);
+  const [isMac] = useState(() => {
+    if (typeof navigator !== "undefined") {
+      return /Mac|iPhone|iPad|iPod/.test(navigator.platform || "");
+    }
+    return true;
+  });
 
   const pageTitle = ROUTE_TITLES[pathname] || "Trading Terminal";
-
-  // Check platform for shortcut badge (⌘K vs Ctrl+K)
-  useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      const platform = navigator.platform || "";
-      setIsMac(/Mac|iPhone|iPad|iPod/.test(platform));
-    }
-  }, []);
 
   useEffect(() => {
     const updateRelative = () => {
