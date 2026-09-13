@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import type { DashboardData } from "@/lib/propr-api";
+import type { DashboardData } from "@/lib/types";
 import { formatAccountTag } from "@/lib/utils";
 import {
   ShieldAlert,

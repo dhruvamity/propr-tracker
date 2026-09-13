@@ -34,6 +34,7 @@ The repository is structured as a monorepo:
 | `PROPR_API_URL` | Base URL for Propr REST API | `https://api.propr.xyz/v1` |
 | `PROPR_WS_URL` | WebSocket URL for live updates | `wss://api.propr.xyz/ws` |
 | `USD_TO_INR` | Reference FX rate for USD face value estimates | `84.5` |
+| `PAYSAGI_EFFECTIVE_RATE` | Effective INR rate per USD for dynamic Paysagi card debits (forex + GST) | `97.82` |
 | `REDIS_URL` | Optional Redis URL for persistent cache in `propr-sync` | *(in-memory fallback)* |
 
 ## Running Locally

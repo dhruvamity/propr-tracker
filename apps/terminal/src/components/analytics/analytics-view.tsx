@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import type { AccountSnapshot } from "@/lib/propr-api";
+import type { AccountSnapshot } from "@/lib/types";
 import {
   formatUSD,
   formatPercent,

@@ -1,4 +1,4 @@
-import type { DashboardData, AccountSnapshot, TradeData } from "./propr-api";
+import type { DashboardData, AccountSnapshot, TradeData } from "./types";
 import { formatUSD, formatINR, formatPercent, formatShortId, formatAccountTag } from "./utils";
 
 interface ComputedAccountMetrics {

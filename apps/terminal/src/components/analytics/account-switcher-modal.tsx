@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { AccountSnapshot } from "@/lib/propr-api";
+import type { AccountSnapshot } from "@/lib/types";
 import { formatUSD, formatShortId, formatAccountTag } from "@/lib/utils";
 import { Star, X, Check } from "lucide-react";
 

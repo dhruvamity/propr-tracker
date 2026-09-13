@@ -1,5 +1,5 @@
 import React from "react";
-import type { AccountSnapshot } from "@/lib/propr-api";
+import type { AccountSnapshot } from "@/lib/types";
 import { formatUSD, formatPercent, formatShortId, cn } from "@/lib/utils";
 
 interface RiskCardProps {

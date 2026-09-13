@@ -3,7 +3,7 @@
 
 import "dotenv/config";
 import { ProprClient } from "@propr/client";
-import { SEED_PURCHASES } from "@propr/finance";
+import { SEED_PURCHASES, reconcileDynamicPurchases } from "@propr/finance";
 import { MemoryStore, RedisStore, type DataStore } from "./store.js";
 import { buildAccountUniverse } from "./normalizer.js";
 import { WsSyncWorker } from "./ws-worker.js";
@@ -85,10 +85,23 @@ async function performSync(
     const user = await client.getUser();
     console.log(`[SYNC] User: ${user.email}`);
 
-    const ledger = await store.getLedger();
-    const payouts = await client.getAllPayouts();
+    const [payouts, purchases, attempts] = await Promise.all([
+      client.getAllPayouts().catch(() => []),
+      client.getPurchases().catch(() => []),
+      client.getAllChallengeAttempts().catch(() => []),
+    ]);
 
     await store.setPayouts(payouts);
+
+    const existingLedger = await store.getLedger();
+    const effectiveRate = process.env.PAYSAGI_EFFECTIVE_RATE || "97.82";
+    const ledger = reconcileDynamicPurchases(
+      purchases as Array<Record<string, unknown>>,
+      attempts as unknown as Array<Record<string, unknown>>,
+      effectiveRate,
+      existingLedger.length > 0 ? existingLedger : SEED_PURCHASES
+    );
+    await store.setLedger(ledger);
 
     const accounts = await buildAccountUniverse(
       client,
