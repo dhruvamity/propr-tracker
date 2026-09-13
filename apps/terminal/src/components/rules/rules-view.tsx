@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Calculator,
   Flame,
   Layers,
   Sparkles,
@@ -376,58 +375,6 @@ export function RulesView({ data }: RulesViewProps) {
     }
   }, [isCooldownActive, minutesSinceLastTrade, audioEnabled]);
 
-  // ─── 7. Interactive Position Sizing Calculator (Rules 3 & 4) ────────────────
-  const [calcAsset, setCalcAsset] = useState<string>("BTC");
-  const [entryPriceInput, setEntryPriceInput] = useState<string>("68430");
-  const [stopLossInput, setStopLossInput] = useState<string>("67900");
-  const [riskMultiplier, setRiskMultiplier] = useState<number>(1.0); // 1.0 (Full), 0.5 (Half)
-
-  const calcResults = useMemo(() => {
-    const entry = parseFloat(entryPriceInput) || 0;
-    const sl = parseFloat(stopLossInput) || 0;
-    const distance = Math.abs(entry - sl);
-    const maxRisk = currentMaxRiskUSD * riskMultiplier;
-
-    const currentAssetSpec = ALLOWED_ASSETS.find((a) => a.symbol === calcAsset) || ALLOWED_ASSETS[0];
-    const leverage = currentAssetSpec.leverage || 2;
-
-    if (entry <= 0 || sl <= 0 || distance <= 0) {
-      return {
-        isValid: false,
-        sizeUnits: 0,
-        notionalUSD: 0,
-        stopDistanceUSD: 0,
-        stopDistancePct: 0,
-        estMarginUSD: 0,
-        leverage,
-        actualDollarRisk: maxRisk,
-      };
-    }
-
-    const sizeUnits = maxRisk / distance;
-    const notionalUSD = sizeUnits * entry;
-    const stopDistancePct = (distance / entry) * 100;
-    const estMarginUSD = notionalUSD / leverage;
-
-    return {
-      isValid: true,
-      sizeUnits: Number(sizeUnits.toFixed(4)),
-      notionalUSD: Number(notionalUSD.toFixed(2)),
-      stopDistanceUSD: Number(distance.toFixed(2)),
-      stopDistancePct: Number(stopDistancePct.toFixed(2)),
-      estMarginUSD: Number(estMarginUSD.toFixed(2)),
-      leverage,
-      actualDollarRisk: Number(maxRisk.toFixed(2)),
-    };
-  }, [entryPriceInput, stopLossInput, currentMaxRiskUSD, riskMultiplier, calcAsset]);
-
-  const handleAssetSelect = (asset: (typeof ALLOWED_ASSETS)[0]) => {
-    setCalcAsset(asset.symbol);
-    setEntryPriceInput(String(asset.defaultPrice));
-    // Default SL 1% below entry
-    setStopLossInput((asset.defaultPrice * 0.99).toFixed(2));
-  };
-
   return (
     <div className="space-y-6 pb-12 font-sans">
       {/* ─── Top Master Gate Status Banner ─────────────────────────────────── */}
@@ -576,135 +523,6 @@ export function RulesView({ data }: RulesViewProps) {
             )}
           </div>
         ))}
-      </div>
-
-      {/* ─── Interactive Position Size & Sizing Calculator (Rules 3 & 4) ───── */}
-      <div className="p-5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-surface)] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
-          <div className="flex items-center gap-2">
-            <Calculator size={18} className="text-cyan-400" />
-            <h3 className="text-sm font-semibold text-white">
-              Interactive Position Size & Risk Calculator (Rule 4 Enforced)
-            </h3>
-          </div>
-          <div className="text-xs text-zinc-400 font-mono">
-            Enforced Risk Ceiling: <span className="text-emerald-400 font-bold">${currentMaxRiskUSD.toFixed(2)}</span>
-          </div>
-        </div>
-
-        {/* 6 Allowed Assets Quick Chips (Rule 3) */}
-        <div>
-          <div className="text-xs text-zinc-400 mb-2">
-            Approved Assets (Rule 3 Whitelist — Click to load):
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {ALLOWED_ASSETS.map((asset) => {
-              const isSelected = calcAsset === asset.symbol;
-              return (
-                <button
-                  key={asset.symbol}
-                  onClick={() => handleAssetSelect(asset)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-colors flex items-center gap-1.5 cursor-pointer border ${
-                    isSelected
-                      ? "bg-cyan-950/60 border-cyan-500/50 text-cyan-200"
-                      : "bg-zinc-800/70 border-zinc-700/60 text-zinc-300 hover:border-zinc-600 hover:text-white"
-                  }`}
-                >
-                  <span className="font-bold">{asset.symbol}</span>
-                  <span className="text-zinc-500 text-[10px]">(${asset.defaultPrice})</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Quick Risk Presets */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-zinc-800 text-xs">
-          <span className="text-zinc-500 font-mono text-[11px]">Risk Preset:</span>
-          <button
-            onClick={() => setRiskMultiplier(1.0)}
-            className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors cursor-pointer border ${
-              riskMultiplier === 1.0
-                ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-300"
-                : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
-            }`}
-          >
-            Full Risk (${currentMaxRiskUSD.toFixed(2)})
-          </button>
-          <button
-            onClick={() => setRiskMultiplier(0.5)}
-            className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors cursor-pointer border ${
-              riskMultiplier === 0.5
-                ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-300"
-                : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white"
-            }`}
-          >
-            Conservative 50% (${(currentMaxRiskUSD * 0.5).toFixed(2)})
-          </button>
-        </div>
-
-        {/* Calculator Inputs & Output Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">Entry Price ($)</label>
-            <input
-              type="number"
-              step="any"
-              value={entryPriceInput}
-              onChange={(e) => setEntryPriceInput(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-cyan-500"
-              placeholder="e.g. 68430"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-zinc-400 mb-1">Stop-Loss Price ($)</label>
-            <input
-              type="number"
-              step="any"
-              value={stopLossInput}
-              onChange={(e) => setStopLossInput(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-cyan-500"
-              placeholder="e.g. 67900"
-            />
-          </div>
-
-          {/* Sizing Output Box */}
-          <div className="p-3.5 rounded-lg bg-zinc-900/90 border border-zinc-800 space-y-1.5 font-mono text-xs">
-            <div className="text-[10px] uppercase text-zinc-500">Calculated Position Sizing</div>
-            {calcResults.isValid ? (
-              <>
-                <div className="flex justify-between items-center text-zinc-300">
-                  <span>Stop Distance:</span>
-                  <span className="text-amber-400 font-medium">
-                    ${calcResults.stopDistanceUSD} ({calcResults.stopDistancePct}%)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-zinc-300">
-                  <span>Max Allowed Units:</span>
-                  <span className="text-emerald-400 font-bold text-sm">
-                    {calcResults.sizeUnits} {calcAsset}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-zinc-400 text-[11px]">
-                  <span>Notional Exposure:</span>
-                  <span>${calcResults.notionalUSD.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center text-zinc-400 text-[11px]">
-                  <span>Est. Margin ({calcResults.leverage}x):</span>
-                  <span>${calcResults.estMarginUSD.toFixed(2)}</span>
-                </div>
-                <div className="text-[10px] text-zinc-400 pt-1 border-t border-zinc-800">
-                  ✓ If stopped out, loss is exactly ${calcResults.actualDollarRisk.toFixed(2)} (Risk Rule compliant).
-                </div>
-              </>
-            ) : (
-              <div className="text-zinc-500 text-xs py-2">
-                Enter valid entry and stop-loss prices to calculate permitted size.
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* ─── Detailed 7 Rules Operational Matrix ────────────────────────────── */}
