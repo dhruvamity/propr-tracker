@@ -4,21 +4,21 @@ import React, { useState, useMemo } from "react";
 import type { AccountSnapshot } from "@/lib/types";
 import { formatUSD, formatAccountTag } from "@/lib/utils";
 import {
-  groupTradesByDay,
+  groupMultiAccountTradesByDay,
   type DailyForensicsSummary,
   type TaggedTrade,
 } from "@/lib/forensics";
-import { AccountSwitcherModal } from "./account-switcher-modal";
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   ShieldCheck,
   ShieldAlert,
   AlertTriangle,
   CheckCircle2,
   XCircle,
   Calendar as CalendarIcon,
+  Layers,
+  Filter,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,37 +28,42 @@ interface ForensicsCalendarViewProps {
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) {
-  // Selected account (defaults to active evaluation/funded or first account)
-  const defaultAccount =
-    accounts.find((a) => a.stage === "EVALUATION" || a.stage === "FUNDED") ||
-    accounts[0];
+type AccountFilterScope = "ALL" | "FUNDED" | "EVALUATION" | "ARCHIVED";
 
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(
-    defaultAccount?.accountId || ""
-  );
-  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) {
+  // Account scope filter: defaults to ALL (mixes all entire past & active accounts)
+  const [scopeFilter, setScopeFilter] = useState<AccountFilterScope>("ALL");
   const [expandedTradeId, setExpandedTradeId] = useState<string | null>(null);
 
-  const currentAccount = useMemo(() => {
-    return (
-      accounts.find((a) => a.accountId === selectedAccountId) ||
-      defaultAccount ||
-      accounts[0]
-    );
-  }, [accounts, selectedAccountId, defaultAccount]);
+  // Filter accounts based on selected scope
+  const filteredAccounts = useMemo(() => {
+    if (scopeFilter === "FUNDED") {
+      return accounts.filter((a) => a.stage === "FUNDED");
+    }
+    if (scopeFilter === "EVALUATION") {
+      return accounts.filter((a) => a.stage === "EVALUATION");
+    }
+    if (scopeFilter === "ARCHIVED") {
+      return accounts.filter(
+        (a) => a.stage === "BREACHED" || a.stage === "FAILED" || a.stage === "CLOSED"
+      );
+    }
+    return accounts;
+  }, [accounts, scopeFilter]);
 
-  const rawTrades = useMemo(() => {
-    return currentAccount?.trades || [];
-  }, [currentAccount]);
+  // Total trade executions across all filtered accounts
+  const totalPooledTrades = useMemo(() => {
+    return filteredAccounts.reduce((sum, a) => sum + (a.trades || []).length, 0);
+  }, [filteredAccounts]);
 
-  // Group trades by day with day-level forensics
+  const activeAccountsCount = useMemo(() => {
+    return filteredAccounts.filter((a) => (a.trades || []).length > 0).length;
+  }, [filteredAccounts]);
+
+  // Group trades across ALL accounts into daily unified buckets
   const dailyMap: Map<string, DailyForensicsSummary> = useMemo(() => {
-    return groupTradesByDay(
-      rawTrades,
-      Number(currentAccount?.initialBalance || 10000)
-    );
-  }, [rawTrades, currentAccount]);
+    return groupMultiAccountTradesByDay(filteredAccounts);
+  }, [filteredAccounts]);
 
   // List of all active trading days sorted chronologically
   const sortedDayKeys = useMemo(() => {
@@ -218,6 +223,21 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
     return dailyMap.get(selectedDateKey) || null;
   }, [dailyMap, selectedDateKey]);
 
+  // Unique accounts that traded on the selected day
+  const selectedDayAccounts = useMemo(() => {
+    if (!selectedDaySummary) return [];
+    const set = new Set<string>();
+    const list: Array<{ tag: string; tier?: string; stage?: string }> = [];
+    for (const tt of selectedDaySummary.taggedTrades) {
+      const tag = tt.accountTag || formatAccountTag(tt.trade.accountId);
+      if (!set.has(tag)) {
+        set.add(tag);
+        list.push({ tag, tier: tt.accountTier, stage: tt.accountStage });
+      }
+    }
+    return list;
+  }, [selectedDaySummary]);
+
   // Navigation between active trading days
   const currentIndex = sortedDayKeys.indexOf(selectedDateKey);
   const prevActiveDate = currentIndex > 0 ? sortedDayKeys[currentIndex - 1] : null;
@@ -234,10 +254,14 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
 
   return (
     <div className="space-y-6 pb-12 font-sans">
-      {/* ─── Breadcrumb & Top Controls ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
+      {/* ─── Breadcrumb & Top Master Portfolio Controls ─── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
+            <Link href="/" className="hover:text-zinc-300 transition-colors">
+              Terminal
+            </Link>
+            <span>/</span>
             <Link href="/analytics" className="hover:text-zinc-300 transition-colors">
               Analytics
             </Link>
@@ -246,33 +270,65 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
             <CalendarIcon className="text-[var(--cyan)]" size={22} />
-            <span>Daily Discipline & Forensics Calendar</span>
+            <span>Master Trade Forensics & Discipline Calendar</span>
           </h1>
+          <p className="text-xs text-zinc-400 mt-1">
+            Unified cross-account execution history mixing all evaluations and funded accounts into a single calendar view.
+          </p>
         </div>
 
-        {/* Account Selector Dropdown Pill */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsSwitcherOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] hover:bg-zinc-800/80 transition-colors text-xs font-medium text-zinc-200"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="font-mono text-zinc-400">
-              {formatAccountTag(currentAccount?.accountId || "")}
+        {/* Portfolio Scope Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-zinc-900 border border-zinc-800 text-xs">
+            <span className="text-zinc-500 px-2 py-1 font-mono text-[11px] flex items-center gap-1">
+              <Filter size={12} />
+              Scope:
             </span>
-            <span className="font-semibold text-white">
-              {currentAccount?.challengeName || "Account"}
-            </span>
-            <ChevronDown size={14} className="text-zinc-500 ml-1" />
-          </button>
-
-          <Link
-            href="/analytics"
-            className="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition-colors"
-          >
-            Overview
-          </Link>
+            <button
+              type="button"
+              onClick={() => setScopeFilter("ALL")}
+              className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+                scopeFilter === "ALL"
+                  ? "bg-[var(--cyan)]/20 text-[var(--cyan)] border border-[var(--cyan)]/40 font-semibold"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              All Accounts ({accounts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setScopeFilter("FUNDED")}
+              className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+                scopeFilter === "FUNDED"
+                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 font-semibold"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Funded Only
+            </button>
+            <button
+              type="button"
+              onClick={() => setScopeFilter("EVALUATION")}
+              className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+                scopeFilter === "EVALUATION"
+                  ? "bg-cyan-950/80 text-cyan-300 border border-cyan-700/60 font-semibold"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Evaluation Only
+            </button>
+            <button
+              type="button"
+              onClick={() => setScopeFilter("ARCHIVED")}
+              className={`px-3 py-1 rounded font-medium transition-colors cursor-pointer ${
+                scopeFilter === "ARCHIVED"
+                  ? "bg-amber-950/80 text-amber-300 border border-amber-700/60 font-semibold"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Archived
+            </button>
+          </div>
         </div>
       </div>
 
@@ -283,7 +339,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-1.5 rounded border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-400 hover:text-white transition-colors"
+              className="p-1.5 rounded border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-400 hover:text-white transition-colors cursor-pointer"
               title="Previous Month"
             >
               <ChevronLeft size={16} />
@@ -294,7 +350,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-1.5 rounded border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-400 hover:text-white transition-colors"
+              className="p-1.5 rounded border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 text-zinc-400 hover:text-white transition-colors cursor-pointer"
               title="Next Month"
             >
               <ChevronRight size={16} />
@@ -302,14 +358,21 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
             <button
               type="button"
               onClick={handleJumpToLatest}
-              className="ml-2 px-2.5 py-1 text-xs font-mono rounded bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 transition-colors"
+              className="ml-2 px-2.5 py-1 text-xs font-mono rounded bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 transition-colors cursor-pointer"
             >
               Latest Day
             </button>
           </div>
 
-          {/* Monthly Aggregated KPIs */}
+          {/* Monthly Aggregated Portfolio KPIs */}
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs">
+            <div>
+              <div className="text-zinc-500 text-[11px]">Accounts Active</div>
+              <div className="font-mono font-bold text-zinc-200 text-sm flex items-center gap-1">
+                <Layers size={13} className="text-cyan-400" />
+                <span>{activeAccountsCount} accounts ({totalPooledTrades} fills)</span>
+              </div>
+            </div>
             <div>
               <div className="text-zinc-500 text-[11px]">Active Days</div>
               <div className="font-mono font-bold text-zinc-200 text-sm">
@@ -324,7 +387,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
               </div>
             </div>
             <div>
-              <div className="text-zinc-500 text-[11px]">Month Discipline</div>
+              <div className="text-zinc-500 text-[11px]">Discipline Score</div>
               <div
                 className={`font-mono font-bold text-sm ${
                   Number(monthSummary.monthDiscipline) >= 90
@@ -350,7 +413,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
               </div>
             </div>
             <div>
-              <div className="text-zinc-500 text-[11px]">Month Net P&L</div>
+              <div className="text-zinc-500 text-[11px]">Portfolio Net P&L</div>
               <div
                 className={`font-mono font-bold text-sm ${
                   monthSummary.totalMonthNetPnl >= 0 ? "text-emerald-400" : "text-red-400"
@@ -489,10 +552,23 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
               <CalendarIcon size={20} />
             </div>
             <div>
-              <div className="text-xs text-zinc-500 font-mono">Selected Trading Day</div>
+              <div className="text-xs text-zinc-500 font-mono">Unified Trading Day Diagnostic</div>
               <h3 className="text-lg font-bold text-zinc-100 font-sans">
                 {selectedDaySummary?.dateLabel || selectedDateKey}
               </h3>
+              {selectedDayAccounts.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-1 text-xs text-zinc-400">
+                  <span className="text-[11px] text-zinc-500">Accounts Active:</span>
+                  {selectedDayAccounts.map((a, i) => (
+                    <span
+                      key={i}
+                      className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-zinc-800 text-zinc-300 border border-zinc-700"
+                    >
+                      {a.tag} {a.tier && `· ${a.tier}`}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -502,7 +578,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
               type="button"
               disabled={!prevActiveDate}
               onClick={() => prevActiveDate && handleStepDay(prevActiveDate)}
-              className="px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs font-mono text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs font-mono text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <ChevronLeft size={14} />
               <span>Prev Active Day</span>
@@ -511,7 +587,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
               type="button"
               disabled={!nextActiveDate}
               onClick={() => nextActiveDate && handleStepDay(nextActiveDate)}
-              className="px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs font-mono text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-xs font-mono text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <span>Next Active Day</span>
               <ChevronRight size={14} />
@@ -533,7 +609,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
                     </span>
                   </div>
                   <div className="text-xs text-emerald-400/80 mt-0.5">
-                    All {selectedDaySummary.totalTrades} trades adhered strictly to approved assets, stop-loss limits, and mandatory cooldown windows.
+                    All {selectedDaySummary.totalTrades} executions across all active accounts adhered strictly to approved assets, stop-loss caps, and cooldown windows.
                   </div>
                 </div>
               </div>
@@ -561,7 +637,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
             {/* 2. Key Daily Metrics (4-Card Grid) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800/80 space-y-1">
-                <div className="text-xs text-zinc-400">Day Net P&L</div>
+                <div className="text-xs text-zinc-400">Day Portfolio Net P&L</div>
                 <div
                   className={`text-2xl font-mono font-bold tracking-tight ${
                     selectedDaySummary.netPnl >= 0 ? "text-emerald-400" : "text-red-400"
@@ -626,7 +702,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
             {/* 3. Daily Protocol Verification Checklist */}
             <div className="p-4 rounded-lg bg-zinc-900/40 border border-zinc-800/80 space-y-3">
               <div className="text-xs font-semibold text-zinc-200 uppercase tracking-wider font-mono">
-                Daily Execution Protocol Checklist
+                Daily Execution Protocol Checklist (Cross-Account)
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 {/* Rule 1: Approved Whitelist */}
@@ -703,10 +779,10 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold text-zinc-200">
-                  Itemized Executions for this Day ({selectedDaySummary.taggedTrades.length})
+                  Itemized Executions for this Day ({selectedDaySummary.taggedTrades.length} Trades across {selectedDayAccounts.length} Accounts)
                 </div>
                 <div className="text-xs text-zinc-500 font-mono">
-                  Chronological execution sequence
+                  Mixed chronological sequence
                 </div>
               </div>
 
@@ -716,6 +792,7 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
                     <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 font-mono text-[11px]">
                       <th className="py-2.5 px-3 w-8">#</th>
                       <th className="py-2.5 px-3">Time (UTC / IST)</th>
+                      <th className="py-2.5 px-3">Account</th>
                       <th className="py-2.5 px-3">Asset</th>
                       <th className="py-2.5 px-3">Side</th>
                       <th className="py-2.5 px-3">Quantity</th>
@@ -757,6 +834,31 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
                             <td className="py-2.5 px-3 font-mono text-zinc-300 text-[11px]">
                               <span>{timeUtc}</span>
                               <span className="text-zinc-500 ml-1.5 text-[10px]">({timeIst})</span>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                                <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-200 font-bold border border-zinc-700">
+                                  {tt.accountTag || formatAccountTag(trade.accountId)}
+                                </span>
+                                {tt.accountTier && (
+                                  <span className="text-[10px] text-zinc-400 font-medium">
+                                    {tt.accountTier}
+                                  </span>
+                                )}
+                                {tt.accountStage && (
+                                  <span
+                                    className={`text-[9px] px-1 py-0.2 rounded font-sans uppercase font-medium ${
+                                      tt.accountStage === "FUNDED"
+                                        ? "bg-emerald-950 text-emerald-400 border border-emerald-800/40"
+                                        : tt.accountStage === "EVALUATION"
+                                        ? "bg-cyan-950 text-cyan-400 border border-cyan-800/40"
+                                        : "bg-zinc-900 text-zinc-500 border border-zinc-800"
+                                    }`}
+                                  >
+                                    {tt.accountStage}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 font-medium text-white">
                               {trade.asset}
@@ -826,12 +928,18 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
                           {/* Expanded Trade Detail */}
                           {isExpanded && (
                             <tr className="bg-zinc-900/40 border-b border-zinc-800">
-                              <td colSpan={9} className="p-4 space-y-3">
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-sans">
+                              <td colSpan={10} className="p-4 space-y-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs font-sans">
                                   <div>
                                     <span className="text-zinc-500 block">Trade ID</span>
                                     <span className="font-mono text-zinc-300 select-all">
                                       {trade.tradeId}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-zinc-500 block">Account</span>
+                                    <span className="font-mono text-zinc-300 select-all">
+                                      {tt.accountName || tt.accountTag} ({tt.accountId || trade.accountId})
                                     </span>
                                   </div>
                                   <div>
@@ -898,15 +1006,6 @@ export function ForensicsCalendarView({ accounts }: ForensicsCalendarViewProps) 
           </div>
         )}
       </div>
-
-      {/* ─── Account Switcher Modal ─── */}
-      <AccountSwitcherModal
-        isOpen={isSwitcherOpen}
-        onClose={() => setIsSwitcherOpen(false)}
-        accounts={accounts}
-        selectedAccountId={selectedAccountId}
-        onSelectAccount={(accId) => setSelectedAccountId(accId)}
-      />
     </div>
   );
 }

@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   analyzeTradeForensics,
   groupTradesByDay,
+  groupMultiAccountTradesByDay,
   isWeekendTradingWindow,
   normalizeAssetSymbol,
 } from "../../apps/terminal/src/lib/forensics";
-import type { TradeData } from "../../apps/terminal/src/lib/types";
+import type { TradeData, AccountSnapshot } from "../../apps/terminal/src/lib/types";
 
 describe("Trade Forensics & Discipline Engine", () => {
   describe("normalizeAssetSymbol", () => {
@@ -264,6 +265,103 @@ describe("Trade Forensics & Discipline Engine", () => {
       expect(day2.disciplineScore).toBe(0);
       expect(day2.checklist.weekendFreezeRespected).toBe(false);
       expect(day2.costOfViolationsUSD).toBe(31);
+    });
+  });
+
+  describe("groupMultiAccountTradesByDay", () => {
+    it("mixes multiple accounts together, applying each account's specific risk tier rules", () => {
+      const acc5k: AccountSnapshot = {
+        accountId: "acc-5000-1111",
+        stage: "PASSED",
+        challengeName: "Propr 5K Challenge",
+        status: "ACTIVE",
+        initialBalance: "5000",
+        balance: "5200",
+        equity: "5200",
+        currency: "USD",
+        createdAt: "2026-03-01T00:00:00Z",
+        updatedAt: "2026-03-04T12:00:00Z",
+        trades: [
+          // On 5K account, a -$45 loss is an OVER_RISK violation (threshold is $32)
+          {
+            tradeId: "t-5k-1",
+            accountId: "acc-5000-1111",
+            asset: "BTC",
+            side: "buy",
+            positionSide: "long",
+            quantity: "0.1",
+            price: "65000",
+            quoteQuantity: "6500",
+            fee: "1.0",
+            realizedPnl: "-45.0",
+            executedAt: "2026-03-04T10:00:00Z",
+            createdAt: "2026-03-04T09:50:00Z",
+            type: "market",
+            liquidityType: "taker",
+            base: "BTC",
+            quote: "USD",
+          },
+        ],
+      };
+
+      const acc10k: AccountSnapshot = {
+        accountId: "acc-10000-2222",
+        stage: "FUNDED",
+        challengeName: "Propr 10K Funded",
+        status: "ACTIVE",
+        initialBalance: "10000",
+        balance: "10150",
+        equity: "10150",
+        currency: "USD",
+        createdAt: "2026-03-01T00:00:00Z",
+        updatedAt: "2026-03-04T15:00:00Z",
+        trades: [
+          // On 10K account, a -$45 loss is compliant (threshold is $52)
+          {
+            tradeId: "t-10k-1",
+            accountId: "acc-10000-2222",
+            asset: "PAXG",
+            side: "buy",
+            positionSide: "long",
+            quantity: "1.0",
+            price: "2500",
+            quoteQuantity: "2500",
+            fee: "0.5",
+            realizedPnl: "-45.0",
+            executedAt: "2026-03-04T14:00:00Z",
+            createdAt: "2026-03-04T13:50:00Z",
+            type: "market",
+            liquidityType: "taker",
+            base: "PAXG",
+            quote: "USD",
+          },
+        ],
+      };
+
+      const dayMap = groupMultiAccountTradesByDay([acc5k, acc10k]);
+      expect(dayMap.size).toBe(1);
+
+      const day = dayMap.get("2026-03-04")!;
+      expect(day).toBeDefined();
+      expect(day.totalTrades).toBe(2);
+      expect(day.netPnl).toBe(-91.5); // (-45 - 1) + (-45 - 0.5)
+
+      // t-5k-1 violated OVER_RISK, t-10k-1 was compliant
+      expect(day.taggedTrades).toHaveLength(2);
+      expect(day.taggedTrades[0].accountTier).toBe("5K");
+      expect(day.taggedTrades[0].accountTag).toBe("1111");
+      expect(day.taggedTrades[0].violations).toHaveLength(1);
+      expect(day.taggedTrades[0].violations[0].type).toBe("OVER_RISK");
+
+      expect(day.taggedTrades[1].accountTier).toBe("10K");
+      expect(day.taggedTrades[1].accountTag).toBe("2222");
+      expect(day.taggedTrades[1].violations).toHaveLength(0);
+      expect(day.taggedTrades[1].isCompliant).toBe(true);
+
+      // Multi-account daily metrics
+      expect(day.disciplineScore).toBe(50);
+      expect(day.violationsCount).toBe(1);
+      expect(day.costOfViolationsUSD).toBe(46); // 45 loss + 1 fee
     });
   });
 });

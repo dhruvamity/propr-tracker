@@ -504,7 +504,7 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
             </button>
           ))}
           <Link
-            href="/analytics/forensics"
+            href="/forensics"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium text-zinc-400 hover:text-[var(--cyan)] transition-colors"
           >
             <Calendar size={13} />
@@ -680,7 +680,7 @@ export function AnalyticsView({ accounts }: AnalyticsViewProps) {
 
                 <div className="flex items-center">
                   <Link
-                    href="/analytics/forensics"
+                    href="/forensics"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--cyan)]/40 bg-[var(--cyan)]/10 hover:bg-[var(--cyan)]/20 text-xs font-mono text-[var(--cyan)] transition-colors"
                   >
                     <Calendar size={13} />
