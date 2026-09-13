@@ -17,6 +17,7 @@ import {
   LineChart,
   ShieldCheck,
   CalendarCheck2,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShell } from "./shell-context";
@@ -46,6 +47,7 @@ const navSections: NavSection[] = [
   {
     title: "Trading",
     items: [
+      { href: "/regime", label: "Regime", icon: Activity },
       { href: "/analytics", label: "Analytics", icon: LineChart },
       { href: "/forensics", label: "Forensics", icon: CalendarCheck2 },
       { href: "/positions", label: "Positions", icon: TrendingUp },

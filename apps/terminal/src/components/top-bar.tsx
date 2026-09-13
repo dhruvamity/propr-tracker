@@ -17,6 +17,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/system": "System",
   "/rules": "Rules",
   "/forensics": "Forensics Calendar",
+  "/regime": "Market Regime Filter",
 };
 
 export function TopBar() {
