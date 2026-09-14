@@ -131,50 +131,65 @@ export default async function FinancePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Milestone 1: Breakeven Threshold */}
-          <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-2">
+          <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-400">Full Breakeven Need</span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700">
+              <span className="text-xs text-[var(--text-secondary)]">Full Breakeven Need</span>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                 100% Payback
               </span>
             </div>
-            <div className="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">
-              ${Math.round(totalSpentINR / (84.5 * 0.8)).toLocaleString()} USD
+            <div>
+              <div className="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">
+                ${Math.round(totalSpentINR / (84.5 * 0.8)).toLocaleString()} USD
+              </div>
+              <div className="text-xs font-mono text-[var(--text-secondary)] mt-0.5">
+                ≈ {formatINR(totalSpentINR)} INR net spend
+              </div>
             </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
-              At 80% trader split, just <strong className="text-zinc-200">${Math.round(totalSpentINR / (84.5 * 0.8))}</strong> in funded profit completely offsets all ₹{totalSpentINR.toLocaleString()} spent on challenges.
+            <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+              At 80% trader split, just <strong className="text-white">${Math.round(totalSpentINR / (84.5 * 0.8))} USD</strong> in funded profit completely offsets all {formatINR(totalSpentINR)} INR spent on challenges.
             </p>
           </div>
 
           {/* Milestone 2: 10K Account Milestone */}
           <div className="p-4 rounded-lg bg-emerald-950/20 border border-emerald-800/40 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-emerald-400 font-medium">10K Turbo Payout</span>
+              <span className="text-xs text-[var(--green)] font-medium">10K Turbo Payout</span>
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
                 212.9% Payback
               </span>
             </div>
-            <div className="text-xl sm:text-2xl font-mono font-bold text-emerald-300 tracking-tight">
-              {formatINR(640 * 84.5)}
+            <div>
+              <div className="text-xl sm:text-2xl font-mono font-bold text-[var(--green)] tracking-tight">
+                {formatINR(640 * 84.5)} INR
+              </div>
+              <div className="text-xs font-mono text-[var(--green)]/80 mt-0.5">
+                ≈ $640.00 USD (80% split)
+              </div>
             </div>
             <p className="text-[11px] text-zinc-300 leading-relaxed">
-              1 funded payout on 10K account (8% target = $640 payout) recovers <strong className="text-emerald-300">212%</strong> of all historical prop spend, leaving <strong className="text-white">+₹28,685 net cash profit</strong>.
+              1 funded payout on 10K account (8% target = $640 USD payout) recovers <strong className="text-[var(--green)]">212%</strong> of all historical prop spend, leaving <strong className="text-white">+₹28,685 net cash profit</strong>.
             </p>
           </div>
 
           {/* Milestone 3: 5K Account Milestone */}
           <div className="p-4 rounded-lg bg-cyan-950/20 border border-cyan-800/40 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-cyan-400 font-medium">5K Turbo Payout</span>
+              <span className="text-xs text-[var(--cyan)] font-medium">5K Turbo Payout</span>
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-cyan-900/60 text-cyan-300 border border-cyan-700/50">
                 106.5% Payback
               </span>
             </div>
-            <div className="text-xl sm:text-2xl font-mono font-bold text-cyan-300 tracking-tight">
-              {formatINR(320 * 84.5)}
+            <div>
+              <div className="text-xl sm:text-2xl font-mono font-bold text-[var(--cyan)] tracking-tight">
+                {formatINR(320 * 84.5)} INR
+              </div>
+              <div className="text-xs font-mono text-[var(--cyan)]/80 mt-0.5">
+                ≈ $320.00 USD (80% split)
+              </div>
             </div>
             <p className="text-[11px] text-zinc-300 leading-relaxed">
-              1 funded payout on 5K account (8% target = $320 payout) recovers <strong className="text-cyan-300">106.5%</strong> of all historical prop spend with <strong className="text-white">+₹1,645 net cash profit</strong>.
+              1 funded payout on 5K account (8% target = $320 USD payout) recovers <strong className="text-[var(--cyan)]">106.5%</strong> of all historical prop spend with <strong className="text-white">+₹1,645 net cash profit</strong>.
             </p>
           </div>
         </div>

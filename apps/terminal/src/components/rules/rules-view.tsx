@@ -321,7 +321,7 @@ export function RulesView({ data }: RulesViewProps) {
       },
       {
         id: "parallel",
-        ruleNum: 7,
+        ruleNum: "7a",
         title: "Zero Parallel Trades",
         description: "Max 1 open trade portfolio-wide at any time",
         passed: !hasParallelViolation,
@@ -331,7 +331,7 @@ export function RulesView({ data }: RulesViewProps) {
       },
       {
         id: "cooldown",
-        ruleNum: 7,
+        ruleNum: "7b",
         title: "45-Minute Trade Gap",
         description: "Enforces 45-minute pause after previous trade to prevent overtrading",
         passed: !isCooldownActive,
@@ -424,7 +424,7 @@ export function RulesView({ data }: RulesViewProps) {
               </div>
               <p className="text-xs md:text-sm text-zinc-300 mt-1 font-sans">
                 {canTradeNow
-                  ? "All 5 trading criteria satisfied: Market hours open, 0 open positions, 45m cooldown satisfied, daily circuit breaker safe."
+                  ? "All 4 trading criteria satisfied: Market hours open, 0 open positions, 45m cooldown satisfied, daily circuit breaker safe."
                   : activeBlockers.map((b) => b.failReason).join(" · ")}
               </p>
             </div>

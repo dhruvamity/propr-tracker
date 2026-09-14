@@ -185,40 +185,45 @@ export function AnalyticsOverviewTab({
 
         {/* Violation Category Pill Breakdown */}
         {forensics.violatingTrades > 0 && (
-          <div className="mt-3.5 pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-[11px] font-medium text-zinc-400">Breaches Tagged:</span>
-            {forensics.violationsByType.WEEKEND_TRADE.count > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
-                <AlertTriangle size={11} />
-                {forensics.violationsByType.WEEKEND_TRADE.count} Weekend Trade
-                {forensics.violationsByType.WEEKEND_TRADE.costUSD > 0 &&
-                  ` (-${formatUSD(forensics.violationsByType.WEEKEND_TRADE.costUSD)})`}
-              </span>
-            )}
-            {forensics.violationsByType.COOLDOWN_BREACH.count > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/50 border border-amber-900/50 text-[11px] font-mono text-amber-400">
-                <AlertTriangle size={11} />
-                {forensics.violationsByType.COOLDOWN_BREACH.count} Cooldown Breach
-                {forensics.violationsByType.COOLDOWN_BREACH.costUSD > 0 &&
-                  ` (-${formatUSD(forensics.violationsByType.COOLDOWN_BREACH.costUSD)})`}
-              </span>
-            )}
-            {forensics.violationsByType.OVER_RISK.count > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
-                <AlertTriangle size={11} />
-                {forensics.violationsByType.OVER_RISK.count} Over-Risk
-                {forensics.violationsByType.OVER_RISK.costUSD > 0 &&
-                  ` (-${formatUSD(forensics.violationsByType.OVER_RISK.costUSD)})`}
-              </span>
-            )}
-            {forensics.violationsByType.UNAUTHORIZED_ASSET.count > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/50 border border-amber-900/50 text-[11px] font-mono text-amber-400">
-                <AlertTriangle size={11} />
-                {forensics.violationsByType.UNAUTHORIZED_ASSET.count} Unauthorized Asset
-                {forensics.violationsByType.UNAUTHORIZED_ASSET.costUSD > 0 &&
-                  ` (-${formatUSD(forensics.violationsByType.UNAUTHORIZED_ASSET.costUSD)})`}
-              </span>
-            )}
+          <div className="mt-3.5 pt-3 border-t border-[var(--border-subtle)] space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-[11px] font-medium text-[var(--text-secondary)]">Rule Tag Incidence:</span>
+              {forensics.violationsByType.WEEKEND_TRADE.count > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
+                  <AlertTriangle size={11} />
+                  {forensics.violationsByType.WEEKEND_TRADE.count} Weekend Trade
+                  {forensics.violationsByType.WEEKEND_TRADE.costUSD > 0 &&
+                    ` (-${formatUSD(forensics.violationsByType.WEEKEND_TRADE.costUSD)})`}
+                </span>
+              )}
+              {forensics.violationsByType.COOLDOWN_BREACH.count > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/50 border border-amber-900/50 text-[11px] font-mono text-amber-400">
+                  <AlertTriangle size={11} />
+                  {forensics.violationsByType.COOLDOWN_BREACH.count} Cooldown Breach
+                  {forensics.violationsByType.COOLDOWN_BREACH.costUSD > 0 &&
+                    ` (-${formatUSD(forensics.violationsByType.COOLDOWN_BREACH.costUSD)})`}
+                </span>
+              )}
+              {forensics.violationsByType.OVER_RISK.count > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-950/50 border border-red-900/50 text-[11px] font-mono text-red-400">
+                  <AlertTriangle size={11} />
+                  {forensics.violationsByType.OVER_RISK.count} Over-Risk
+                  {forensics.violationsByType.OVER_RISK.costUSD > 0 &&
+                    ` (-${formatUSD(forensics.violationsByType.OVER_RISK.costUSD)})`}
+                </span>
+              )}
+              {forensics.violationsByType.UNAUTHORIZED_ASSET.count > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/50 border border-amber-900/50 text-[11px] font-mono text-amber-400">
+                  <AlertTriangle size={11} />
+                  {forensics.violationsByType.UNAUTHORIZED_ASSET.count} Unauthorized Asset
+                  {forensics.violationsByType.UNAUTHORIZED_ASSET.costUSD > 0 &&
+                    ` (-${formatUSD(forensics.violationsByType.UNAUTHORIZED_ASSET.costUSD)})`}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] font-sans italic">
+              * Tag amounts reflect gross loss attributed per rule condition. Individual trades may breach multiple rules simultaneously, so tag totals overlap; the headline Cost of Violations is the deduplicated net portfolio loss.
+            </p>
           </div>
         )}
       </div>

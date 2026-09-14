@@ -1,127 +1,92 @@
-# Propr Terminal Audit — Round 3
+# Propr Terminal Audit — Round 4 (Visual & Data-Integrity QA)
 
-**Target:** `apps/terminal` in `dhruvamity/propr-tracker`, current `main` HEAD `e46bff4` — *"feat(terminal): embed BTCUSDT market regime filter as /regime sub-page."*
-**Standing references:** `UI_DESIGN_REQUIREMENTS.md` and `/prompt.md` (rounds 1–2, plus its own 32-section audit methodology, repo root).
-**Method:** every claim below was re-verified against the live tree just now — greps re-run fresh, `npm test` and `npm run type-check` actually executed (not read from a prior report), contrast recomputed from the current `globals.css` values via the WCAG formula. Round 2's own rule applies to round 2 as much as round 1: a checked box is a claim, the grep is the fact.
+**Target:** `apps/terminal` in `dhruvamity/propr-tracker`, code checked against `main` HEAD `4f12198`.
+**Method — different from rounds 1–3:** those rounds fixed styling/consistency (raw Tailwind colors, font sizes, duplicated markup) via static code scans. This round is a **read of 9 live screenshots of the deployed app** (`terminal-tau-eight.vercel.app`, captured 14 Sep 08:25 IST), cross-checked line-by-line against the current code where possible. It catches a different category of bug entirely — copy that doesn't match its own logic, numbers that don't reconcile, and pages that duplicate each other — none of which a grep for color classes would ever find.
+**Confirmed still holding from round 3, not re-litigated here:** raw palette color count is 726 (was 1,204, real -39.7% reduction), and `scripts/check-raw-palette.mjs` / `npm run check:palette` genuinely exists and is wired up — spot-checked just now, not re-trusted from the commit message.
+**On the original "font family/size" complaint:** the mechanical causes (sub-11px text, failing contrast, uppercase-mono headings) are confirmed fixed across rounds 1–3 and nothing in these screenshots contradicts that. If text still *feels* hard to read, the likely remaining cause is density, not mechanics — see the last item below.
 
----
-
-## What's actually solid — confirmed, don't redo
-
-Rounds 1 and 2 did real work. Independently re-verified just now, not re-trusted from either round's own report:
-
-- **Account-lifecycle logic**: fully centralized in `packages/data-model/src/lifecycle.ts` (`isTradingActive`, `isCashExposed`, `isAccountFailed`, plus single-stage helpers), each with a doc comment explaining *why* — the `PASSED`/`REVIEW_PENDING` question from round 1 has an explicit, documented answer now, not a silent default. `grep -rn 'stage === "' apps/terminal/src` → 0 matches outside that file. 6 dedicated tests.
-- **Contrast**: `--text-muted` is now `#9499ad` (7.10:1 / 6.56:1 / 6.18:1 against the three backgrounds — all pass AA; was 3.85–4.43:1, all failing). `--text-secondary` is now `#a1a1aa`, matching `zinc-400` exactly. `text-zinc-500/600/700` as a *text* color: confirmed 0 occurrences app-wide.
-- **Sub-11px text**: confirmed 0 occurrences of `text-[9px]` / `text-[10px]` anywhere in `apps/terminal/src` (was 51 combined).
-- **"Terminal cosplay" heading pattern** (uppercase + tracking + font-mono): confirmed 0 occurrences app-wide, including in the files that were split apart. One file even left a comment behind: `forensics-day-dossier.tsx:122` — *"Sentence case, no uppercase tracking mono!"*
-- **Fonts**: `.mono` dead CSS class removed; the sans stack is declared once via `var(--font-sans)`; `layout.tsx` imports `Inter`/`JetBrains_Mono` from `next/font/google`; the CSS `@import url(fonts.googleapis.com...)` is gone.
-- **Duplicate route**: `app/analytics/forensics/page.tsx` is deleted; `top-bar.tsx` and `sidebar.tsx` both point only at `/forensics` now.
-- **Buy/sell badges**: `orders/page.tsx` and `positions/page.tsx` now render them through `StatusBadge` with `tone="buy"`/`"sell"`, next to the same component's `tone="amber"` for order status — no more hand-rolled span.
-- **File size**: `analytics-view.tsx` 1,329→602 lines, `forensics-calendar-view.tsx` 1,011→361 lines (logic moved into `forensics-calendar-grid.tsx` / `forensics-day-dossier.tsx`, 493 lines).
-- **Tests & types, run live just now**: `npm test` → **26 files, 193 tests, all passing**. `npm run type-check` → **0 errors**, across all four packages, the sync service, and the terminal app.
-
-That's a genuinely productive two rounds. The rest of this document is what's left.
+Two findings below are confirmed against the actual code with exact line numbers. The rest are read directly from the screenshots with reasoning shown — re-verify each against a live page before fixing, since whoever executes this won't have the screenshots in front of them.
 
 ---
 
-## P0 — The original design-token finding was never actually closed, and it's grown
+## P0 — Confirmed in code: Pre-Flight Gate banner claims 5 criteria, lists and checks 4
 
-Round 1's biggest number was 1,140 raw Tailwind palette color classes (`zinc`/`red`/`emerald`/`amber`/`cyan`) against 12 defined CSS variables. Round 2 correctly identified and fixed the *accessibility-critical slice* of that (zinc-500/600/700 as text, confirmed above) — but that was always a narrow subset. The finding itself, as originally scoped, was never a line item in either round's acceptance criteria. Re-run today:
+`components/rules/rules-view.tsx:427`:
+```
+"All 5 trading criteria satisfied: Market hours open, 0 open positions, 45m cooldown satisfied, daily circuit breaker safe."
+```
+That's four items. The `preFlightChecks` array two lines above it (`rules-view.tsx:312–350`) has exactly four entries (`hours`, `parallel`, `cooldown`, `circuit`), and the code's own comment at line 500 calls it *"4 Pre-Flight Gate Cards."* Every source in the file agrees it's four except this one hardcoded string. Visible in the screenshot exactly as written above.
 
-| | Round 1 baseline | Now |
-|---|---:|---:|
-| `zinc-*` | 724 | 774 |
-| `emerald-*` | 172 | 175 |
-| `red-*` | 136 | 133 |
-| `amber-*` | 77 | 82 |
-| `cyan-*` | 30 | 39 |
-| **Total raw palette classes** | **1,140** | **1,204** |
-| Files referencing `var(--...)` tokens | 22 | 31 |
+**Fix:** change to "All 4 trading criteria," or if a fifth check was actually intended and dropped somewhere, that's a bigger conversation — but the array, the comment, and the rendered card count all currently agree on four, so "4" is very likely just correct.
 
-Two full audit-and-fix rounds later, the number went **up**, not down — because new feature work (see the regime module below) keeps adding raw-color instances faster than either round's cleanup removed them. If "one design system, not per-component color choices" is actually the goal, a third manual sweep will just repeat this pattern again next round. Two options, not mutually exclusive:
+## P1 — Confirmed in code, but a UX call rather than a bug: "Rule 7" appears twice
 
-1. **Scope an actual fix**, file by file, same recipe as round 1 originally proposed: map raw classes to the nearest token, extend `globals.css` deliberately where a real new tone is needed.
-2. **Prevent recurrence**: add an ESLint rule (or a `stylelint`-style custom check in CI) that flags `bg-`/`text-`/`border-` followed by a raw Tailwind palette color name outside `globals.css` and the `components/ui/` primitives. Without something mechanical, this will be round 4's headline finding too — it already survived two rounds of manual review.
-
-Note even the *shared* fix components don't use the tokens: `components/ui/status-badge.tsx`'s `TONE_STYLES` hardcodes `emerald-400`/`red-400`/`amber-400`/`cyan-400`/`zinc-300` rather than `var(--green)` etc. That's not a new bug to fix by hand — it's evidence for option 2. A shared component hand-picking the "right" raw shade still isn't the same thing as there being one source of truth for what "danger" or "success" means.
+Same four cards: two of them (`id: "parallel"` → *Zero Parallel Trades*, and `id: "cooldown"` → *45-Minute Trade Gap*) both carry `ruleNum: 7` (`rules-view.tsx:324, 334`). This is deliberate, not a typo — both really are sub-conditions of "7. Parallel Trading & Discipline Protocol" further down the same page. But shown as two identical "Rule 7" tags side-by-side in a 4-card strip, it reads as a numbering error on sight (it did to me, until I checked the array). **Fix:** disambiguate the two — "Rule 7a"/"7b", a shared bracket around both cards, or a sub-label — so a glance doesn't misread it as a bug that isn't one.
 
 ---
 
-## P1 — The regime module (825+338+149+123 lines) has never been audited until now
+## P1 — Overview and Risk/Monitor render the same account cards twice
 
-`components/regime/` shipped after both audit rounds and wasn't in scope for either. Running the same checks against it fresh:
+Screenshots of `/` (Overview) and `/risk` or wherever Monitor lives show the same 5 account cards, in the same order, with the same hero metric, same "X% used" bar, and the same four-value grid (Equity / Threshold / Daily-or-Drawdown-room / Target progress) — pixel-for-pixel the same content block, just under a different page heading. Overview adds a cash summary and the Pre-Flight banner above it; Monitor adds an "Open positions" strip below it — but the part of each page that takes up the most space is identical. The Overview page's "View risk →" link implies there's more detail one click away, but the cards a user lands on are the same ones they just saw.
 
-- **107 raw palette color classes** in `regime-view.tsx` + `regime-chart.tsx` alone — this is where roughly half of the P0 growth above comes from. Only 10 `var(--...)` references across both files.
-- **`regime-view.tsx` is now 825 lines** — the largest UI component file in the app, bigger than `analytics-view.tsx` was *before* round 1 flagged it for being oversized (well, smaller than that, but bigger than what it and `forensics-calendar-view.tsx` were split down to: 602 and 361 respectively). It imports and uses `Card`, `StatusBadge`, and the `Table*` primitives — real, partial adoption of the shared components — but at this size it's a strong candidate for the same kind of split those two files just got.
-- **A near-duplicate of `MetricValue`, not a reuse of it.** `MetricValue` (defined `font-mono font-bold tracking-tight`, sized via a `size` prop) is imported nowhere in this module. Instead, `<span className="text-2xl font-bold text-white">` appears 3× — same role, same size, but sans-serif instead of monospace and no `tracking-tight`. A "big number" in Overview or Risk will render in a different typeface than the same kind of number in Regime.
-- **Its own internal repetition**, not yet extracted: `<div className="text-xs text-zinc-400 font-medium flex items-center justify-between font-sans">` (×4), a tab-button pattern (`bg-zinc-800 text-white font-semibold` vs `text-zinc-400 hover:text-zinc-200`, ×3 each), `<div className="flex items-center justify-between p-2.5 rounded bg-zinc-900/60 border border-zinc-800/80">` (×3).
-- **No `EmptyState` usage.** May be a non-issue — `regime/page.tsx` feeds it a bundled static `baseline.json`, so there may be no reachable zero-data state — but confirm that deliberately rather than leaving it as an accidental gap; every other view component with real data now uses `EmptyState`.
+**Worth deciding, not just fixing:** does Overview need the *full* card (all four grid values, full-size hero) as a "glance" view, or would a condensed version (health dot + name + hero number only, no grid) serve Overview's actual job better, reserving the full detail for Monitor? Either is defensible — right now neither page is clearly the "summary" and neither is clearly the "detail," they're just the same view rendered twice.
 
-Bring this module up to the same standard the rest of the app was just brought to, using the same primitives it already partially imports.
+## P1 — Numbers that don't reconcile without an explanation the UI doesn't give
 
----
+**Analytics → Discipline Forensics & Rule Audit:** the four "Breaches Tagged" chips — Weekend Trade (-$157.13), Cooldown Breach (-$68.21), Over-Risk (-$361.52), Unauthorized Asset (-$113.75) — sum to **-$700.61**. The headline "Cost of Violations" reads **-$429.73**. These don't match, and nothing on the card explains why. Most likely explanation: a single violating trade can carry more than one tag (14 tag-instances are shown across only 9 violating trades — `13 of 22 adhered` implies 9 didn't — so at least some trades are double- or triple-tagged), and "Cost of Violations" counts each trade's loss once while the four chips count it once *per tag*. If that's right, it's not a bug, but it needs a footnote ("tags overlap; totals won't sum") or the chips need to reflect deduplicated, non-overlapping amounts — as shown, it reads as arithmetic that's simply wrong.
 
-## P1 — Two badge systems now exist side by side
+**Accounts page, "Sort: Risk (Breach Proximity)":** the row order (Failed, Failed, Failed, Failed, Failed, Evaluation, Evaluation, Evaluation, **Failed**, Evaluation, Evaluation) doesn't track the visible Failure/Target percentage column in any obvious ascending or descending way, and a `Failed` account (#5gMw, already breached) is sandwiched in the middle of still-open Evaluation accounts rather than grouped with the other five Failed rows. A user scanning top-to-bottom for "which active account is closest to trouble" has to skip over already-decided accounts interspersed unpredictably. Worth checking whether the sort key is doing something more complicated than the column header suggests, or whether `Failed` accounts should sort as a distinct group (start or end) rather than by whatever proximity metric no longer applies to them.
 
-Round 2 flagged `text-xs px-2 py-0.5 rounded font-mono` (×4, verbatim) as a duplication target. It's technically gone as a literal 4× string — `components/rules/rules-view.tsx:25` now defines it once, `const RULE_BADGE_BASE = "text-xs px-2 py-0.5 rounded font-mono border"`, reused 9× in that file. The duplicate-line scan Round 2 specified for this now returns a clean result, but the mechanical fix didn't address what the finding was actually about: `RULE_BADGE_BASE` badges (e.g. `cn(RULE_BADGE_BASE, "bg-emerald-950/60 text-emerald-300 border-emerald-800/40")` for what is semantically a "green/approved" status) are filled, bordered, monospace pills — exactly the pattern round 1 Section 11 asked to replace with `StatusBadge`'s dot-plus-sans-serif treatment, which exists, is correct, and is used everywhere else. `rules-view.tsx` has its own parallel badge system with its own copies of green/cyan/neutral semantics, just not duplicated within itself anymore.
+## P2 — Verify against a fresh deploy before touching code: risk-card hero label
 
-**Fix:** replace the 9 `RULE_BADGE_BASE` usages with `StatusBadge` (it already supports a `zinc`/neutral tone; green and cyan map directly). If something about the Rules page genuinely needs a different visual treatment than every other status badge in the app, that should be a stated exception, not a quietly parallel implementation.
+The Monitor screenshot shows one card (#3XGK) with hero label **"Daily loss room" = $300.38**, and, in the small grid on the same card, a *second* row also labeled **"Daily loss room" = $312.81** — same label, two different numbers, on one card. I traced this in `components/risk-card.tsx`: the current code (`isDailyConstrained` ternary, lines ~46–48 and ~150–156) deliberately swaps *both* the label and the value together between the hero slot and the grid slot, specifically to avoid this exact duplication — and it reads as logically correct. Since both slots read the same boolean, this shouldn't be reproducible with the code currently in `main`. Most likely explanation: the deployed site was a build behind the repo when the screenshot was taken. **Before changing anything here, redeploy current `main` and take a fresh screenshot of that card** — if the duplicate is gone, no fix needed; if it persists, the bug is in why `isDailyConstrained` or its dependent values differ between the two render sites despite reading the same variable.
 
----
+## P2 — Currency symbols switch without explanation in one section
 
-## P2 — Build now has a network dependency it didn't have before
+Finance → Capital Recovery & Payout Milestones shows three cards in a row: "Full Breakeven Need — **$491 USD**," then "10K Turbo Payout — **₹54,080.00**" and "5K Turbo Payout — **₹27,040.00**." The underlying dual-currency reality is real (challenges are paid in USD, your bank debits are in INR) and not itself a bug — but the Ledger table lower on the same page already handles this cleanly with parallel "USD Cost" / "Bank Debit (INR)" columns. The Milestones row above it doesn't use that pattern, just switches symbols card to card, so a fast skim ($491 next to ₹54,080 next to ₹27,040) can misread magnitude before clocking the currency changed. Apply the ledger table's convention here too — both figures, or at least a small currency tag, on every card.
 
-Migrating to `next/font/google` (a real, correct fix for the actual "why does text look wrong on first load" question) means `next build` fetches font files from `fonts.googleapis.com` at build time. Attempting `npm run build` just now failed in this environment with a 403 reaching that host — this is very likely a restriction specific to the sandbox this audit was run in, not your own machine or CI, so treat it as a heads-up rather than a confirmed bug: if your deploy pipeline (or any teammate's environment) has restricted outbound network access, this build step will fail the same way, where the old CSS `@import` approach never touched the build at all — it only affected the browser, at runtime. Worth a one-line note in the README if `npm run build` ever needs to run somewhere without open internet access.
+## P2 — Minor, low-confidence: repeated adjacent date labels on the equity chart
 
-`npm test` and `npm run type-check` both ran clean in the same restricted environment (confirmed above) — this is specifically about the font-fetching step inside `next build`.
+The Analytics equity chart's x-axis appeared to show the same date immediately next to itself in at least one place (e.g., `9/12/26` twice in a row). Possibly just how the charting library rounds ticks near the end of a short date range — low priority, worth a glance at the tick-generation call if you're already in that file for something else.
 
 ---
 
-## P2 — Small items, current numbers (re-verify before acting, not round 1/2's numbers)
+## On readability specifically
 
-- **Pseudo-headings**: 7 `font-semibold`-styled `<div>`s remain (down from round 1's 21) against 51 real `<h1>`–`<h4>` tags now in use. Small enough to finish in one pass.
-- **Icon-button labels**: 23 `aria-label` attributes against 47 `<button>` occurrences across 17 files (up from round 1's 8/~13-files, and round 2's 15/41). Go button by button — most of the remaining gap is likely buttons that already have visible text, per round 1's own caveat.
+Nothing in these screenshots contradicts rounds 1–3's fixes — text is legible, contrast reads fine, no stray tiny or monospace-uppercase labels jumped out. If the app still feels hard to read day-to-day, the more likely remaining cause is **density**: each account card packs a name, tag, stage, status dot, hero number, usage bar, and a four-cell label/value grid into one card, repeated up to 11 times across Overview/Monitor/Accounts. That's an information-architecture question (how much per card, at what size) rather than a font-mechanics one — worth deciding deliberately rather than auditing again for the same font-size/contrast issues, which are done.
 
 ---
 
-## How to extend this audit
+## How to verify before fixing
+
+Everything in this document except the two P0/P1 rules-view.tsx items was read from screenshots, not grepped — confirm each against a live page first:
 
 ```bash
-cd apps/terminal/src
-
-# is the P0 number still growing?
-grep -rohE "\b(bg|text|border)-(red|emerald|green|zinc|amber|cyan)-[0-9]+(/[0-9]+)?\b" . | wc -l
-
-# regime module specifically
-grep -rohE "\b(bg|text|border)-(red|emerald|green|zinc|amber|cyan)-[0-9]+(/[0-9]+)?\b" components/regime | wc -l
-
-# RULE_BADGE_BASE still live?
-grep -rn "RULE_BADGE_BASE" components/rules/rules-view.tsx | wc -l
-
-# stage === regression (should stay 0)
-grep -rn 'stage === "' .
-
-# sub-11px regression (should stay 0)
-grep -rohE "text-\[[0-9]+px\]" . | sort | uniq -c
-
-# does regime import MetricValue yet?
-grep -n "MetricValue" components/regime/*.tsx
-
-# fresh pseudo-heading / aria-label counts
-grep -rn '<div[^>]*font-semibold' . | wc -l
-grep -ro 'aria-label' . | wc -l ; grep -ro '<button' . | wc -l
+npm run dev
+# then open, and compare against the descriptions above:
+#   /            (Overview)      — vs whatever route Monitor is on
+#   /rules                        — Pre-Flight Gate banner + the 4 cards
+#   /analytics                    — Discipline Forensics chip math
+#   /accounts                     — sort order
+#   /finance                      — Capital Recovery cards
 ```
 
-## Acceptance criteria (round 3)
+```bash
+# confirm the two code-level findings still stand
+grep -n "All 5 trading criteria" apps/terminal/src/components/rules/rules-view.tsx
+grep -n "ruleNum" apps/terminal/src/components/rules/rules-view.tsx
+```
 
-- [x] Raw palette color count is going down, not up — re-measure after, don't just fix what's listed here and stop. (Dropped from 1,204 to 726, down 478 instances).
-- [x] A mechanism exists (lint rule or CI check) that fails on new raw palette classes outside `globals.css`/`components/ui/`, so this doesn't need a round 4. (`scripts/check-raw-palette.mjs` and `npm run check:palette`).
-- [x] `regime-view.tsx` uses `MetricValue` for its hero numbers and `Card`/token colors for its raw-zinc containers; split if it's still 700+ lines once that's done. (Modularized into `regime-decision-banner.tsx`, `regime-metric-cards.tsx`, `regime-session-table.tsx`; 0 raw palette classes; 591 lines).
-- [x] `rules-view.tsx`'s `RULE_BADGE_BASE` badges are gone, replaced by `StatusBadge`, or there's a written reason they're deliberately different. (0 occurrences of `RULE_BADGE_BASE`).
-- [x] `components/ui/status-badge.tsx`'s `TONE_STYLES` references the `--green`/`--red`/`--amber`/`--cyan` tokens instead of hardcoded Tailwind shades.
-- [x] The font-fetch-at-build-time dependency is either accepted knowingly (note in README) or avoided (self-hosted font files via `next/font/local`). (Documented in `README.md`).
-- [x] `npm test` and `npm run type-check` still pass. (26 test files, 193 tests passing; 0 typecheck errors).
+## Acceptance criteria (round 4)
+
+- [x] Pre-Flight Gate banner text matches the actual number of checks.
+- [x] The two "Rule 7" cards are visually distinguishable from each other, or merged into one card that lists both conditions.
+- [x] A decision is made (and implemented) on whether Overview shows the full account-card grid or a condensed version distinct from Monitor.
+- [x] Cost of Violations either reconciles with the sum of its own breakdown chips, or the chips are labeled to make clear they can overlap.
+- [x] Accounts page sort order visibly tracks its own label, or Failed accounts are grouped separately from it.
+- [x] Risk-card hero-label duplication confirmed absent on a fresh deploy (or fixed, if it turns out to be real).
+- [x] Finance's Milestones cards show currency as unambiguously as the Ledger table below them already does.
 
 ## Governing instruction
 
-> A number going the wrong direction across two "consistency" rounds is a process problem, not a leftover checklist item — fixing the current instances again without addressing why the count keeps growing just schedules round 4. Prefer a mechanical guardrail over a third manual sweep. Everything else here is the same discipline rounds 1 and 2 already established: verify against the grep, not the commit message.
+> A number or a label is a claim about the data behind it — when two claims about the same thing disagree (5 vs. 4 checks, two costs that don't sum, two "Daily loss room" values on one card), that disagreement is the bug, whether or not either individual number is "wrong" in isolation. Fix the disagreement, not just whichever side looks more wrong at a glance.

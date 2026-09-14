@@ -6,9 +6,10 @@ import { formatUSD, formatPercent, formatShortId, cn } from "@/lib/utils";
 interface RiskCardProps {
   account: AccountSnapshot;
   rank?: number;
+  variant?: "full" | "condensed";
 }
 
-export function RiskCard({ account, rank }: RiskCardProps) {
+export function RiskCard({ account, rank, variant = "full" }: RiskCardProps) {
   const equityNum = Number(account.equity || 0);
   const startBalNum = Number(account.initialBalance || account.startingBalance || 10000);
   const drawdownBufferNum = Number(account.drawdownRemaining || 0);
@@ -72,7 +73,8 @@ export function RiskCard({ account, rank }: RiskCardProps) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] p-5 space-y-4 transition-colors",
+        "rounded-lg border border-[var(--border-primary)] bg-[var(--bg-surface)] transition-colors",
+        variant === "condensed" ? "p-4 space-y-3.5" : "p-5 space-y-4",
         railColor
       )}
     >
@@ -143,31 +145,33 @@ export function RiskCard({ account, rank }: RiskCardProps) {
         </div>
       </div>
 
-      {/* ─── 3. Divider & 4 Aligned Values (Prompt §7: Easy-to-scan aligned rows) ─── */}
-      <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-3 border-t border-[var(--border-subtle)] text-xs font-sans">
-        <div className="flex justify-between items-baseline">
-          <span className="text-zinc-400">Equity</span>
-          <span className="font-mono text-zinc-100 font-medium">{formatUSD(equityNum)}</span>
+      {/* ─── 3. Divider & 4 Aligned Values (Prompt §7: Easy-to-scan aligned rows; omitted in condensed variant) ─── */}
+      {variant !== "condensed" && (
+        <div className="grid grid-cols-2 gap-y-2 gap-x-4 pt-3 border-t border-[var(--border-subtle)] text-xs font-sans">
+          <div className="flex justify-between items-baseline">
+            <span className="text-zinc-400">Equity</span>
+            <span className="font-mono text-zinc-100 font-medium">{formatUSD(equityNum)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-zinc-400">Threshold</span>
+            <span className="font-mono text-zinc-200 font-medium">{formatUSD(activeThreshold)}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-zinc-400">
+              {isDailyConstrained ? "Drawdown room" : "Daily loss room"}
+            </span>
+            <span className="font-mono text-zinc-200 font-medium">
+              {formatUSD(isDailyConstrained ? drawdownBufferNum : dailyRoomNum)}
+            </span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-zinc-400">Target progress</span>
+            <span className="font-mono text-zinc-200 font-medium">
+              {formatPercent(actualProfitPct, 2)}
+            </span>
+          </div>
         </div>
-        <div className="flex justify-between items-baseline">
-          <span className="text-zinc-400">Threshold</span>
-          <span className="font-mono text-zinc-200 font-medium">{formatUSD(activeThreshold)}</span>
-        </div>
-        <div className="flex justify-between items-baseline">
-          <span className="text-zinc-400">
-            {isDailyConstrained ? "Drawdown room" : "Daily loss room"}
-          </span>
-          <span className="font-mono text-zinc-200 font-medium">
-            {formatUSD(isDailyConstrained ? drawdownBufferNum : dailyRoomNum)}
-          </span>
-        </div>
-        <div className="flex justify-between items-baseline">
-          <span className="text-zinc-400">Target progress</span>
-          <span className="font-mono text-zinc-200 font-medium">
-            {formatPercent(actualProfitPct, 2)}
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

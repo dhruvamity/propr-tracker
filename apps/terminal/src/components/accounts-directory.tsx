@@ -144,8 +144,13 @@ export function AccountsDirectory({ accounts }: AccountsDirectoryProps) {
       })
       .sort((a, b) => {
         if (sortBy === "RISK") {
-          const bufA = Number(a.drawdownRemaining || 999999);
-          const bufB = Number(b.drawdownRemaining || 999999);
+          const isFailedA = isAccountFailed(a.stage);
+          const isFailedB = isAccountFailed(b.stage);
+          if (isFailedA !== isFailedB) {
+            return isFailedA ? 1 : -1;
+          }
+          const bufA = Number(a.drawdownRemaining ?? 999999);
+          const bufB = Number(b.drawdownRemaining ?? 999999);
           return bufA - bufB;
         }
         if (sortBy === "EQUITY_DESC") {

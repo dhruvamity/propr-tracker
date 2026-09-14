@@ -202,7 +202,7 @@ export default async function OverviewPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {rankedActiveAccounts.map((acc, idx) => (
-              <RiskCard key={acc.accountId} account={acc} rank={idx + 1} />
+              <RiskCard key={acc.accountId} account={acc} rank={idx + 1} variant="condensed" />
             ))}
           </div>
         )}

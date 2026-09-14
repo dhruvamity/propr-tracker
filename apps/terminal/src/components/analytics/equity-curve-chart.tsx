@@ -257,24 +257,29 @@ export function EquityCurveChart({
             />
           )}
 
-          {/* X-axis date labels */}
-          {points.map((pt, idx) => {
-            if (idx % Math.ceil(points.length / 5) !== 0 && idx !== points.length - 1) return null;
-            const x = getX(idx);
-            return (
-              <text
-                key={idx}
-                x={x}
-                y={height - 8}
-                textAnchor="middle"
-                fill="#71717a"
-                fontSize="10"
-                className="font-mono"
-              >
-                {pt.label}
-              </text>
-            );
-          })}
+          {/* X-axis date labels (deduplicated against adjacent identical dates) */}
+          {(() => {
+            let lastLabel = "";
+            return points.map((pt, idx) => {
+              if (idx % Math.ceil(points.length / 5) !== 0 && idx !== points.length - 1) return null;
+              if (pt.label === lastLabel) return null;
+              lastLabel = pt.label;
+              const x = getX(idx);
+              return (
+                <text
+                  key={idx}
+                  x={x}
+                  y={height - 8}
+                  textAnchor="middle"
+                  fill="#71717a"
+                  fontSize="10"
+                  className="font-mono"
+                >
+                  {pt.label}
+                </text>
+              );
+            });
+          })()}
 
           {/* Hover Tracker crosshair & interaction areas */}
           {points.map((pt, idx) => {
